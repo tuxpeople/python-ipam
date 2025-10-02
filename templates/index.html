@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Python IPAM{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1 class="mb-4">
+            <i class="bi bi-speedometer2"></i> IPAM Dashboard
+        </h1>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ networks|length }}</h4>
+                        <p class="card-text">Networks</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-diagram-2 fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ hosts|length }}</h4>
+                        <p class="card-text">Total Hosts</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-pc-display fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ hosts|selectattr('status', 'equalto', 'active')|list|length }}</h4>
+                        <p class="card-text">Active Hosts</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-check-circle fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ networks|sum(attribute='total_hosts') - hosts|length }}</h4>
+                        <p class="card-text">Available IPs</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-hdd fs-1"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-diagram-2"></i> Networks Overview
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Network</th>
+                                <th>VLAN</th>
+                                <th>Used/Total</th>
+                                <th>Utilization</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for network in networks[:5] %}
+                            <tr>
+                                <td>{{ network.network }}/{{ network.cidr }}</td>
+                                <td>{{ network.vlan_id or '-' }}</td>
+                                <td>{{ network.used_hosts }}/{{ network.total_hosts }}</td>
+                                <td>
+                                    {% set utilization = (network.used_hosts / network.total_hosts * 100) if network.total_hosts > 0 else 0 %}
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar
+                                            {% if utilization < 50 %}bg-success
+                                            {% elif utilization < 80 %}bg-warning
+                                            {% else %}bg-danger{% endif %}"
+                                            style="width: {{ utilization }}%">
+                                            {{ "%.1f"|format(utilization) }}%
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if networks|length > 5 %}
+                <div class="text-center">
+                    <a href="{{ url_for('networks') }}" class="btn btn-outline-primary btn-sm">
+                        View All Networks
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-pc-display"></i> Recent Hosts
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>IP Address</th>
+                                <th>Hostname</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for host in hosts[:5] %}
+                            <tr>
+                                <td>{{ host.ip_address }}</td>
+                                <td>{{ host.hostname or '-' }}</td>
+                                <td>
+                                    <span class="badge
+                                        {% if host.status == 'active' %}bg-success
+                                        {% elif host.status == 'inactive' %}bg-secondary
+                                        {% else %}bg-warning{% endif %}">
+                                        {{ host.status.title() }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% if hosts|length > 5 %}
+                <div class="text-center">
+                    <a href="{{ url_for('hosts') }}" class="btn btn-outline-primary btn-sm">
+                        View All Hosts
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

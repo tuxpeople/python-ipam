@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Hosts - Python IPAM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-pc-display"></i> Hosts</h1>
+    <a href="{{ url_for('add_host') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Add Host
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <table id="hostsTable" class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>IP Address</th>
+                    <th>Hostname</th>
+                    <th>MAC Address</th>
+                    <th>Status</th>
+                    <th>Network</th>
+                    <th>Description</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for host in hosts %}
+                <tr>
+                    <td>{{ host.ip_address }}</td>
+                    <td>{{ host.hostname or '-' }}</td>
+                    <td>
+                        {% if host.mac_address %}
+                            <code>{{ host.mac_address }}</code>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge
+                            {% if host.status == 'active' %}bg-success
+                            {% elif host.status == 'inactive' %}bg-secondary
+                            {% elif host.status == 'reserved' %}bg-warning
+                            {% else %}bg-info{% endif %}">
+                            {{ host.status.title() }}
+                        </span>
+                    </td>
+                    <td>
+                        {% if host.network_ref %}
+                            {{ host.network_ref.network }}/{{ host.network_ref.cidr }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{{ host.description or '-' }}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" title="Edit">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-outline-danger" title="Delete">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('#hostsTable').DataTable({
+        responsive: true,
+        pageLength: 25,
+        order: [[0, 'asc']],
+        columnDefs: [
+            { targets: [6], orderable: false }
+        ]
+    });
+});
+</script>
+{% endblock %}

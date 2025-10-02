@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  ipam:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
+      - DATABASE_URL=sqlite:///data/ipam.db
+    volumes:
+      - ipam_data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  ipam-dev:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+      - FLASK_DEBUG=1
+      - SECRET_KEY=dev-secret-key
+      - DATABASE_URL=sqlite:///data/ipam.db
+    volumes:
+      - .:/app
+      - ipam_data:/app/data
+    command: ["python", "app.py"]
+    profiles:
+      - dev
+
+volumes:
+  ipam_data:

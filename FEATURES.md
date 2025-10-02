@@ -177,25 +177,52 @@
     - API authentication (token-based)
     - OpenAPI/Swagger documentation
     - Rate limiting and pagination
+  - **Dependencies**: [IPAM-015] for authentication system
   - **Technical Notes**: Consider Flask-RESTX for auto-documentation
 
-### Security & Authentication
-- **[IPAM-015]** 📅 OIDC Authentication with OAuth2 Proxy
-  - **Priority**: High | **Category**: Security
-  - **Estimated Effort**: Medium (2-3 days)
-  - **Description**: OIDC authentication using OAuth2 Proxy as reverse proxy
+- **[IPAM-016]** 📅 Local User Management UI
+  - **Priority**: Medium | **Category**: UI/Security
+  - **Estimated Effort**: Small (1-2 days)
+  - **Description**: Admin interface for local user management
   - **Acceptance Criteria**:
-    - OAuth2 Proxy integration with Docker Compose
-    - Support for multiple OIDC providers (Keycloak, Azure AD, etc.)
-    - User header extraction from proxy
-    - Role-based permissions via OIDC claims
-    - Single logout support
+    - User list with search and filtering
+    - Add/edit/disable user accounts
+    - Role assignment interface
+    - Password reset functionality
+    - User activity logging
+  - **Dependencies**: [IPAM-015] hybrid authentication system
   - **Technical Notes**:
-    - Use OAuth2 Proxy container as authentication layer
-    - Extract user info from X-Forwarded-User headers
-    - Map OIDC groups/roles to IPAM permissions
-    - Maintain session state in OAuth2 Proxy
-  - **Implementation Approach**:
+    - Reuse existing Bootstrap/DataTables UI patterns
+    - Add password strength validation
+    - Implement user audit trail
+
+### Security & Authentication
+- **[IPAM-015]** 📅 Hybrid Authentication System
+  - **Priority**: High | **Category**: Security
+  - **Estimated Effort**: Medium (3-4 days)
+  - **Description**: Support both local user management and OIDC via OAuth2 Proxy
+  - **Acceptance Criteria**:
+    - **Local Authentication**: Built-in user registration, login, password reset
+    - **OAuth2 Proxy Support**: OIDC integration via reverse proxy
+    - **Role-based Access Control**: Admin, User, ReadOnly roles
+    - **Configurable Auth Mode**: Environment variable to switch between modes
+    - **User Management UI**: Admin interface for local users
+    - **Session Management**: Secure session handling for both modes
+  - **Technical Notes**:
+    - Use Flask-Login for local authentication
+    - Header extraction for proxy-based auth
+    - Unified User model supporting both auth types
+    - Role inheritance from OIDC groups or local assignment
+  - **Authentication Modes**:
+
+    **Mode 1: Local Authentication (Default)**
+    ```python
+    # .env
+    AUTH_MODE=local
+    SECRET_KEY=your-secret-key
+    ```
+
+    **Mode 2: OAuth2 Proxy**
     ```yaml
     # docker-compose.auth.yml
     services:
@@ -209,10 +236,30 @@
           - OAUTH2_PROXY_PASS_USER_HEADERS=true
       ipam:
         environment:
-          - AUTH_PROXY_ENABLED=true
+          - AUTH_MODE=proxy
           - AUTH_USER_HEADER=X-Forwarded-User
     ```
-  - **Rationale**: Simpler than native OIDC implementation, proven security model
+  - **Implementation Structure**:
+    ```python
+    # auth/models.py
+    class User(db.Model):
+        id = db.Column(db.Integer, primary_key=True)
+        username = db.Column(db.String(80), unique=True, nullable=False)
+        email = db.Column(db.String(120), unique=True, nullable=False)
+        password_hash = db.Column(db.String(255))  # Only for local auth
+        role = db.Column(db.String(20), default='user')  # admin/user/readonly
+        auth_type = db.Column(db.String(10), default='local')  # local/proxy
+        is_active = db.Column(db.Boolean, default=True)
+
+    # auth/manager.py
+    class AuthManager:
+        def authenticate_user(self, request):
+            if app.config['AUTH_MODE'] == 'proxy':
+                return self._authenticate_proxy(request)
+            else:
+                return self._authenticate_local(request)
+    ```
+  - **Rationale**: Maximum flexibility - simple setup for development/small deployments, enterprise-ready OIDC for larger organizations
 
 ---
 
@@ -235,10 +282,15 @@ Currently no blocked features.
 - 📅 Advanced import formats
 - 📅 REST API expansion
 
-### v2.0.0 (Planned - Q1 2025)
-- 📅 User authentication system
+### v1.2.0 (Planned - Q1 2025)
+- 📅 Hybrid authentication system (local + OIDC)
+- 📅 User management interface
+- 📅 Role-based access control
+
+### v2.0.0 (Planned - Q2 2025)
 - 📅 Network discovery tools
-- 📅 Advanced reporting
+- 📅 Advanced reporting and analytics
+- 📅 Multi-tenant support
 
 ---
 

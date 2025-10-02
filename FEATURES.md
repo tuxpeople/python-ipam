@@ -265,7 +265,11 @@
 
 ## 🚫 Blocked/Deferred
 
-Currently no blocked features.
+### Out of Scope
+- **Multi-tenant Support**: Not planned for current roadmap
+  - **Rationale**: Single-tenant IPAM covers majority of use cases
+  - **Complexity**: Would require significant architecture changes
+  - **Alternative**: Deploy multiple IPAM instances for isolation
 
 ---
 
@@ -290,7 +294,7 @@ Currently no blocked features.
 ### v2.0.0 (Planned - Q2 2025)
 - 📅 Network discovery tools
 - 📅 Advanced reporting and analytics
-- 📅 Multi-tenant support
+- 📅 Performance optimizations for large datasets
 
 ---
 

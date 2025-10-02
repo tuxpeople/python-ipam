@@ -180,16 +180,39 @@
   - **Technical Notes**: Consider Flask-RESTX for auto-documentation
 
 ### Security & Authentication
-- **[IPAM-015]** 📅 User Authentication System
+- **[IPAM-015]** 📅 OIDC Authentication with OAuth2 Proxy
   - **Priority**: High | **Category**: Security
-  - **Estimated Effort**: High (4-5 days)
-  - **Description**: Multi-user support with role-based access
+  - **Estimated Effort**: Medium (2-3 days)
+  - **Description**: OIDC authentication using OAuth2 Proxy as reverse proxy
   - **Acceptance Criteria**:
-    - User registration and login
-    - Role-based permissions (admin, user, readonly)
-    - Session management
-    - Password reset functionality
-  - **Technical Notes**: Use Flask-Login and Flask-User
+    - OAuth2 Proxy integration with Docker Compose
+    - Support for multiple OIDC providers (Keycloak, Azure AD, etc.)
+    - User header extraction from proxy
+    - Role-based permissions via OIDC claims
+    - Single logout support
+  - **Technical Notes**:
+    - Use OAuth2 Proxy container as authentication layer
+    - Extract user info from X-Forwarded-User headers
+    - Map OIDC groups/roles to IPAM permissions
+    - Maintain session state in OAuth2 Proxy
+  - **Implementation Approach**:
+    ```yaml
+    # docker-compose.auth.yml
+    services:
+      oauth2-proxy:
+        image: quay.io/oauth2-proxy/oauth2-proxy:latest
+        ports: ["4180:4180"]
+        environment:
+          - OAUTH2_PROXY_UPSTREAM=http://ipam:5000
+          - OAUTH2_PROXY_OIDC_ISSUER_URL=${OIDC_ISSUER}
+          - OAUTH2_PROXY_CLIENT_ID=${OIDC_CLIENT_ID}
+          - OAUTH2_PROXY_PASS_USER_HEADERS=true
+      ipam:
+        environment:
+          - AUTH_PROXY_ENABLED=true
+          - AUTH_USER_HEADER=X-Forwarded-User
+    ```
+  - **Rationale**: Simpler than native OIDC implementation, proven security model
 
 ---
 

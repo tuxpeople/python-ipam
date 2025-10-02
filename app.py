@@ -2,17 +2,35 @@ import ipaddress
 import os
 
 from dotenv import load_dotenv
+from exporters import get_exporter, register_exporter, get_available_exporters
+from exporters.csv_exporter import CSVExporter
+from exporters.json_exporter import JSONExporter
+from importers import (
+    get_importer,
+    register_importer,
+    get_available_importers,
+    detect_format_by_extension,
+)
+from importers.csv_importer import CSVImporter
 from flask import (
     Flask,
+    Response,
     flash,
     jsonify,
     redirect,
     render_template,
+    request,
     url_for,
 )
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
-from wtforms import IntegerField, SelectField, StringField, TextAreaField
+from wtforms import (
+    FileField,
+    IntegerField,
+    SelectField,
+    StringField,
+    TextAreaField,
+)
 from wtforms.validators import DataRequired, IPAddress, Optional
 
 load_dotenv()
@@ -25,6 +43,11 @@ app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
+
+# Register export/import plugins
+register_exporter("csv", CSVExporter())
+register_exporter("json", JSONExporter())
+register_importer("csv", CSVImporter())
 
 
 class Network(db.Model):
@@ -109,6 +132,20 @@ class HostForm(FlaskForm):
         ],
     )
     network_id = SelectField("Network", coerce=int, validators=[Optional()])
+
+
+class ImportForm(FlaskForm):
+    file = FileField("File", validators=[DataRequired()])
+    import_type = SelectField(
+        "Import Type",
+        choices=[("networks", "Networks"), ("hosts", "Hosts")],
+        validators=[DataRequired()],
+    )
+    format_type = SelectField(
+        "Format",
+        choices=[],  # Will be populated dynamically
+        validators=[DataRequired()],
+    )
 
 
 @app.route("/")
@@ -235,6 +272,194 @@ def api_hosts():
             for h in hosts_list
         ]
     )
+
+
+@app.route("/export/<export_type>/<format_name>")
+def export_data(export_type, format_name):
+    """Export data in specified format."""
+    try:
+        exporter = get_exporter(format_name)
+
+        if export_type == "networks":
+            networks_list = Network.query.all()
+            data = exporter.export_networks(networks_list)
+            filename = f"networks.{exporter.file_extension}"
+        elif export_type == "hosts":
+            hosts_list = Host.query.all()
+            data = exporter.export_hosts(hosts_list)
+            filename = f"hosts.{exporter.file_extension}"
+        else:
+            flash("Invalid export type", "error")
+            return redirect(url_for("index"))
+
+        return Response(
+            data,
+            mimetype=exporter.mime_type,
+            headers={"Content-Disposition": f"attachment; filename={filename}"},
+        )
+
+    except ValueError as e:
+        flash(f"Export failed: {str(e)}", "error")
+        return redirect(url_for("index"))
+
+
+# Legacy routes for backward compatibility
+@app.route("/export/networks")
+def export_networks_csv():
+    """Legacy route for CSV export of networks."""
+    return redirect(
+        url_for("export_data", export_type="networks", format_name="csv")
+    )
+
+
+@app.route("/export/hosts")
+def export_hosts_csv():
+    """Legacy route for CSV export of hosts."""
+    return redirect(
+        url_for("export_data", export_type="hosts", format_name="csv")
+    )
+
+
+@app.route("/import", methods=["GET", "POST"])
+def import_data():
+    """Import networks or hosts from file."""
+    form = ImportForm()
+
+    # Populate format choices
+    available_importers = get_available_importers()
+    form.format_type.choices = [
+        (name, importer.format_name)
+        for name, importer in available_importers.items()
+    ]
+
+    if form.validate_on_submit():
+        file_obj = form.file.data
+        import_type = form.import_type.data
+        format_type = form.format_type.data
+
+        try:
+            # Get importer
+            importer = get_importer(format_type)
+
+            # Read file content
+            file_content = file_obj.read()
+
+            # Import and validate data
+            if import_type == "networks":
+                raw_data = importer.import_networks(file_content)
+                valid_data, errors = importer.validate_networks_data(raw_data)
+                imported_count = _create_networks_from_data(valid_data)
+
+                if errors:
+                    flash(
+                        f"Import completed with {len(errors)} errors. Check the data.",
+                        "warning",
+                    )
+                    for error in errors[:5]:  # Show first 5 errors
+                        flash(error, "warning")
+
+                flash(
+                    f"Successfully imported {imported_count} networks!",
+                    "success",
+                )
+                return redirect(url_for("networks"))
+
+            elif import_type == "hosts":
+                raw_data = importer.import_hosts(file_content)
+                valid_data, errors = importer.validate_hosts_data(raw_data)
+                imported_count = _create_hosts_from_data(valid_data)
+
+                if errors:
+                    flash(
+                        f"Import completed with {len(errors)} errors. Check the data.",
+                        "warning",
+                    )
+                    for error in errors[:5]:  # Show first 5 errors
+                        flash(error, "warning")
+
+                flash(
+                    f"Successfully imported {imported_count} hosts!", "success"
+                )
+                return redirect(url_for("hosts"))
+
+        except Exception as e:
+            flash(f"Import failed: {str(e)}", "error")
+
+    return render_template("import_data.html", form=form)
+
+
+# Legacy route for backward compatibility
+@app.route("/import_csv", methods=["GET", "POST"])
+def import_csv():
+    """Legacy route for CSV import."""
+    return redirect(url_for("import_data"))
+
+
+def _create_networks_from_data(networks_data):
+    """Create Network objects from validated data."""
+    imported_count = 0
+
+    for network_data in networks_data:
+        # Check if network already exists
+        existing_network = Network.query.filter_by(
+            network=network_data["network"]
+        ).first()
+        if existing_network:
+            continue
+
+        network = Network(
+            network=network_data["network"],
+            cidr=network_data["cidr"],
+            broadcast_address=network_data["broadcast_address"],
+            vlan_id=network_data.get("vlan_id"),
+            location=network_data.get("location", ""),
+            description=network_data.get("description", ""),
+        )
+
+        db.session.add(network)
+        imported_count += 1
+
+    db.session.commit()
+    return imported_count
+
+
+def _create_hosts_from_data(hosts_data):
+    """Create Host objects from validated data."""
+    imported_count = 0
+
+    for host_data in hosts_data:
+        # Check if host already exists
+        existing_host = Host.query.filter_by(
+            ip_address=host_data["ip_address"]
+        ).first()
+        if existing_host:
+            continue
+
+        # Auto-detect network
+        network_id = None
+        ip = ipaddress.IPv4Address(host_data["ip_address"])
+        for network in Network.query.all():
+            net = ipaddress.IPv4Network(
+                f"{network.network}/{network.cidr}", strict=False
+            )
+            if ip in net:
+                network_id = network.id
+                break
+
+        host = Host(
+            ip_address=host_data["ip_address"],
+            hostname=host_data.get("hostname", ""),
+            mac_address=host_data.get("mac_address", ""),
+            status=host_data.get("status", "active"),
+            description=host_data.get("description", ""),
+            network_id=network_id,
+        )
+
+        db.session.add(host)
+        imported_count += 1
+
+    db.session.commit()
+    return imported_count
 
 
 if __name__ == "__main__":

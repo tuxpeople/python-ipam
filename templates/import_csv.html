@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}CSV Import - Python IPAM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-upload"></i> Import from CSV
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>CSV Format Requirements:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li><strong>Networks:</strong> Headers must include "Network", "CIDR" (required), "VLAN ID", "Location", "Description" (optional)</li>
+                        <li><strong>Hosts:</strong> Headers must include "IP Address" (required), "Hostname", "MAC Address", "Status", "Description" (optional)</li>
+                        <li>Existing entries (same Network or IP Address) will be skipped</li>
+                        <li>Invalid rows will be automatically skipped</li>
+                    </ul>
+                </div>
+
+                <form method="POST" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        {{ form.import_type.label(class="form-label") }}
+                        {{ form.import_type(class="form-select") }}
+                        <div class="form-text">Select whether you're importing networks or hosts</div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.csv_file.label(class="form-label") }}
+                        {{ form.csv_file(class="form-control" + (" is-invalid" if form.csv_file.errors else ""), accept=".csv") }}
+                        {% if form.csv_file.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.csv_file.errors[0] }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Select a CSV file to import</div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to Dashboard
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-upload"></i> Import CSV
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Sample CSV Format Examples -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">Sample Networks CSV</h6>
+                    </div>
+                    <div class="card-body">
+                        <pre class="small">Network,CIDR,VLAN ID,Location,Description
+192.168.1.0,24,100,Office,Main office network
+10.0.0.0,16,,Datacenter,Production servers</pre>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">Sample Hosts CSV</h6>
+                    </div>
+                    <div class="card-body">
+                        <pre class="small">IP Address,Hostname,MAC Address,Status,Description
+192.168.1.10,server01,aa:bb:cc:dd:ee:ff,active,Web server
+192.168.1.11,server02,,active,Database server</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

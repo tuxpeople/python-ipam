@@ -49,6 +49,33 @@
                             </a></li>
                         </ul>
                     </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-download"></i> Export/Import
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><h6 class="dropdown-header">Export Networks</h6></li>
+                            <li><a class="dropdown-item" href="{{ url_for('export_data', export_type='networks', format_name='csv') }}">
+                                <i class="bi bi-filetype-csv"></i> Networks CSV
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('export_data', export_type='networks', format_name='json') }}">
+                                <i class="bi bi-filetype-json"></i> Networks JSON
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">Export Hosts</h6></li>
+                            <li><a class="dropdown-item" href="{{ url_for('export_data', export_type='hosts', format_name='csv') }}">
+                                <i class="bi bi-filetype-csv"></i> Hosts CSV
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('export_data', export_type='hosts', format_name='json') }}">
+                                <i class="bi bi-filetype-json"></i> Hosts JSON
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><h6 class="dropdown-header">Import</h6></li>
+                            <li><a class="dropdown-item" href="{{ url_for('import_data') }}">
+                                <i class="bi bi-upload"></i> Import Data
+                            </a></li>
+                        </ul>
+                    </li>
                 </ul>
             </div>
         </div>

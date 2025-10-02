@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Import Data - Python IPAM{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-upload"></i> Import Data
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Import Guidelines:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Select the appropriate format for your data file</li>
+                        <li>Existing entries (same Network or IP Address) will be skipped</li>
+                        <li>Invalid rows will be automatically skipped with error messages</li>
+                        <li>Support for multiple data formats (CSV, JSON, etc.)</li>
+                    </ul>
+                </div>
+
+                <form method="POST" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.import_type.label(class="form-label") }}
+                                {{ form.import_type(class="form-select") }}
+                                <div class="form-text">Select whether you're importing networks or hosts</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.format_type.label(class="form-label") }}
+                                {{ form.format_type(class="form-select") }}
+                                <div class="form-text">Choose the data format of your file</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.file.label(class="form-label") }}
+                        {{ form.file(class="form-control" + (" is-invalid" if form.file.errors else "")) }}
+                        {% if form.file.errors %}
+                            <div class="invalid-feedback">
+                                {{ form.file.errors[0] }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Select a data file to import</div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to Dashboard
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-upload"></i> Import Data
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Format Examples -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">CSV Format Examples</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <strong>Networks CSV:</strong>
+                            <pre class="small bg-light p-2 rounded">Network,CIDR,VLAN ID,Location,Description
+192.168.1.0,24,100,Office,Main office network
+10.0.0.0,16,,Datacenter,Production servers</pre>
+                        </div>
+                        <div>
+                            <strong>Hosts CSV:</strong>
+                            <pre class="small bg-light p-2 rounded">IP Address,Hostname,MAC Address,Status,Description
+192.168.1.10,server01,aa:bb:cc:dd:ee:ff,active,Web server
+192.168.1.11,server02,,active,Database server</pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">Supported Formats</h6>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>
+                                    <i class="bi bi-filetype-csv"></i> CSV
+                                    <small class="text-muted d-block">Comma-separated values</small>
+                                </span>
+                                <span class="badge bg-success rounded-pill">Available</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>
+                                    <i class="bi bi-filetype-json"></i> JSON
+                                    <small class="text-muted d-block">JavaScript Object Notation</small>
+                                </span>
+                                <span class="badge bg-primary rounded-pill">Coming Soon</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span>
+                                    <i class="bi bi-filetype-xml"></i> XML
+                                    <small class="text-muted d-block">Extensible Markup Language</small>
+                                </span>
+                                <span class="badge bg-secondary rounded-pill">Planned</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

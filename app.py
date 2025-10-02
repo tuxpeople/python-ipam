@@ -115,7 +115,9 @@ class HostForm(FlaskForm):
 def index():
     networks_list = Network.query.all()
     hosts_list = Host.query.all()
-    return render_template("index.html", networks=networks_list, hosts=hosts_list)
+    return render_template(
+        "index.html", networks=networks_list, hosts=hosts_list
+    )
 
 
 @app.route("/networks")

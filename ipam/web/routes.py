@@ -68,7 +68,7 @@ def add_network():
             db.session.add(network)
             db.session.commit()
             flash("Network added successfully!", "success")
-            return redirect(url_for("networks"))
+            return redirect(url_for("web.networks"))
         except ValueError as e:
             flash(f"Invalid network: {e}", "error")
 
@@ -108,7 +108,7 @@ def add_host():
         db.session.add(host)
         db.session.commit()
         flash("Host added successfully!", "success")
-        return redirect(url_for("hosts"))
+        return redirect(url_for("web.hosts"))
 
     return render_template("add_host.html", form=form)
 
@@ -137,7 +137,7 @@ def edit_network(network_id):
 
             db.session.commit()
             flash("Network updated successfully!", "success")
-            return redirect(url_for("networks"))
+            return redirect(url_for("web.networks"))
         except ValueError as e:
             flash(f"Invalid network: {e}", "error")
 
@@ -176,7 +176,7 @@ def edit_host(host_id):
 
         db.session.commit()
         flash("Host updated successfully!", "success")
-        return redirect(url_for("hosts"))
+        return redirect(url_for("web.hosts"))
 
     return render_template("edit_host.html", form=form, host=host)
 
@@ -193,12 +193,12 @@ def delete_network(network_id):
             f"assigned to this network",
             "error",
         )
-        return redirect(url_for("networks"))
+        return redirect(url_for("web.networks"))
 
     db.session.delete(network)
     db.session.commit()
     flash("Network deleted successfully!", "success")
-    return redirect(url_for("networks"))
+    return redirect(url_for("web.networks"))
 
 
 @web_bp.route("/delete_host/<int:host_id>", methods=["POST"])
@@ -208,7 +208,7 @@ def delete_host(host_id):
     db.session.delete(host)
     db.session.commit()
     flash("Host deleted successfully!", "success")
-    return redirect(url_for("hosts"))
+    return redirect(url_for("web.hosts"))
 
 
 @web_bp.route("/api/networks")
@@ -273,7 +273,7 @@ def export_data(export_type, format_name):
             filename = f"hosts.{exporter.file_extension}"
         else:
             flash("Invalid export type", "error")
-            return redirect(url_for("index"))
+            return redirect(url_for("web.index"))
 
         return Response(
             data,
@@ -283,7 +283,7 @@ def export_data(export_type, format_name):
 
     except ValueError as e:
         flash(f"Export failed: {str(e)}", "error")
-        return redirect(url_for("index"))
+        return redirect(url_for("web.index"))
 
 
 # Legacy routes for backward compatibility
@@ -291,7 +291,7 @@ def export_data(export_type, format_name):
 def export_networks_csv():
     """Legacy route for CSV export of networks."""
     return redirect(
-        url_for("export_data", export_type="networks", format_name="csv")
+        url_for("web.export_data", export_type="networks", format_name="csv")
     )
 
 
@@ -299,7 +299,7 @@ def export_networks_csv():
 def export_hosts_csv():
     """Legacy route for CSV export of hosts."""
     return redirect(
-        url_for("export_data", export_type="hosts", format_name="csv")
+        url_for("web.export_data", export_type="hosts", format_name="csv")
     )
 
 
@@ -346,7 +346,7 @@ def import_data():
                     f"Successfully imported {imported_count} networks!",
                     "success",
                 )
-                return redirect(url_for("networks"))
+                return redirect(url_for("web.networks"))
 
             elif import_type == "hosts":
                 raw_data = importer.import_hosts(file_content)
@@ -365,7 +365,7 @@ def import_data():
                 flash(
                     f"Successfully imported {imported_count} hosts!", "success"
                 )
-                return redirect(url_for("hosts"))
+                return redirect(url_for("web.hosts"))
 
         except Exception as e:
             flash(f"Import failed: {str(e)}", "error")
@@ -377,7 +377,7 @@ def import_data():
 @web_bp.route("/import_csv", methods=["GET", "POST"])
 def import_csv():
     """Legacy route for CSV import."""
-    return redirect(url_for("import_data"))
+    return redirect(url_for("web.import_data"))
 
 
 def _create_networks_from_data(networks_data):

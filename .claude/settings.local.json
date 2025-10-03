@@ -12,7 +12,9 @@
       "Bash(pkill:*)",
       "Bash(gh auth:*)",
       "Bash(gh repo view:*)",
-      "Bash(gh run view:*)"
+      "Bash(gh run view:*)",
+      "Bash(gh pr:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

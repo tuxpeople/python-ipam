@@ -52,6 +52,7 @@ jobs:
           files: ./coverage.xml
           flags: unittests
           name: codecov-python-ipam
+          token: ${{ secrets.CODECOV_TOKEN }}
         continue-on-error: true
 
   docker-build:

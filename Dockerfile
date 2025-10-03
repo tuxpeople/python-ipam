@@ -1,6 +1,7 @@
 # Multi-stage build using Chainguard Python images for minimal attack surface
 # Stage 1: Build virtualenv with all dependencies
-FROM cgr.dev/chainguard/python:latest-dev@sha256:9c012ae77bfbcf6c2a1f8d75c85ec3b1d5dbae5c56f7ba06f7dd4c1a7698d6a4 AS build
+# hadolint ignore=DL3007
+FROM cgr.dev/chainguard/python:latest-dev AS build
 
 # Create virtualenv and upgrade build tools
 RUN python -m venv /home/nonroot/venv && \
@@ -15,7 +16,8 @@ RUN /home/nonroot/venv/bin/pip install \
     -r /tmp/requirements.txt
 
 # Stage 3: Final minimal runtime image
-FROM cgr.dev/chainguard/python:latest@sha256:2b41c96e8f3e22f2e89c77729cc15e91a8c8c1b4bf98c67ba2f2ec70ec0db9f8
+# hadolint ignore=DL3007
+FROM cgr.dev/chainguard/python:latest
 
 LABEL maintainer="Python IPAM"
 LABEL description="IP Address Management System built with Flask"

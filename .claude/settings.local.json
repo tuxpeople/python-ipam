@@ -11,7 +11,8 @@
       "Bash(python:*)",
       "Bash(pkill:*)",
       "Bash(gh auth:*)",
-      "Bash(gh repo view:*)"
+      "Bash(gh repo view:*)",
+      "Bash(gh run view:*)"
     ],
     "deny": [],
     "ask": []

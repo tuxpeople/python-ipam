@@ -71,7 +71,9 @@ class TestDatabaseInitialization:
             ]
 
             for col in required_columns:
-                assert col in columns, f"Column '{col}' missing from networks table"
+                assert (
+                    col in columns
+                ), f"Column '{col}' missing from networks table"
 
             db.drop_all()
 
@@ -107,7 +109,9 @@ class TestDatabaseInitialization:
             ]
 
             for col in required_columns:
-                assert col in columns, f"Column '{col}' missing from hosts table"
+                assert (
+                    col in columns
+                ), f"Column '{col}' missing from hosts table"
 
             db.drop_all()
 

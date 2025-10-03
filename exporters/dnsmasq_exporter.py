@@ -16,7 +16,9 @@ class DNSmasqExporter(BaseExporter):
             mode: Export mode - 'dns', 'dhcp', or 'combined' (default)
         """
         if mode not in ["dns", "dhcp", "combined"]:
-            raise ValueError(f"Invalid mode '{mode}'. Must be 'dns', 'dhcp', or 'combined'")
+            raise ValueError(
+                f"Invalid mode '{mode}'. Must be 'dns', 'dhcp', or 'combined'"
+            )
         self.mode = mode
 
     @property
@@ -52,26 +54,34 @@ class DNSmasqExporter(BaseExporter):
 
         # Add format explanation based on mode
         if self.mode == "dns":
-            lines.extend([
-                "# DNS-only mode: host-record=hostname,IP",
-                "# Use this for DNSmasq as DNS server only",
-                "",
-            ])
+            lines.extend(
+                [
+                    "# DNS-only mode: host-record=hostname,IP",
+                    "# Use this for DNSmasq as DNS server only",
+                    "",
+                ]
+            )
         elif self.mode == "dhcp":
-            lines.extend([
-                "# DHCP-only mode: dhcp-host=MAC,IP,hostname",
-                "# Use this for DNSmasq as DHCP server only",
-                "",
-            ])
+            lines.extend(
+                [
+                    "# DHCP-only mode: dhcp-host=MAC,IP,hostname",
+                    "# Use this for DNSmasq as DHCP server only",
+                    "",
+                ]
+            )
         else:  # combined
-            lines.extend([
-                "# Combined mode: dhcp-host=MAC,IP,hostname + host-record=hostname,IP",
-                "# Use this for DNSmasq as both DNS and DHCP server",
-                "",
-            ])
+            lines.extend(
+                [
+                    "# Combined mode: dhcp-host=MAC,IP,hostname + host-record=hostname,IP",
+                    "# Use this for DNSmasq as both DNS and DHCP server",
+                    "",
+                ]
+            )
 
         active_hosts = [h for h in hosts if h.status == "active" and h.hostname]
-        reserved_hosts = [h for h in hosts if h.status == "reserved" and h.hostname]
+        reserved_hosts = [
+            h for h in hosts if h.status == "reserved" and h.hostname
+        ]
 
         # Process active hosts
         if active_hosts:
@@ -90,7 +100,11 @@ class DNSmasqExporter(BaseExporter):
             lines.append("")
 
         # Add CNAME entries for all modes
-        cname_hosts = [h for h in hosts if h.cname and h.hostname and h.status in ["active", "reserved"]]
+        cname_hosts = [
+            h
+            for h in hosts
+            if h.cname and h.hostname and h.status in ["active", "reserved"]
+        ]
         if cname_hosts:
             lines.append("# CNAME aliases")
             for host in cname_hosts:
@@ -99,11 +113,13 @@ class DNSmasqExporter(BaseExporter):
 
         # Add statistics
         stats = self._calculate_statistics(hosts)
-        lines.extend([
-            "# Statistics:",
-            f"# Total exported entries: {stats['total']}",
-            f"# Hosts with entries: {stats['hosts_with_entries']}",
-        ])
+        lines.extend(
+            [
+                "# Statistics:",
+                f"# Total exported entries: {stats['total']}",
+                f"# Hosts with entries: {stats['hosts_with_entries']}",
+            ]
+        )
 
         if self.mode in ["dhcp", "combined"]:
             lines.append(f"# DHCP reservations: {stats['dhcp_entries']}")
@@ -111,7 +127,7 @@ class DNSmasqExporter(BaseExporter):
             lines.append(f"# DNS records: {stats['dns_entries']}")
 
         # Always show CNAME statistics if any exist
-        if stats['cname_entries'] > 0:
+        if stats["cname_entries"] > 0:
             lines.append(f"# CNAME aliases: {stats['cname_entries']}")
 
         return "\n".join(lines).encode("utf-8")
@@ -146,7 +162,11 @@ class DNSmasqExporter(BaseExporter):
 
     def _calculate_statistics(self, hosts) -> dict:
         """Calculate export statistics."""
-        hosts_with_hostname = [h for h in hosts if h.hostname and h.status in ["active", "reserved"]]
+        hosts_with_hostname = [
+            h
+            for h in hosts
+            if h.hostname and h.status in ["active", "reserved"]
+        ]
 
         total_entries = 0
         dhcp_entries = 0

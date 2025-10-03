@@ -671,7 +671,7 @@ class TestExportRoutes:
             host2 = Host(
                 ip_address="192.168.20.11",
                 hostname="mode-test2",
-                status="active"
+                status="active",
                 # No MAC address
             )
             db.session.add_all([host1, host2])

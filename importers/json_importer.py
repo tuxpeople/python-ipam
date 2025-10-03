@@ -29,7 +29,9 @@ class JSONImporter(BaseImporter):
         elif isinstance(data, list):
             networks_data = data
         else:
-            raise ValueError("Invalid JSON format: expected array or object with 'data' field")
+            raise ValueError(
+                "Invalid JSON format: expected array or object with 'data' field"
+            )
 
         networks = []
         for network_data in networks_data:
@@ -56,7 +58,9 @@ class JSONImporter(BaseImporter):
         elif isinstance(data, list):
             hosts_data = data
         else:
-            raise ValueError("Invalid JSON format: expected array or object with 'data' field")
+            raise ValueError(
+                "Invalid JSON format: expected array or object with 'data' field"
+            )
 
         hosts = []
         for host_data in hosts_data:
@@ -147,6 +151,8 @@ class JSONImporter(BaseImporter):
                 valid_data.append(host_data)
 
             except ipaddress.AddressValueError as e:
-                errors.append(f"Entry {entry_num}: Invalid IP address - {str(e)}")
+                errors.append(
+                    f"Entry {entry_num}: Invalid IP address - {str(e)}"
+                )
 
         return valid_data, errors

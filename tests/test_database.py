@@ -193,9 +193,9 @@ class TestDatabaseInitialization:
             db.session.commit()
 
             # Verify hosts were also deleted (cascade)
-            assert Network.query.get(network_id) is None
+            assert db.session.get(Network, network_id) is None
             for host_id in host_ids:
-                assert Host.query.get(host_id) is None
+                assert db.session.get(Host, host_id) is None
 
             db.drop_all()
 

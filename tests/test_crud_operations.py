@@ -59,7 +59,7 @@ class TestNetworkCRUD:
 
         # Verify changes
         with client.application.app_context():
-            updated_network = Network.query.get(network_id)
+            updated_network = db.session.get(Network, network_id)
             assert updated_network.cidr == 25
             assert updated_network.vlan_id == 200
             assert updated_network.location == "Updated Location"
@@ -85,7 +85,7 @@ class TestNetworkCRUD:
 
         # Verify deletion
         with client.application.app_context():
-            deleted_network = Network.query.get(network_id)
+            deleted_network = db.session.get(Network, network_id)
             assert deleted_network is None
 
     def test_delete_network_with_hosts_fails(self, client):
@@ -120,7 +120,7 @@ class TestNetworkCRUD:
 
         # Verify network still exists
         with client.application.app_context():
-            existing_network = Network.query.get(network_id)
+            existing_network = db.session.get(Network, network_id)
             assert existing_network is not None
 
     def test_edit_network_404(self, client):
@@ -187,7 +187,7 @@ class TestHostCRUD:
 
         # Verify changes
         with client.application.app_context():
-            updated_host = Host.query.get(host_id)
+            updated_host = db.session.get(Host, host_id)
             assert updated_host.ip_address == "192.168.105.11"
             assert updated_host.hostname == "new-hostname"
             assert updated_host.mac_address == "bb:cc:dd:ee:ff:aa"
@@ -208,7 +208,7 @@ class TestHostCRUD:
 
         # Verify deletion
         with client.application.app_context():
-            deleted_host = Host.query.get(host_id)
+            deleted_host = db.session.get(Host, host_id)
             assert deleted_host is None
 
     def test_edit_host_with_network(self, client):
@@ -248,7 +248,7 @@ class TestHostCRUD:
 
         # Verify network assignment
         with client.application.app_context():
-            updated_host = Host.query.get(host_id)
+            updated_host = db.session.get(Host, host_id)
             assert updated_host.network_id == network_id
             assert updated_host.hostname == "assigned-host"
 

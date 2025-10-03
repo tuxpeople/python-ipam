@@ -1,14 +1,12 @@
 # .github/workflows/project-automation.yml
-# NOTE: Disabled - User projects require a Personal Access Token (PAT)
-# To enable: Create a PAT with 'project' scope and add as PROJECT_TOKEN secret
 name: Project Automation
 
 on:
-    workflow_dispatch:  # Manual trigger only
-    # issues:
-    #     types: [opened, closed, labeled]
-    # pull_request:
-    #     types: [opened, closed, merged]
+    issues:
+        types: [opened, closed, labeled]
+    pull_request:
+        types: [opened, closed, merged]
+    workflow_dispatch:  # Manual trigger
 
 jobs:
     update-project:
@@ -22,5 +20,5 @@ jobs:
               uses: actions/add-to-project@v1.0.2
               with:
                   project-url: https://github.com/users/tuxpeople/projects/3
-                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  github-token: ${{ secrets.PROJECT_TOKEN }}
                   labeled: enhancement

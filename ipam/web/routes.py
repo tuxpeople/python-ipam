@@ -71,6 +71,9 @@ def add_network():
             return redirect(url_for("web.networks"))
         except ValueError as e:
             flash(f"Invalid network: {e}", "error")
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Error adding network: {e}", "error")
 
     return render_template("add_network.html", form=form)
 

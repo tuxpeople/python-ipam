@@ -41,17 +41,20 @@ class TestHostForm:
             "network_id": 1,
         }
         form = HostForm(data=form_data)
+        form.network_id.choices = [(0, "Auto-detect"), (1, "Test Network")]
         assert form.validate()
 
     def test_host_form_required_ip(self, app_context):
         form_data = {"hostname": "test-host", "status": "active"}
         form = HostForm(data=form_data)
+        form.network_id.choices = [(0, "Auto-detect")]
         assert not form.validate()
         assert "This field is required." in form.ip_address.errors
 
     def test_host_form_invalid_ip(self, app_context):
         form_data = {"ip_address": "invalid-ip", "status": "active"}
         form = HostForm(data=form_data)
+        form.network_id.choices = [(0, "Auto-detect")]
         assert not form.validate()
         assert "Invalid IP address." in form.ip_address.errors
 
@@ -61,6 +64,7 @@ class TestHostForm:
         for ip in valid_ips:
             form_data = {"ip_address": ip, "status": "active"}
             form = HostForm(data=form_data)
+            form.network_id.choices = [(0, "Auto-detect")]
             assert form.validate(), f"IP {ip} should be valid"
 
     def test_host_form_invalid_ip_formats(self, app_context):
@@ -69,6 +73,7 @@ class TestHostForm:
         for ip in invalid_ips:
             form_data = {"ip_address": ip, "status": "active"}
             form = HostForm(data=form_data)
+            form.network_id.choices = [(0, "Auto-detect")]
             assert not form.validate(), f"IP {ip} should be invalid"
 
     def test_host_form_status_choices(self, app_context):
@@ -77,9 +82,11 @@ class TestHostForm:
         for status in valid_statuses:
             form_data = {"ip_address": "192.168.1.10", "status": status}
             form = HostForm(data=form_data)
+            form.network_id.choices = [(0, "Auto-detect")]
             assert form.validate(), f"Status {status} should be valid"
 
     def test_host_form_optional_fields(self, app_context):
         form_data = {"ip_address": "192.168.1.10", "status": "active"}
         form = HostForm(data=form_data)
+        form.network_id.choices = [(0, "Auto-detect")]
         assert form.validate()

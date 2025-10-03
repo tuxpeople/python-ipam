@@ -1,6 +1,11 @@
-import pytest
+"""Test web routes."""
+
 import json
-from app import db, Network, Host
+
+import pytest
+
+from ipam.extensions import db
+from ipam.models import Host, Network
 
 
 class TestIndexRoute:

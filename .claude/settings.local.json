@@ -2,7 +2,14 @@
   "permissions": {
     "allow": [
       "WebFetch(domain:github.com)",
-      "Bash(python -m black:*)"
+      "Bash(python -m black:*)",
+      "Bash(python -m pytest tests/test_export_import.py::TestImporters::test_json_importer_networks tests/test_export_import.py::TestImporters::test_json_importer_hosts tests/test_export_import.py::TestImporters::test_json_importer_validate_networks -v)",
+      "Bash(python -m pytest tests/test_crud_operations.py::TestHostCRUD::test_edit_host_form_submission -v)",
+      "Bash(python3:*)",
+      "Bash(curl -s http://127.0.0.1:5000/api/v1/docs/)",
+      "Bash(curl -s http://127.0.0.1:5000/api/v1/docs)",
+      "Bash(python:*)",
+      "Bash(pkill:*)"
     ],
     "deny": [],
     "ask": []

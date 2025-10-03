@@ -1,16 +1,17 @@
 # 🚀 Python IPAM - Features & Roadmap
 
-**Version**: 1.0.0
-**Last Updated**: 2024-10-02
+**Version**: 1.1.0
+**Last Updated**: 2025-10-03
 
 ## 📊 Project Status Overview
 
 | Category | Completed | In Progress | Planned | Total |
 |----------|-----------|-------------|---------|-------|
-| Core Features | 8 | 1 | 3 | 12 |
+| Core Features | 9 | 0 | 3 | 12 |
+| API Integration | 1 | 0 | 0 | 1 |
 | UI/UX | 6 | 0 | 2 | 8 |
 | Data Management | 4 | 0 | 2 | 6 |
-| Testing | 5 | 1 | 1 | 7 |
+| Testing | 6 | 0 | 1 | 7 |
 
 ---
 
@@ -102,18 +103,176 @@
 
 ## 🔄 In Progress
 
+*No features currently in progress*
+
+---
+
+## ✅ Recently Completed
+
+### Core Features Enhancement
+- **[IPAM-020]** ✅ Network Names and Domains
+  - **Priority**: Medium | **Category**: Core
+  - **Status**: Complete
+  - **Description**: Add name and domain fields to networks for better organization
+  - **Acceptance Criteria**:
+    - ✅ Add `name` field to Network model (optional, user-friendly identifier)
+    - ✅ Add `domain` field to Network model (optional, DNS domain for network)
+    - ✅ Update network forms to include new fields
+    - ✅ Update network displays and tables
+    - ✅ Database migration for existing networks
+  - **Technical Implementation**:
+    - Added `name` and `domain` VARCHAR(100) columns to networks table
+    - Updated NetworkForm with new optional fields
+    - Enhanced all network templates and API responses
+    - Backward compatible with existing networks
+
+- **[IPAM-021]** ✅ Host CNAME Support
+  - **Priority**: Medium | **Category**: Core
+  - **Status**: Complete
+  - **Description**: Add CNAME alias support for hosts with export integration
+  - **Acceptance Criteria**:
+    - ✅ Add `cname` field to Host model (optional, DNS alias)
+    - ✅ Update host forms and displays
+    - ✅ Extend DNSmasq exporter with `cname=CNAME,HOSTNAME` entries
+    - ✅ Update all templates to show CNAME field
+    - ✅ CNAME statistics in DNSmasq export
+  - **Technical Features**:
+    - Added `cname` VARCHAR(255) column to hosts table
+    - Updated HostForm and all host templates
+    - Enhanced DNSmasq exporter with separate CNAME section
+    - CNAME aliases work with all DNSmasq modes (DNS/DHCP/Combined)
+    - Export format: `cname=ALIAS,HOSTNAME`
+
+- **[IPAM-022]** ✅ Form Field Validation Indicators
+  - **Priority**: Low | **Category**: UI/UX
+  - **Status**: Complete
+  - **Description**: Visual indicators for mandatory vs optional form fields
+  - **Acceptance Criteria**:
+    - ✅ Add asterisk (*) to required field labels
+    - ✅ Helpful form-text for all fields (required/optional)
+    - ✅ Consistent styling across all forms
+    - ✅ Clear visual distinction between mandatory and optional fields
+  - **UI Improvements**:
+    - Red asterisk (*) for required fields (Network Address, CIDR, IP Address)
+    - Form-text descriptions for all fields
+    - Consistent Bootstrap styling throughout forms
+
+### CRUD Operations
+- **[IPAM-019]** ✅ Edit and Delete Functionality for Networks and Hosts
+  - **Priority**: High | **Category**: Core
+  - **Status**: Complete
+  - **Description**: Full CRUD operations with edit forms and safe deletion
+  - **Acceptance Criteria**:
+    - ✅ Edit network form with validation and error handling
+    - ✅ Edit host form with network auto-detection and manual assignment
+    - ✅ Delete network with host-dependency protection
+    - ✅ Delete host with confirmation dialog
+    - ✅ Action buttons integrated into DataTables
+    - ✅ JavaScript confirmation dialogs for deletions
+    - ✅ Flash messages for success/error feedback
+    - ✅ Form pre-population with existing data
+  - **Routes Added**:
+    - `GET/POST /edit_network/<id>` - Edit network form
+    - `GET/POST /edit_host/<id>` - Edit host form
+    - `POST /delete_network/<id>` - Delete network (with host check)
+    - `POST /delete_host/<id>` - Delete host
+  - **Technical Features**:
+    - Network deletion blocked if hosts are assigned
+    - Host IP validation and network auto-detection
+    - CSRF protection for all forms
+    - Bootstrap form styling with validation feedback
+    - JavaScript confirmation with host count display
+
+### Export/Import System
+- **[IPAM-018]** ✅ DNSmasq Host Export with Multiple Modes
+  - **Priority**: Medium | **Category**: Export
+  - **Status**: Complete
+  - **Description**: Export hosts in DNSmasq configuration format with configurable modes
+  - **Acceptance Criteria**:
+    - ✅ **DNS Mode**: Only `host-record=hostname,IP` entries for DNS server use
+    - ✅ **DHCP Mode**: Only `dhcp-host=MAC,IP,hostname` entries for DHCP server use
+    - ✅ **Combined Mode**: Both DNS and DHCP entries for full DNSmasq setup
+    - ✅ Separate active and reserved hosts in all modes
+    - ✅ Include mode-specific statistics and comments
+    - ✅ Skip inactive hosts and hosts without hostnames
+    - ✅ Skip hosts without MAC addresses in DHCP-only mode
+  - **Export Routes**:
+    - `/export/hosts/dnsmasq` - Combined mode (default)
+    - `/export/hosts/dnsmasq-dns` - DNS-only mode
+    - `/export/hosts/dnsmasq-dhcp` - DHCP-only mode
+  - **Technical Notes**:
+    - **DNS Mode**: All hosts get `host-record=hostname,IP` (ignores MAC)
+    - **DHCP Mode**: Only hosts with MAC get `dhcp-host=MAC,IP,hostname`
+    - **Combined Mode**: MAC hosts get `dhcp-host`, non-MAC hosts get `host-record`
+    - File extension: `.conf`
+    - MIME type: `text/plain`
+    - Configurable via DNSmasqExporter constructor
+
 ### Testing
-- **[IPAM-009]** 🔄 Export/Import Test Coverage
+- **[IPAM-009]** ✅ Export/Import Test Coverage
   - **Priority**: High | **Category**: Testing
-  - **Status**: 80% complete
+  - **Status**: Complete
   - **Description**: Complete test coverage for new export/import system
   - **Acceptance Criteria**:
     - ✅ CSV exporter/importer tests
-    - ✅ JSON exporter tests
+    - ✅ JSON exporter/importer tests
     - ✅ Route integration tests
-    - ⏳ Error handling edge cases
-    - ⏳ Performance tests for large datasets
-  - **Next Steps**: Complete edge case testing and performance validation
+    - ✅ Error handling edge cases
+    - ✅ Performance tests for large datasets
+  - **Completed**: Added comprehensive edge case tests, performance tests, and JSON import functionality
+
+### API & Integration
+- **[IPAM-023]** ✅ Comprehensive REST API with OpenAPI/Swagger
+  - **Priority**: High | **Category**: API
+  - **Status**: Complete
+  - **Description**: Complete RESTful API for all IPAM operations with filtering, pagination, and interactive Swagger UI documentation
+  - **Acceptance Criteria**:
+    - **Network Operations**:
+      - ✅ `GET /api/v1/networks` - List all networks (with filtering support)
+      - ✅ `GET /api/v1/networks/{id}` - Get specific network details
+      - ✅ `POST /api/v1/networks` - Create new network
+      - ✅ `PUT /api/v1/networks/{id}` - Update existing network
+      - ✅ `DELETE /api/v1/networks/{id}` - Delete network (with host check)
+      - ✅ `GET /api/v1/networks/{id}/hosts` - List hosts in specific network
+    - **Host Operations**:
+      - ✅ `GET /api/v1/hosts` - List all hosts (with filtering support)
+      - ✅ `GET /api/v1/hosts/{id}` - Get specific host details
+      - ✅ `POST /api/v1/hosts` - Create new host
+      - ✅ `PUT /api/v1/hosts/{id}` - Update existing host
+      - ✅ `DELETE /api/v1/hosts/{id}` - Delete host
+    - **IP Management**:
+      - ✅ `GET /api/v1/ip/networks/{id}/next-ip` - Get next available IP in network
+      - ✅ `GET /api/v1/ip/networks/{id}/available-ips` - List all available IPs
+      - ✅ `GET /api/v1/ip/{ip_address}` - Query IP address status/details
+    - **Filtering & Search**:
+      - ✅ Network filters: `name`, `domain`, `vlan_id`, `location`
+      - ✅ Host filters: `hostname`, `cname`, `status`, `mac_address`, `network_id`
+      - ✅ Pagination support: `page`, `per_page`
+    - **Response Format**:
+      - ✅ Consistent JSON responses with metadata
+      - ✅ Error handling with proper HTTP status codes
+      - ✅ Interactive Swagger UI at `/api/v1/docs`
+  - **Technical Implementation**:
+    - Flask-RESTX for auto-documentation and Swagger UI
+    - Application Factory pattern for modular architecture
+    - SQLAlchemy models in dedicated ipam/models.py
+    - Comprehensive error handling with proper status codes
+    - Blueprint-based routing (ipam/api/ and ipam/web/)
+  - **Implementation Files**:
+    - `ipam/__init__.py` - Application factory with db initialization
+    - `ipam/extensions.py` - Flask-SQLAlchemy extension
+    - `ipam/models.py` - Network and Host models
+    - `ipam/config.py` - Configuration with absolute database paths
+    - `ipam/api/__init__.py` - API blueprint and Swagger configuration
+    - `ipam/api/models.py` - Request/response serialization models
+    - `ipam/api/networks.py` - Network CRUD endpoints
+    - `ipam/api/hosts.py` - Host CRUD endpoints
+    - `ipam/api/ip_management.py` - IP allocation and query endpoints
+    - `ipam/web/` - Web interface blueprint
+    - `API.md` - Complete API documentation
+    - `tests/test_database.py` - Database initialization tests
+  - **Completed**: API fully operational at http://127.0.0.1:5000/api/v1 with Swagger UI at /api/v1/docs
+  - **Notes**: Authentication and rate limiting planned for future release (see roadmap)
 
 ---
 
@@ -157,15 +316,66 @@
     - Cisco/HP switch MAC table import
   - **Dependencies**: [IPAM-004] plugin system
 
-- **[IPAM-013]** 📅 Data Backup & Restore
+- **[IPAM-013]** 📅 Advanced Export with Filtering
+  - **Priority**: High | **Category**: Data Management
+  - **Estimated Effort**: Medium (2-3 days)
+  - **Description**: Export all data or filtered subsets with advanced options
+  - **Acceptance Criteria**:
+    - **Complete Database Export**: All networks, hosts, and relationships
+    - **Filtered Network Export**: By VLAN, location, IP range, utilization
+    - **Filtered Host Export**: By status, network, hostname pattern, date range
+    - **Multiple Format Support**: CSV, JSON, Excel for all export types
+    - **Custom Field Selection**: Choose which columns to include
+    - **Export Templates**: Save and reuse filter configurations
+  - **UI Features**:
+    - Advanced filter interface with multiple criteria
+    - Export preview with row count estimation
+    - Progress indicator for large exports
+    - Download history and re-export capability
+  - **Technical Implementation**:
+    ```python
+    # Export with advanced filtering
+    /export/networks?vlan_id=100&location=datacenter&format=csv
+    /export/hosts?status=active&network_id=5&format=json
+    /export/complete?include=networks,hosts,relationships&format=excel
+
+    # Filter examples
+    networks: VLAN ID, location, IP range, utilization %, description
+    hosts: status, network, hostname regex, IP range, last_seen date
+    ```
+  - **UI Mockup**:
+    ```
+    [ Advanced Export ]
+
+    Export Type: [●] Networks [ ] Hosts [●] Complete Database
+
+    Filters:
+    ┌─ Networks ─────────────────────────────────────────┐
+    │ VLAN ID: [100,200-300] Location: [datacenter*]     │
+    │ IP Range: [10.0.0.0/8] Utilization: [>80%]        │
+    └────────────────────────────────────────────────────┘
+
+    ┌─ Hosts ────────────────────────────────────────────┐
+    │ Status: [☑active ☐inactive ☑reserved]             │
+    │ Hostname: [server*] Last Seen: [last 30 days]     │
+    └────────────────────────────────────────────────────┘
+
+    Format: [CSV ▼] Include: [☑IP ☑Hostname ☐MAC ☑Status]
+
+    Preview: ~1,247 networks, ~5,632 hosts
+    [Export] [Save as Template] [Load Template]
+    ```
+  - **Dependencies**: [IPAM-004] plugin system for format support
+
+- **[IPAM-017]** 📅 Data Backup & Restore
   - **Priority**: Medium | **Category**: Data Management
   - **Estimated Effort**: Small (1-2 days)
   - **Description**: Automated backup and restore functionality
   - **Acceptance Criteria**:
     - Scheduled database backups
     - One-click restore from backup
-    - Export complete IPAM database
-    - Migration utilities
+    - Complete database migration utilities
+    - Backup verification and integrity checks
 
 ### API & Integration
 - **[IPAM-014]** 📅 REST API Expansion
@@ -281,17 +491,18 @@
 - ✅ Responsive web interface
 - ✅ Comprehensive test suite
 
-### v1.1.0 (Planned - Q4 2024)
+### v1.1.0 (Planned - Q4 2025)
+- 📅 Advanced export with filtering and templates
 - 📅 Network tools and calculator
-- 📅 Advanced import formats
+- 📅 Enhanced import formats (Excel, XML)
 - 📅 REST API expansion
 
-### v1.2.0 (Planned - Q1 2025)
+### v1.2.0 (Planned - Q1 2026)
 - 📅 Hybrid authentication system (local + OIDC)
 - 📅 User management interface
 - 📅 Role-based access control
 
-### v2.0.0 (Planned - Q2 2025)
+### v2.0.0 (Planned - Q2 2026)
 - 📅 Network discovery tools
 - 📅 Advanced reporting and analytics
 - 📅 Performance optimizations for large datasets
@@ -301,18 +512,22 @@
 ## 🎯 Current Sprint Goals
 
 **Sprint**: Export/Import System Enhancement
-**Duration**: 2024-10-01 to 2024-10-05
+**Duration**: 2025-10-01 to 2025-10-05
 
-### Goals:
+### Goals
+
 1. ✅ Complete plugin-based export/import system
-2. 🔄 Achieve 95%+ test coverage for export/import features
-3. 📅 Add JSON import capability
-4. 📅 Performance optimization for large datasets
+2. ✅ Achieve 95%+ test coverage for export/import features
+3. ✅ Add JSON import capability
+4. ✅ Performance optimization for large datasets
 
-### Success Metrics:
-- All export/import tests passing
-- No regression in existing functionality
-- Plugin system documented for future extensions
+### Success Metrics
+
+- ✅ All export/import tests passing
+- ✅ No regression in existing functionality
+- ✅ Plugin system documented for future extensions
+- ✅ JSON import/export functionality complete
+- ✅ Comprehensive edge case and performance test coverage
 
 ---
 

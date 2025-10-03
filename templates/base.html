@@ -11,7 +11,7 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="{{ url_for('index') }}">
+            <a class="navbar-brand" href="{{ url_for('web.index') }}">
                 <i class="bi bi-diagram-3"></i> Python IPAM
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -20,17 +20,17 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('index') }}">
+                        <a class="nav-link" href="{{ url_for('web.index') }}">
                             <i class="bi bi-house"></i> Dashboard
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('networks') }}">
+                        <a class="nav-link" href="{{ url_for('web.networks') }}">
                             <i class="bi bi-diagram-2"></i> Networks
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('hosts') }}">
+                        <a class="nav-link" href="{{ url_for('web.hosts') }}">
                             <i class="bi bi-pc-display"></i> Hosts
                         </a>
                     </li>
@@ -41,10 +41,10 @@
                             <i class="bi bi-plus-circle"></i> Add
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{{ url_for('add_network') }}">
+                            <li><a class="dropdown-item" href="{{ url_for('web.add_network') }}">
                                 <i class="bi bi-diagram-2"></i> Network
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('add_host') }}">
+                            <li><a class="dropdown-item" href="{{ url_for('web.add_host') }}">
                                 <i class="bi bi-pc-display"></i> Host
                             </a></li>
                         </ul>
@@ -55,23 +55,23 @@
                         </a>
                         <ul class="dropdown-menu">
                             <li><h6 class="dropdown-header">Export Networks</h6></li>
-                            <li><a class="dropdown-item" href="{{ url_for('export_data', export_type='networks', format_name='csv') }}">
+                            <li><a class="dropdown-item" href="{{ url_for('web.export_data', export_type='networks', format_name='csv') }}">
                                 <i class="bi bi-filetype-csv"></i> Networks CSV
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('export_data', export_type='networks', format_name='json') }}">
+                            <li><a class="dropdown-item" href="{{ url_for('web.export_data', export_type='networks', format_name='json') }}">
                                 <i class="bi bi-filetype-json"></i> Networks JSON
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><h6 class="dropdown-header">Export Hosts</h6></li>
-                            <li><a class="dropdown-item" href="{{ url_for('export_data', export_type='hosts', format_name='csv') }}">
+                            <li><a class="dropdown-item" href="{{ url_for('web.export_data', export_type='hosts', format_name='csv') }}">
                                 <i class="bi bi-filetype-csv"></i> Hosts CSV
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('export_data', export_type='hosts', format_name='json') }}">
+                            <li><a class="dropdown-item" href="{{ url_for('web.export_data', export_type='hosts', format_name='json') }}">
                                 <i class="bi bi-filetype-json"></i> Hosts JSON
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
                             <li><h6 class="dropdown-header">Import</h6></li>
-                            <li><a class="dropdown-item" href="{{ url_for('import_data') }}">
+                            <li><a class="dropdown-item" href="{{ url_for('web.import_data') }}">
                                 <i class="bi bi-upload"></i> Import Data
                             </a></li>
                         </ul>

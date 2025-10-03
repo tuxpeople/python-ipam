@@ -18,19 +18,21 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                {{ form.ip_address.label(class="form-label") }}
+                                <label class="form-label">{{ form.ip_address.label.text }} <span class="text-danger">*</span></label>
                                 {{ form.ip_address(class="form-control" + (" is-invalid" if form.ip_address.errors else ""), placeholder="192.168.1.10") }}
                                 {% if form.ip_address.errors %}
                                     <div class="invalid-feedback">
                                         {{ form.ip_address.errors[0] }}
                                     </div>
                                 {% endif %}
+                                <div class="form-text">IPv4 address (required)</div>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 {{ form.hostname.label(class="form-label") }}
                                 {{ form.hostname(class="form-control", placeholder="server01") }}
+                                <div class="form-text">DNS hostname (optional)</div>
                             </div>
                         </div>
                     </div>
@@ -38,10 +40,21 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                {{ form.mac_address.label(class="form-label") }}
-                                {{ form.mac_address(class="form-control", placeholder="aa:bb:cc:dd:ee:ff") }}
+                                {{ form.cname.label(class="form-label") }}
+                                {{ form.cname(class="form-control", placeholder="alias") }}
+                                <div class="form-text">DNS alias for this host (optional)</div>
                             </div>
                         </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.mac_address.label(class="form-label") }}
+                                {{ form.mac_address(class="form-control", placeholder="aa:bb:cc:dd:ee:ff") }}
+                                <div class="form-text">MAC address (optional)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
                                 {{ form.status.label(class="form-label") }}
@@ -62,7 +75,7 @@
                     </div>
 
                     <div class="d-flex justify-content-between">
-                        <a href="{{ url_for('hosts') }}" class="btn btn-secondary">
+                        <a href="{{ url_for('web.hosts') }}" class="btn btn-secondary">
                             <i class="bi bi-arrow-left"></i> Back to Hosts
                         </a>
                         <button type="submit" class="btn btn-primary">

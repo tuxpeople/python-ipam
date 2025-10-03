@@ -1,32 +1,46 @@
-import pytest
+"""Test fixtures for IPAM."""
+
 import os
 import tempfile
-from app import app, db
+
+import pytest
+
+from ipam import create_app
+from ipam.extensions import db
 
 
 @pytest.fixture
-def client():
-    db_fd, app.config["DATABASE"] = tempfile.mkstemp()
-    app.config["TESTING"] = True
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
-    app.config["WTF_CSRF_ENABLED"] = False
+def app():
+    """Create application for testing."""
+    db_fd, db_path = tempfile.mkstemp()
 
-    with app.test_client() as client:
-        with app.app_context():
-            db.create_all()
-        yield client
-
-    os.close(db_fd)
-    os.unlink(app.config["DATABASE"])
-
-
-@pytest.fixture
-def app_context():
-    app.config["TESTING"] = True
-    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
+    app = create_app("default")
+    app.config.update(
+        {
+            "TESTING": True,
+            "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+            "WTF_CSRF_ENABLED": False,
+        }
+    )
 
     with app.app_context():
         db.create_all()
         yield app
         db.session.remove()
         db.drop_all()
+
+    os.close(db_fd)
+    os.unlink(db_path)
+
+
+@pytest.fixture
+def client(app):
+    """Create test client."""
+    return app.test_client()
+
+
+@pytest.fixture
+def app_context(app):
+    """Create application context."""
+    with app.app_context():
+        yield app

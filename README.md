@@ -1,34 +1,35 @@
 # Python IPAM - IP Address Management System
 
-Eine moderne, webbasierte IP-Adress-Verwaltungssystem (IPAM) gebaut mit Flask, SQLite, Bootstrap und DataTables.
+A modern, web-based IP Address Management (IPAM) system built with Flask, SQLite, Bootstrap, and DataTables.
 
 ## Features
 
-- 🌐 **Netzwerk-Management**: Verwalten Sie IP-Netzwerke mit CIDR-Notation
-- 🖥️ **Host-Management**: Verfolgen Sie IP-Adressen, Hostnamen und MAC-Adressen
-- 📊 **Dashboard**: Übersichtliche Darstellung der Netzwerkauslastung
-- 🔍 **Erweiterte Suche**: DataTables-Integration für effiziente Datenfilterung
-- 📱 **Responsive Design**: Bootstrap 5 für moderne, mobile-freundliche UI
-- 🐳 **Container-ready**: Docker-Unterstützung für einfache Bereitstellung
-- ✅ **Vollständig getestet**: Umfassende Unit-Tests mit pytest
+- 🌐 **Network Management**: Manage IP networks with CIDR notation
+- 🖥️ **Host Management**: Track IP addresses, hostnames, and MAC addresses
+- 🔌 **REST API**: Complete RESTful API with Swagger UI documentation
+- 📊 **Dashboard**: Clear overview of network utilization
+- 🔍 **Advanced Search**: DataTables integration for efficient data filtering
+- 📱 **Responsive Design**: Bootstrap 5 for modern, mobile-friendly UI
+- 🐳 **Container-ready**: Docker support for easy deployment
+- ✅ **Fully Tested**: Comprehensive unit tests with pytest
 
-## Lokale Entwicklung mit pyenv
+## Local Development with pyenv
 
-### Voraussetzungen
+### Prerequisites
 
-1. **pyenv installieren** (falls noch nicht vorhanden):
+1. **Install pyenv** (if not already installed):
 
-   **macOS mit Homebrew:**
+   **macOS with Homebrew:**
    ```bash
    brew install pyenv
    ```
 
-   **Linux/macOS mit curl:**
+   **Linux/macOS with curl:**
    ```bash
    curl https://pyenv.run | bash
    ```
 
-2. **Shell-Konfiguration** (für bash/zsh):
+2. **Shell Configuration** (for bash/zsh):
    ```bash
    echo 'export PATH="$HOME/.pyenv/bin:$PATH"' >> ~/.bashrc
    echo 'eval "$(pyenv init -)"' >> ~/.bashrc
@@ -38,159 +39,216 @@ Eine moderne, webbasierte IP-Adress-Verwaltungssystem (IPAM) gebaut mit Flask, S
 
 ### Setup
 
-1. **Repository klonen:**
+1. **Clone repository:**
    ```bash
    git clone <repository-url>
    cd ipam
    ```
 
-2. **Python-Version installieren und aktivieren:**
+2. **Install and activate Python version:**
    ```bash
    pyenv install 3.11.6
    pyenv local 3.11.6
    ```
 
-3. **Virtuelle Umgebung erstellen:**
+3. **Create virtual environment:**
    ```bash
    python -m venv venv
    source venv/bin/activate  # Linux/macOS
-   # oder
+   # or
    venv\\Scripts\\activate  # Windows
    ```
 
-4. **Dependencies installieren:**
+4. **Install dependencies:**
    ```bash
    pip install -r requirements.txt
    ```
 
-5. **Umgebungsvariablen konfigurieren:**
+5. **Configure environment variables:**
    ```bash
    cp .env.example .env
-   # Bearbeiten Sie .env nach Bedarf
+   # Edit .env as needed
    ```
 
-6. **Datenbank initialisieren:**
+6. **Initialize database:**
    ```bash
-   python -c "from app import app, db; app.app_context().push(); db.create_all()"
+   python3 -c "from ipam import create_app; from ipam.extensions import db; app = create_app(); app.app_context().push(); db.create_all()"
    ```
 
-7. **Anwendung starten:**
+7. **Start application:**
    ```bash
    python app.py
    ```
 
-   Die Anwendung ist dann unter http://localhost:5000 erreichbar.
+   The application will be available at:
+   - **Web Interface**: http://localhost:5000
+   - **REST API**: http://localhost:5000/api/v1
+   - **API Documentation (Swagger UI)**: http://localhost:5000/api/v1/docs
 
-### Tests ausführen
+### Running Tests
 
 ```bash
-# Alle Tests ausführen
+# Run all tests
 pytest
 
-# Tests mit Coverage-Report
+# Tests with coverage report
 pytest --cov=app --cov-report=html
 
-# Nur spezifische Tests
+# Run specific tests
 pytest tests/test_models.py
 
-# Tests im Watch-Modus (mit pytest-watch)
+# Tests in watch mode (with pytest-watch)
 pip install pytest-watch
 ptw
 ```
 
-## Docker-Bereitstellung
+## Docker Deployment
 
-### Entwicklung
+### Development
 
 ```bash
-# Entwicklungsumgebung mit Hot-Reload
+# Development environment with hot-reload
 docker-compose --profile dev up
 
-# Oder direkter Docker-Build
+# Or direct Docker build
 docker build -t python-ipam .
 docker run -p 5000:5000 python-ipam
 ```
 
-### Produktion
+### Production
 
 ```bash
-# Produktionsumgebung
+# Production environment
 docker-compose up -d
 
-# Mit eigener .env-Datei
+# With custom .env file
 cp .env.example .env
-# Bearbeiten Sie .env für Produktionseinstellungen
+# Edit .env for production settings
 docker-compose up -d
 ```
 
-## API-Endpunkte
+## REST API
 
-- `GET /api/networks` - Alle Netzwerke abrufen
-- `GET /api/hosts` - Alle Hosts abrufen
+The complete REST API is available at `/api/v1`. Interactive API documentation (Swagger UI) can be found at http://localhost:5000/api/v1/docs
 
-## Projektstruktur
+### Main Endpoints:
+
+**Networks:**
+- `GET /api/v1/networks` - List all networks with filtering and pagination
+- `GET /api/v1/networks/{id}` - Get specific network
+- `POST /api/v1/networks` - Create new network
+- `PUT /api/v1/networks/{id}` - Update network
+- `DELETE /api/v1/networks/{id}` - Delete network
+
+**Hosts:**
+- `GET /api/v1/hosts` - List all hosts with filtering and pagination
+- `GET /api/v1/hosts/{id}` - Get specific host
+- `POST /api/v1/hosts` - Create new host
+- `PUT /api/v1/hosts/{id}` - Update host
+- `DELETE /api/v1/hosts/{id}` - Delete host
+
+**IP Management:**
+- `GET /api/v1/ip/networks/{id}/next-ip` - Get next available IP
+- `GET /api/v1/ip/networks/{id}/available-ips` - List all available IPs
+- `GET /api/v1/ip/{ip_address}` - Query IP address status
+
+See [API.md](API.md) for complete documentation
+
+## Project Structure
 
 ```
 ipam/
-├── app.py                 # Haupt-Flask-Anwendung
-├── requirements.txt       # Python-Dependencies
-├── pytest.ini           # Pytest-Konfiguration
-├── Dockerfile            # Docker-Container-Definition
-├── docker-compose.yml    # Docker-Compose-Konfiguration
-├── .env.example          # Beispiel-Umgebungsvariablen
-├── templates/            # HTML-Templates
-│   ├── base.html         # Basis-Template
+├── app.py                 # Flask application entry point
+├── requirements.txt       # Python dependencies
+├── pytest.ini            # Pytest configuration
+├── Dockerfile            # Docker container definition
+├── docker-compose.yml    # Docker Compose configuration
+├── .env.example          # Example environment variables
+├── ipam/                 # Main application package
+│   ├── __init__.py       # Application Factory
+│   ├── extensions.py     # Flask extensions (SQLAlchemy)
+│   ├── models.py         # Database models
+│   ├── forms.py          # WTForms
+│   ├── config.py         # Configuration
+│   ├── api/              # REST API Blueprint
+│   │   ├── __init__.py   # API Blueprint and Swagger
+│   │   ├── models.py     # API serialization models
+│   │   ├── networks.py   # Network endpoints
+│   │   ├── hosts.py      # Host endpoints
+│   │   └── ip_management.py  # IP management endpoints
+│   └── web/              # Web Interface Blueprint
+│       ├── __init__.py   # Web Blueprint
+│       └── routes.py     # Web routes
+├── templates/            # HTML Templates (Jinja2)
+│   ├── base.html         # Base template
 │   ├── index.html        # Dashboard
-│   ├── networks.html     # Netzwerk-Übersicht
-│   ├── hosts.html        # Host-Übersicht
-│   ├── add_network.html  # Netzwerk hinzufügen
-│   └── add_host.html     # Host hinzufügen
-└── tests/                # Test-Suite
-    ├── conftest.py       # Pytest-Konfiguration
-    ├── test_models.py    # Modell-Tests
-    ├── test_routes.py    # Route-Tests
-    └── test_forms.py     # Formular-Tests
+│   ├── networks.html     # Network overview
+│   ├── hosts.html        # Host overview
+│   ├── add_network.html  # Add network
+│   ├── add_host.html     # Add host
+│   ├── edit_network.html # Edit network
+│   └── edit_host.html    # Edit host
+├── exporters/            # Export plugins
+│   ├── base_exporter.py  # Base exporter class
+│   ├── csv_exporter.py   # CSV export
+│   ├── json_exporter.py  # JSON export
+│   └── dnsmasq_exporter.py  # DNSmasq config export
+├── importers/            # Import plugins
+│   ├── base_importer.py  # Base importer class
+│   ├── csv_importer.py   # CSV import
+│   └── json_importer.py  # JSON import
+└── tests/                # Test suite
+    ├── conftest.py       # Pytest fixtures
+    ├── test_models.py    # Model tests
+    ├── test_routes.py    # Route tests
+    ├── test_forms.py     # Form tests
+    ├── test_database.py  # Database tests
+    ├── test_export_import.py  # Export/Import tests
+    └── test_crud_operations.py  # CRUD tests
 ```
 
-## Datenbank-Schema
+## Database Schema
 
-### Networks Tabelle
+### Networks Table
 - `id` - Primary Key
-- `network` - Netzwerk-Adresse (z.B. "192.168.1.0")
-- `cidr` - CIDR-Suffix (z.B. 24)
-- `broadcast_address` - Broadcast-Adresse
-- `vlan_id` - VLAN-ID (optional)
-- `description` - Beschreibung
-- `location` - Standort
+- `network` - Network address (e.g., "192.168.1.0")
+- `cidr` - CIDR suffix (e.g., 24)
+- `broadcast_address` - Broadcast address
+- `name` - Network name (optional)
+- `domain` - DNS domain (optional)
+- `vlan_id` - VLAN ID (optional)
+- `description` - Description (optional)
+- `location` - Location (optional)
 
-### Hosts Tabelle
+### Hosts Table
 - `id` - Primary Key
-- `ip_address` - IP-Adresse (einzigartig)
+- `ip_address` - IP address (unique)
 - `hostname` - Hostname (optional)
-- `mac_address` - MAC-Adresse (optional)
-- `description` - Beschreibung
+- `cname` - DNS alias/CNAME (optional)
+- `mac_address` - MAC address (optional)
+- `description` - Description (optional)
 - `status` - Status (active/inactive/reserved)
-- `network_id` - Foreign Key zu Networks
+- `network_id` - Foreign Key to Networks
 
-## Entwicklungsrichtlinien
+## Development Guidelines
 
-1. **Code-Style**: Folgen Sie PEP 8
-2. **Tests**: Schreiben Sie Tests für neue Features
-3. **Commits**: Verwenden Sie aussagekräftige Commit-Messages
-4. **Branches**: Nutzen Sie Feature-Branches für neue Entwicklungen
+1. **Code Style**: Follow PEP 8
+2. **Tests**: Write tests for new features
+3. **Commits**: Use meaningful commit messages
+4. **Branches**: Use feature branches for new development
 
-## Technologie-Stack
+## Technology Stack
 
 - **Backend**: Flask 3.0, SQLAlchemy
 - **Frontend**: Bootstrap 5, jQuery, DataTables
-- **Database**: SQLite (produktionsreif für kleine bis mittlere Bereitstellungen)
+- **Database**: SQLite (production-ready for small to medium deployments)
 - **Testing**: pytest, pytest-flask
 - **Containerization**: Docker, Docker Compose
 
-## Lizenz
+## License
 
-[Lizenz hier angeben]
+[Specify license here]
 
-## Beiträge
+## Contributing
 
-Beiträge sind willkommen! Bitte erstellen Sie Issues für Bug-Reports oder Feature-Requests.
+Contributions are welcome! Please create issues for bug reports or feature requests.

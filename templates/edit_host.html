@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Host - Python IPAM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-pencil-square"></i> Edit Host</h1>
+    <a href="{{ url_for('web.hosts') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Hosts
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-pc-display"></i> Host Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.ip_address.label(class="form-label") }}
+                                {{ form.ip_address(class="form-control" + (" is-invalid" if form.ip_address.errors else "")) }}
+                                {% for error in form.ip_address.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text">IPv4 address (e.g., 192.168.1.100)</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.hostname.label(class="form-label") }}
+                                {{ form.hostname(class="form-control" + (" is-invalid" if form.hostname.errors else "")) }}
+                                {% for error in form.hostname.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text">DNS hostname (optional)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.cname.label(class="form-label") }}
+                                {{ form.cname(class="form-control" + (" is-invalid" if form.cname.errors else "")) }}
+                                {% for error in form.cname.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text">DNS alias for this host (optional)</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.mac_address.label(class="form-label") }}
+                                {{ form.mac_address(class="form-control" + (" is-invalid" if form.mac_address.errors else "")) }}
+                                {% for error in form.mac_address.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text">MAC address (optional, e.g., aa:bb:cc:dd:ee:ff)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                {{ form.status.label(class="form-label") }}
+                                {{ form.status(class="form-control" + (" is-invalid" if form.status.errors else "")) }}
+                                {% for error in form.status.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text">Host status</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.network_id.label(class="form-label") }}
+                        {{ form.network_id(class="form-control" + (" is-invalid" if form.network_id.errors else "")) }}
+                        {% for error in form.network_id.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                        <div class="form-text">Network assignment (auto-detect based on IP address if not specified)</div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.description.label(class="form-label") }}
+                        {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows="3") }}
+                        {% for error in form.description.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                        <div class="form-text">Host description (optional)</div>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('web.hosts') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Update Host
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if host.network_ref %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-diagram-2"></i> Current Network
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>Network:</strong> {{ host.network_ref.network }}/{{ host.network_ref.cidr }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Location:</strong> {{ host.network_ref.location or '-' }}
+                    </div>
+                </div>
+                {% if host.network_ref.description %}
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <strong>Description:</strong> {{ host.network_ref.description }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

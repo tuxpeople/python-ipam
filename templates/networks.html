@@ -11,15 +11,15 @@
                 <i class="bi bi-download"></i> Export
             </button>
             <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="{{ url_for('export_data', export_type='networks', format_name='csv') }}">
+                <li><a class="dropdown-item" href="{{ url_for('web.export_data', export_type='networks', format_name='csv') }}">
                     <i class="bi bi-filetype-csv"></i> CSV Format
                 </a></li>
-                <li><a class="dropdown-item" href="{{ url_for('export_data', export_type='networks', format_name='json') }}">
+                <li><a class="dropdown-item" href="{{ url_for('web.export_data', export_type='networks', format_name='json') }}">
                     <i class="bi bi-filetype-json"></i> JSON Format
                 </a></li>
             </ul>
         </div>
-        <a href="{{ url_for('add_network') }}" class="btn btn-primary">
+        <a href="{{ url_for('web.add_network') }}" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> Add Network
         </a>
     </div>
@@ -31,8 +31,9 @@
             <thead>
                 <tr>
                     <th>Network</th>
+                    <th>Name</th>
+                    <th>Domain</th>
                     <th>CIDR</th>
-                    <th>Broadcast</th>
                     <th>VLAN ID</th>
                     <th>Location</th>
                     <th>Hosts Used/Total</th>
@@ -45,8 +46,9 @@
                 {% for network in networks %}
                 <tr>
                     <td>{{ network.network }}</td>
+                    <td>{{ network.name or '-' }}</td>
+                    <td>{{ network.domain or '-' }}</td>
                     <td>/{{ network.cidr }}</td>
-                    <td>{{ network.broadcast_address }}</td>
                     <td>{{ network.vlan_id or '-' }}</td>
                     <td>{{ network.location or '-' }}</td>
                     <td>{{ network.used_hosts }}/{{ network.total_hosts }}</td>
@@ -65,10 +67,13 @@
                     <td>{{ network.description or '-' }}</td>
                     <td>
                         <div class="btn-group btn-group-sm">
-                            <button class="btn btn-outline-primary" title="Edit">
+                            <a href="{{ url_for('web.edit_network', network_id=network.id) }}"
+                               class="btn btn-outline-primary" title="Edit Network">
                                 <i class="bi bi-pencil"></i>
-                            </button>
-                            <button class="btn btn-outline-danger" title="Delete">
+                            </a>
+                            <button class="btn btn-outline-danger"
+                                    title="Delete Network"
+                                    onclick="confirmDelete('{{ network.network }}/{{ network.cidr }}', '{{ url_for('web.delete_network', network_id=network.id) }}', {{ network.hosts|length }})">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
@@ -89,9 +94,40 @@ $(document).ready(function() {
         pageLength: 25,
         order: [[0, 'asc']],
         columnDefs: [
-            { targets: [8], orderable: false }
+            { targets: [9], orderable: false }
         ]
     });
 });
+
+function confirmDelete(networkName, deleteUrl, hostCount) {
+    let message;
+    if (hostCount > 0) {
+        message = `Cannot delete network "${networkName}" because it has ${hostCount} host(s) assigned to it.\n\nPlease remove or reassign all hosts before deleting this network.`;
+        alert(message);
+        return;
+    }
+
+    message = `Are you sure you want to delete network "${networkName}"?\n\nThis action cannot be undone.`;
+
+    if (confirm(message)) {
+        // Create a form and submit it for DELETE request
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = deleteUrl;
+
+        // Add CSRF token if available
+        const csrfToken = document.querySelector('meta[name=csrf-token]');
+        if (csrfToken) {
+            const tokenInput = document.createElement('input');
+            tokenInput.type = 'hidden';
+            tokenInput.name = 'csrf_token';
+            tokenInput.value = csrfToken.getAttribute('content');
+            form.appendChild(tokenInput);
+        }
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
 </script>
 {% endblock %}

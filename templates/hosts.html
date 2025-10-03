@@ -11,15 +11,26 @@
                 <i class="bi bi-download"></i> Export
             </button>
             <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="{{ url_for('export_data', export_type='hosts', format_name='csv') }}">
+                <li><a class="dropdown-item" href="{{ url_for('web.export_data', export_type='hosts', format_name='csv') }}">
                     <i class="bi bi-filetype-csv"></i> CSV Format
                 </a></li>
-                <li><a class="dropdown-item" href="{{ url_for('export_data', export_type='hosts', format_name='json') }}">
+                <li><a class="dropdown-item" href="{{ url_for('web.export_data', export_type='hosts', format_name='json') }}">
                     <i class="bi bi-filetype-json"></i> JSON Format
+                </a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><h6 class="dropdown-header">DNSmasq Formats</h6></li>
+                <li><a class="dropdown-item" href="{{ url_for('web.export_data', export_type='hosts', format_name='dnsmasq') }}">
+                    <i class="bi bi-gear"></i> Combined (DNS + DHCP)
+                </a></li>
+                <li><a class="dropdown-item" href="{{ url_for('web.export_data', export_type='hosts', format_name='dnsmasq-dns') }}">
+                    <i class="bi bi-globe"></i> DNS only
+                </a></li>
+                <li><a class="dropdown-item" href="{{ url_for('web.export_data', export_type='hosts', format_name='dnsmasq-dhcp') }}">
+                    <i class="bi bi-router"></i> DHCP only
                 </a></li>
             </ul>
         </div>
-        <a href="{{ url_for('add_host') }}" class="btn btn-primary">
+        <a href="{{ url_for('web.add_host') }}" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> Add Host
         </a>
     </div>
@@ -32,6 +43,7 @@
                 <tr>
                     <th>IP Address</th>
                     <th>Hostname</th>
+                    <th>CNAME</th>
                     <th>MAC Address</th>
                     <th>Status</th>
                     <th>Network</th>
@@ -44,6 +56,7 @@
                 <tr>
                     <td>{{ host.ip_address }}</td>
                     <td>{{ host.hostname or '-' }}</td>
+                    <td>{{ host.cname or '-' }}</td>
                     <td>
                         {% if host.mac_address %}
                             <code>{{ host.mac_address }}</code>
@@ -70,10 +83,13 @@
                     <td>{{ host.description or '-' }}</td>
                     <td>
                         <div class="btn-group btn-group-sm">
-                            <button class="btn btn-outline-primary" title="Edit">
+                            <a href="{{ url_for('web.edit_host', host_id=host.id) }}"
+                               class="btn btn-outline-primary" title="Edit Host">
                                 <i class="bi bi-pencil"></i>
-                            </button>
-                            <button class="btn btn-outline-danger" title="Delete">
+                            </a>
+                            <button class="btn btn-outline-danger"
+                                    title="Delete Host"
+                                    onclick="confirmDeleteHost('{{ host.ip_address }}', '{{ host.hostname or '' }}', '{{ url_for('web.delete_host', host_id=host.id) }}')">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
@@ -94,9 +110,34 @@ $(document).ready(function() {
         pageLength: 25,
         order: [[0, 'asc']],
         columnDefs: [
-            { targets: [6], orderable: false }
+            { targets: [7], orderable: false }
         ]
     });
 });
+
+function confirmDeleteHost(ipAddress, hostname, deleteUrl) {
+    const hostIdentifier = hostname ? `${hostname} (${ipAddress})` : ipAddress;
+    const message = `Are you sure you want to delete host "${hostIdentifier}"?\n\nThis action cannot be undone.`;
+
+    if (confirm(message)) {
+        // Create a form and submit it for DELETE request
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = deleteUrl;
+
+        // Add CSRF token if available
+        const csrfToken = document.querySelector('meta[name=csrf-token]');
+        if (csrfToken) {
+            const tokenInput = document.createElement('input');
+            tokenInput.type = 'hidden';
+            tokenInput.name = 'csrf_token';
+            tokenInput.value = csrfToken.getAttribute('content');
+            form.appendChild(tokenInput);
+        }
+
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
 </script>
 {% endblock %}

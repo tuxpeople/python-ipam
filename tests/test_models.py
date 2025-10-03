@@ -1,6 +1,11 @@
-import pytest
-from app import db, Network, Host
+"""Test database models."""
+
 import ipaddress
+
+import pytest
+
+from ipam.extensions import db
+from ipam.models import Host, Network
 
 
 class TestNetworkModel:

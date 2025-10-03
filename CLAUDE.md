@@ -1,38 +1,57 @@
 # CLAUDE.md - Python IPAM Project
 
-Claude Code-spezifische Konfiguration und Standards für das Python IPAM-Projekt.
+Claude Code-specific configuration and standards for the Python IPAM project.
 
-## Projekt-Übersicht
+## Documentation Standards
 
-**Python IPAM** ist eine moderne IP-Adress-Verwaltungssystem (IPAM) basierend auf:
+**IMPORTANT LANGUAGE REQUIREMENT**:
+- **ALL documentation MUST be written in English**
+- This includes: README.md, API.md, FEATURES.md, REFACTORING.md, CLAUDE.md, code comments, commit messages
+- German or other languages are NOT permitted in documentation
+
+**DOCUMENTATION UPDATE POLICY**:
+- **Every code change MUST be evaluated for documentation impact**
+- Before committing ANY change, ask: "Does this require documentation updates?"
+- Documentation files to check:
+  - `README.md` - User-facing documentation, setup instructions
+  - `API.md` - REST API endpoint documentation
+  - `FEATURES.md` - Feature tracking and roadmap
+  - `REFACTORING.md` - Architecture and refactoring notes
+  - `CLAUDE.md` - This file, project standards
+- Documentation updates should be committed together with code changes
+- Never commit code without updating related documentation
+
+## Project Overview
+
+**Python IPAM** is a modern IP Address Management (IPAM) system based on:
 - Flask 3.0 (Python Web Framework)
-- SQLite/SQLAlchemy (Datenbank)
+- SQLite/SQLAlchemy (Database)
 - Bootstrap 5 + DataTables (Frontend)
 - pytest (Testing Framework)
-- Docker (Containerisierung)
+- Docker (Containerization)
 
-## Code-Style-Regeln
+## Code Style Rules
 
 ### Python (Google Style Guide)
 
-**Formatter**: Black mit 80 Zeichen Zeilenlänge
+**Formatter**: Black with 80 character line length
 ```bash
 black . --line-length 80
 ```
 
-**Linting**: Pylint mit Google-Konfiguration
+**Linting**: Pylint with Google configuration
 ```bash
 pylint --rcfile=https://google.github.io/styleguide/pylintrc app.py tests/
 ```
 
 **Naming Conventions**:
-- Module/Packages: `lowercase_with_underscores`
-- Klassen: `CapWords` (z.B. `NetworkForm`, `HostModel`)
-- Funktionen/Variablen: `lowercase_with_underscores`
-- Konstanten: `CAPS_WITH_UNDERSCORES`
+- Modules/Packages: `lowercase_with_underscores`
+- Classes: `CapWords` (e.g., `NetworkForm`, `HostModel`)
+- Functions/Variables: `lowercase_with_underscores`
+- Constants: `CAPS_WITH_UNDERSCORES`
 - Private: `_leading_underscore`
 
-**Import-Reihenfolge** (mit Leerzeilen getrennt):
+**Import Order** (separated by blank lines):
 ```python
 from __future__ import annotations
 
@@ -42,12 +61,12 @@ import ipaddress
 from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 
-from app import db, Network, Host
+from ipam import db, Network, Host
 ```
 
 ### Dockerfile (Hadolint Standard)
 
-Beachte Security Best Practices:
+Follow security best practices:
 ```dockerfile
 FROM python:3.11-slim
 
@@ -55,13 +74,13 @@ FROM python:3.11-slim
 RUN useradd -r -s /bin/false ipam
 USER ipam
 
-# Layer-Optimierung
+# Layer optimization
 RUN apt-get update && \
     apt-get install -y --no-install-recommends gcc && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# JSON notation für CMD
+# JSON notation for CMD
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
 ```
 
@@ -76,14 +95,14 @@ CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
 <footer>
 ```
 
-**Types für dieses Projekt**:
-- `feat`: Neue IPAM-Features (Host/Network-Management)
-- `fix`: Bugfixes in Web-UI oder API
-- `test`: Unit-Tests für Models/Routes/Forms
-- `docker`: Container-Konfiguration
-- `docs`: README oder API-Dokumentation
+**Types for this project**:
+- `feat`: New IPAM features (Host/Network management)
+- `fix`: Bug fixes in web UI or API
+- `test`: Unit tests for models/routes/forms
+- `docker`: Container configuration
+- `docs`: README or API documentation
 
-**Beispiele**:
+**Examples**:
 ```bash
 feat(networks): add VLAN ID support
 fix(hosts): resolve auto-detection for overlapping subnets
@@ -92,69 +111,77 @@ docker: optimize layer caching in Dockerfile
 docs: update pyenv setup instructions
 ```
 
-**WICHTIG**: Keine KI-Signaturen in Commits verwenden!
+**IMPORTANT**: Do not use AI signatures in commits!
 
 ### Shell/Bash
 
-Für Test-Scripts und Setup-Automation:
+For test scripts and setup automation:
 ```bash
 #!/bin/bash
 
-# Funktionen
+# Functions
 function setup_venv() {
   local python_version="$1"
   echo "Setting up Python ${python_version}..."
 }
 
-# [[ ]] bevorzugen
+# Prefer [[ ]]
 if [[ -d "venv" ]]; then
   source venv/bin/activate
 fi
 
-# Variablen quoten
+# Quote variables
 echo "PATH: ${PATH}"
 ```
 
-## Projektspezifische Standards
+## Project-Specific Standards
 
 ### Testing
 
-**Test-Struktur**:
+**Test Structure**:
 ```
 tests/
-├── conftest.py          # Pytest fixtures
-├── test_models.py       # SQLAlchemy Model Tests
-├── test_routes.py       # Flask Route Tests
-└── test_forms.py        # WTForms Validation Tests
+├── conftest.py              # Pytest fixtures (Application Factory)
+├── test_models.py           # SQLAlchemy Model Tests
+├── test_routes.py           # Flask Route Tests
+├── test_forms.py            # WTForms Validation Tests
+├── test_database.py         # Database initialization tests
+├── test_export_import.py    # Export/Import plugin tests
+└── test_crud_operations.py  # CRUD operation tests
 ```
 
-**Test-Commands**:
+**Test Commands**:
 ```bash
-# Alle Tests
+# All tests
 pytest -v
 
-# Mit Coverage
-pytest --cov=app --cov-report=html
+# With coverage
+pytest --cov=ipam --cov-report=html
 
-# Spezifische Tests
+# Specific tests
 pytest tests/test_models.py::TestNetworkModel::test_network_properties
+
+# Database tests
+pytest tests/test_database.py -v
 ```
 
 ### Database Models
 
-SQLAlchemy-Models folgen diesen Conventions:
+SQLAlchemy models in `ipam/models.py`:
 ```python
-class Network(db.Model):
-    __tablename__ = 'networks'  # Explizite Tabellennamen
+from ipam.extensions import db
 
-    # Primary Keys als erste Spalte
+class Network(db.Model):
+    __tablename__ = 'networks'  # Explicit table names
+
+    # Primary Keys as first column
     id = db.Column(db.Integer, primary_key=True)
 
-    # Relationships mit cascade-Definitionen
+    # Relationships with cascade definitions
     hosts = db.relationship('Host', backref='network_ref',
                            cascade='all, delete-orphan')
 
-    # Properties für berechnete Werte
+    # Properties for calculated values
     @property
     def total_hosts(self):
         return len(list(ipaddress.IPv4Network(
@@ -162,32 +189,70 @@ class Network(db.Model):
         ).hosts()))
 ```
 
+### Flask Application Structure
+
+**Application Factory Pattern** in `ipam/__init__.py`:
+```python
+from ipam.extensions import db
+from ipam.config import config
+
+def create_app(config_name='default'):
+    app = Flask(__name__)
+    app.config.from_object(config[config_name])
+
+    db.init_app(app)
+
+    from ipam.web import web_bp
+    from ipam.api import api_bp
+
+    app.register_blueprint(web_bp)
+    app.register_blueprint(api_bp)
+
+    return app
+```
+
 ### Flask Routes
 
-Route-Konventionen:
+**Web Routes** in `ipam/web/routes.py`:
 ```python
-@app.route('/api/networks')
-def api_networks():
-    """API-Endpunkt für Netzwerk-Daten."""
+from ipam.web import web_bp
+from ipam.extensions import db
+from ipam.models import Network, Host
+
+@web_bp.route('/')
+def index():
+    """Dashboard."""
     networks = Network.query.all()
-    return jsonify([{
-        'id': n.id,
-        'network': n.network,
-        # ...weitere Felder
-    } for n in networks])
+    return render_template('index.html', networks=networks)
+```
+
+**API Routes** in `ipam/api/networks.py`:
+```python
+from flask_restx import Namespace, Resource
+from ipam.extensions import db
+from ipam.models import Network
+
+api = Namespace('networks', description='Network operations')
+
+@api.route('/')
+class NetworkList(Resource):
+    def get(self):
+        """List all networks."""
+        networks = Network.query.all()
+        return {'data': [network.to_dict() for network in networks]}
 ```
 
 ### Templates
 
-HTML/Jinja2-Template-Standards:
-- Bootstrap 5 CSS-Klassen
-- Responsive Design
-- DataTables für Tabellen
+HTML/Jinja2 template standards:
+- Bootstrap 5 CSS classes
+- Responsive design
+- DataTables for tables
 - Bootstrap Icons (`bi-*`)
 
-## Umgebung & Tools
+## Environment & Tools
 
-### Lokale Entwicklung
+### Local Development
 
 **pyenv Setup**:
 ```bash
@@ -198,12 +263,23 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-**Development Server**:
+**Database Initialization**:
 ```bash
-python app.py  # Flask dev server auf :5000
+# Create database (on first start)
+python3 -c "from ipam import create_app; from ipam.extensions import db; app = create_app(); app.app_context().push(); db.create_all()"
 ```
 
-### Docker-Entwicklung
+**Development Server**:
+```bash
+python app.py  # Flask dev server on :5000
+
+# Available URLs:
+# - Web Interface: http://localhost:5000
+# - REST API: http://localhost:5000/api/v1
+# - Swagger UI: http://localhost:5000/api/v1/docs
+```
+
+### Docker Development
 
 **Development Container**:
 ```bash
@@ -217,7 +293,7 @@ docker-compose up -d
 
 ### Quality Assurance
 
-**Linting/Formatting (lokal)**:
+**Linting/Formatting (local)**:
 ```bash
 # Python Code
 black . --line-length 80
@@ -232,34 +308,60 @@ shellcheck run_tests.sh
 
 **Testing**:
 ```bash
-./run_tests.sh  # Vollständige Test-Suite mit Coverage
-make test       # Makefile-Target
+./run_tests.sh  # Complete test suite with coverage
+make test       # Makefile target
 ```
 
-## API-Dokumentation
+## API Documentation
 
-**RESTful Endpunkte**:
-- `GET /api/networks` - Alle Netzwerke
-- `GET /api/hosts` - Alle Hosts
+**REST API Base URL**: `/api/v1`
+**Swagger UI**: http://localhost:5000/api/v1/docs
+
+**Main Endpoints**:
+
+**Networks**:
+- `GET /api/v1/networks` - List all networks (with filtering/pagination)
+- `POST /api/v1/networks` - Create network
+- `GET /api/v1/networks/{id}` - Get network
+- `PUT /api/v1/networks/{id}` - Update network
+- `DELETE /api/v1/networks/{id}` - Delete network
+
+**Hosts**:
+- `GET /api/v1/hosts` - List all hosts (with filtering/pagination)
+- `POST /api/v1/hosts` - Create host
+- `GET /api/v1/hosts/{id}` - Get host
+- `PUT /api/v1/hosts/{id}` - Update host
+- `DELETE /api/v1/hosts/{id}` - Delete host
+
+**IP Management**:
+- `GET /api/v1/ip/networks/{id}/next-ip` - Get next free IP
+- `GET /api/v1/ip/networks/{id}/available-ips` - List all free IPs
+- `GET /api/v1/ip/{ip_address}` - Query IP status
 
 **Response Format**:
 ```json
 {
   "data": [...],
-  "status": "success",
-  "message": "Optional message"
+  "pagination": {
+    "page": 1,
+    "per_page": 50,
+    "total_items": 100,
+    "total_pages": 2
+  }
 }
 ```
 
+Complete documentation: **API.md**
+
 ## Deployment
 
-**Container-Registries**:
-- Verwende spezifische Tags, nicht `latest`
-- Multi-stage Builds für Production
+**Container Registries**:
+- Use specific tags, not `latest`
+- Multi-stage builds for production
 
-**Kubernetes** (falls verwendet):
+**Kubernetes** (if used):
 ```yaml
-# Folge Kubernetes Best Practices
+# Follow Kubernetes best practices
 metadata:
   labels:
     app.kubernetes.io/name: python-ipam
@@ -268,19 +370,19 @@ metadata:
 
 ## Troubleshooting
 
-**Häufige Probleme**:
+**Common Issues**:
 
 1. **SQLite Lock Issues**:
    ```python
-   # Verwende Context Manager
+   # Use context manager
    with app.app_context():
        db.session.commit()
    ```
 
-2. **pyenv Python nicht gefunden**:
+2. **pyenv Python not found**:
    ```bash
    pyenv rehash
-   which python  # Sollte pyenv-Version zeigen
+   which python  # Should show pyenv version
    ```
 
 3. **Docker Build Failures**:
@@ -289,7 +391,7 @@ metadata:
    docker build --no-cache .
    ```
 
-## Wartung
+## Maintenance
 
 **Dependencies Update**:
 ```bash
@@ -298,16 +400,36 @@ pip install -U package_name
 pip freeze > requirements.txt
 ```
 
-**Database Migrations** (bei Schema-Änderungen):
+**Database Migrations** (on schema changes):
 ```python
 # In Python Console
-from app import app, db
+from ipam import create_app
+from ipam.extensions import db
+
+app = create_app()
 with app.app_context():
-    db.drop_all()  # Vorsicht in Production!
+    db.drop_all()  # Caution in production!
     db.create_all()
+```
+
+**Database Initialization** (Command line):
+```bash
+python3 -c "from ipam import create_app; from ipam.extensions import db; app = create_app(); app.app_context().push(); db.create_all()"
 ```
 
 ---
 
-**Letztes Update**: 2024-10-02
+**Last Update**: 2025-10-03
 **Maintainer**: Python IPAM Team
+
+## Changelog
+
+### 2025-10-03
+- ✅ Implemented Application Factory Pattern
+- ✅ REST API with Flask-RESTX and Swagger UI
+- ✅ Modular Blueprint structure (ipam/web/ and ipam/api/)
+- ✅ Fixed circular import issues
+- ✅ Absolute database paths in ipam/config.py
+- ✅ Extended test suite (test_database.py, test_crud_operations.py)
+- ✅ Converted all documentation to English
+- ✅ Added documentation update policy

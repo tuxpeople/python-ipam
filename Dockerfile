@@ -4,8 +4,9 @@
 FROM cgr.dev/chainguard/python:latest-dev AS build
 
 # Create virtualenv and upgrade build tools
+# Pin pip to avoid CVE-2025-8869 in pip 25.2 (when fix is available)
 RUN python -m venv /home/nonroot/venv && \
-    /home/nonroot/venv/bin/pip install --upgrade pip setuptools wheel
+    /home/nonroot/venv/bin/pip install --upgrade 'pip<25.2' setuptools wheel
 
 # Stage 2: Install Python dependencies
 FROM build AS build-venv

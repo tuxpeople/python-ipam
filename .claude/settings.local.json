@@ -9,7 +9,9 @@
       "Bash(curl -s http://127.0.0.1:5000/api/v1/docs/)",
       "Bash(curl -s http://127.0.0.1:5000/api/v1/docs)",
       "Bash(python:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(gh auth:*)",
+      "Bash(gh repo view:*)"
     ],
     "deny": [],
     "ask": []

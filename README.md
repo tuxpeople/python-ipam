@@ -47,8 +47,8 @@ A modern, web-based IP Address Management (IPAM) system built with Flask, SQLite
 
 2. **Install and activate Python version:**
    ```bash
-   pyenv install 3.11.6
-   pyenv local 3.11.6
+   pyenv install 3.13
+   pyenv local 3.13
    ```
 
 3. **Create virtual environment:**
@@ -104,27 +104,48 @@ ptw
 
 ## Docker Deployment
 
-### Development
+### Production Container (Chainguard Distroless)
+
+The production Docker image is built on **Chainguard distroless Python images** for maximum security:
+
+**Security Features:**
+- ✅ **0 CRITICAL/HIGH vulnerabilities** (Trivy scanned)
+- ✅ Multi-stage build with minimal attack surface
+- ✅ Distroless runtime (no shell, package manager)
+- ✅ Runs as nonroot user (UID 65532)
+- ✅ Includes SBOM (Software Bill of Materials)
+- ✅ Python 3.13
+
+**Image Details:**
+- **Size**: ~50-100MB (vs 200-300MB for standard Python images)
+- **Base**: cgr.dev/chainguard/python:latest (distroless)
+- **Registry**: ghcr.io/tuxpeople/python-ipam
 
 ```bash
-# Development environment with hot-reload
-docker-compose --profile dev up
+# Pull and run production image
+docker pull ghcr.io/tuxpeople/python-ipam:latest
+docker run -d -p 5000:5000 \
+  -v $(pwd)/ipam.db:/app/ipam.db \
+  ghcr.io/tuxpeople/python-ipam:latest
 
-# Or direct Docker build
-docker build -t python-ipam .
-docker run -p 5000:5000 python-ipam
-```
-
-### Production
-
-```bash
-# Production environment
+# Or use Docker Compose
 docker-compose up -d
 
 # With custom .env file
 cp .env.example .env
 # Edit .env for production settings
 docker-compose up -d
+```
+
+### Development
+
+```bash
+# Development environment with hot-reload
+docker-compose --profile dev up
+
+# Or build locally
+docker build -t python-ipam:dev .
+docker run -p 5000:5000 python-ipam:dev
 ```
 
 ## REST API
@@ -239,11 +260,13 @@ ipam/
 
 ## Technology Stack
 
-- **Backend**: Flask 3.0, SQLAlchemy
+- **Backend**: Flask 3.1, SQLAlchemy 2.0, Flask-RESTX
 - **Frontend**: Bootstrap 5, jQuery, DataTables
 - **Database**: SQLite (production-ready for small to medium deployments)
-- **Testing**: pytest, pytest-flask
-- **Containerization**: Docker, Docker Compose
+- **Testing**: pytest, pytest-flask (96 tests)
+- **Containerization**: Docker (Chainguard distroless), Docker Compose
+- **Security**: Trivy scanning, SBOM generation, multi-stage builds
+- **CI/CD**: GitHub Actions (tests, security scans, docs deployment)
 
 ## License
 

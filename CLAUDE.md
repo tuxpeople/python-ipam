@@ -256,8 +256,8 @@ HTML/Jinja2 template standards:
 
 **pyenv Setup**:
 ```bash
-pyenv install 3.11.6
-pyenv local 3.11.6
+pyenv install 3.13
+pyenv local 3.13
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
@@ -355,9 +355,40 @@ Complete documentation: **API.md**
 
 ## Deployment
 
-**Container Registries**:
-- Use specific tags, not `latest`
-- Multi-stage builds for production
+### Container Images
+
+**Production Images** (Chainguard distroless):
+- **Registry**: ghcr.io/tuxpeople/python-ipam
+- **Base**: cgr.dev/chainguard/python:latest (distroless)
+- **Security**: 0 CRITICAL/HIGH vulnerabilities (Trivy scanned)
+- **Size**: ~50-100MB (multi-stage build)
+- **User**: nonroot (UID 65532)
+- **Python**: 3.13
+
+**Tags**:
+- `latest` - Always points to latest stable release
+- `1.0.0` - Specific patch version
+- `1.0` - Minor version (updates with new patches)
+- `1` - Major version (updates with new minors/patches)
+- `main-<sha>` - Git commit SHA for main branch builds
+
+**Multi-stage Build**:
+```dockerfile
+# Stage 1: Build dependencies in -dev image
+FROM cgr.dev/chainguard/python:latest-dev AS build
+RUN python -m venv /home/nonroot/venv && \
+    /home/nonroot/venv/bin/pip install --upgrade 'pip<25.2' setuptools wheel
+
+# Stage 2: Install Python packages
+FROM build AS build-venv
+COPY requirements.txt /tmp/requirements.txt
+RUN /home/nonroot/venv/bin/pip install -r /tmp/requirements.txt
+
+# Stage 3: Minimal runtime image (distroless)
+FROM cgr.dev/chainguard/python:latest
+COPY --from=build-venv /home/nonroot/venv /home/nonroot/venv
+ENV PATH="/home/nonroot/venv/bin:$PATH"
+```
 
 **Kubernetes** (if used):
 ```yaml
@@ -365,7 +396,13 @@ Complete documentation: **API.md**
 metadata:
   labels:
     app.kubernetes.io/name: python-ipam
+    app.kubernetes.io/version: "1.0.0"
     app.kubernetes.io/component: backend
+spec:
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 65532
+    fsGroup: 65532
 ```
 
 ## Troubleshooting
@@ -417,6 +454,157 @@ with app.app_context():
 python3 -c "from ipam import create_app; from ipam.extensions import db; app = create_app(); app.app_context().push(); db.create_all()"
 ```
 
+## Release Process
+
+### Semantic Versioning
+
+This project follows [Semantic Versioning 2.0.0](https://semver.org/):
+
+**Version Format**: `MAJOR.MINOR.PATCH`
+
+- **MAJOR**: Breaking changes (API changes, database schema changes)
+- **MINOR**: New features (backwards compatible)
+- **PATCH**: Bug fixes (backwards compatible)
+
+**Examples**:
+- `v1.0.0` - First production release
+- `v1.1.0` - New features (e.g., subnet calculator)
+- `v1.1.1` - Bug fixes
+- `v2.0.0` - Breaking changes (e.g., database schema migration)
+
+### Creating a Release
+
+**IMPORTANT**: Every version MUST have:
+1. Git tag (annotated)
+2. GitHub Release with changelog
+3. Docker image published to GHCR
+
+**Release Checklist**:
+
+1. **Update Version** (if not already done):
+   ```bash
+   # Update version in relevant files if needed
+   # (Currently no __version__ file, but could be added)
+   ```
+
+2. **Run Full Test Suite**:
+   ```bash
+   pytest -v
+   black . --check --line-length 80
+   hadolint Dockerfile
+   ```
+
+3. **Update Documentation**:
+   - Check README.md, API.md, FEATURES.md for accuracy
+   - Update CLAUDE.md changelog (see below)
+   - Ensure all recent changes are documented
+
+4. **Create Git Tag**:
+   ```bash
+   # Create annotated tag with version (must start with 'v' for CI/CD)
+   git tag -a v1.0.0 -m "v1.0.0"
+
+   # Push tag to GitHub (triggers Docker build)
+   git push origin v1.0.0
+   ```
+
+5. **Create GitHub Release**:
+   ```bash
+   # Create release with changelog (title should be version only)
+   gh release create v1.0.0 \
+     --title "v1.0.0" \
+     --notes-file /tmp/release-notes.md
+   ```
+
+   **Release Notes Template** (`/tmp/release-notes.md`):
+   ```markdown
+   # Python IPAM v1.0.0
+
+   Brief description of the release.
+
+   ## 🚀 Features
+   - New feature 1
+   - New feature 2
+
+   ## 🐛 Bug Fixes
+   - Fix for issue #123
+
+   ## 🔒 Security
+   - Security improvements
+
+   ## 📦 Container Image
+   \`\`\`bash
+   docker pull ghcr.io/tuxpeople/python-ipam:1.0.0
+   docker pull ghcr.io/tuxpeople/python-ipam:1.0
+   docker pull ghcr.io/tuxpeople/python-ipam:1
+   docker pull ghcr.io/tuxpeople/python-ipam:latest
+   \`\`\`
+
+   ## 🔄 Migration Notes
+   - Breaking changes (if any)
+   - Upgrade instructions
+
+   ## 📝 Full Changelog
+   https://github.com/tuxpeople/python-ipam/compare/v0.9.0...v1.0.0
+   ```
+
+6. **Verify Docker Image**:
+   ```bash
+   # CI/CD automatically builds and pushes to GHCR on tag push
+   # Verify all tags are available (wait ~5 minutes for build)
+   docker pull ghcr.io/tuxpeople/python-ipam:1.0.0
+   docker pull ghcr.io/tuxpeople/python-ipam:1.0
+   docker pull ghcr.io/tuxpeople/python-ipam:1
+   docker pull ghcr.io/tuxpeople/python-ipam:latest
+   ```
+
+7. **Update CLAUDE.md Changelog** (after release):
+   ```markdown
+   ### 2025-10-03 - v1.0.0
+   - ✅ First production release
+   - ✅ Chainguard distroless migration (0 vulnerabilities)
+   - ✅ Complete CI/CD pipeline
+   ```
+
+### Hotfix Release Process
+
+For urgent bug fixes:
+
+1. Create branch from tag:
+   ```bash
+   git checkout -b hotfix/v1.0.1 v1.0.0
+   ```
+
+2. Apply fix and test:
+   ```bash
+   # Make changes
+   pytest -v
+   git commit -m "fix: critical bug in network calculation"
+   ```
+
+3. Tag and release:
+   ```bash
+   git tag -a v1.0.1 -m "v1.0.1"
+   git push origin v1.0.1
+   gh release create v1.0.1 --title "v1.0.1" --notes "Critical bug fix"
+   ```
+
+4. Merge back to main:
+   ```bash
+   git checkout main
+   git merge hotfix/v1.0.1
+   git push origin main
+   ```
+
+### CI/CD Integration
+
+The GitHub Actions workflow automatically:
+- Builds Docker image on tag push (tags starting with `v`)
+- Generates SBOM with Anchore
+- Scans with Trivy (fails on CRITICAL/HIGH)
+- Pushes to GHCR with multiple version tags
+- Creates tags: `1.0.0`, `1.0`, `1`, `latest` (from Git tag `v1.0.0`)
+
 ---
 
 **Last Update**: 2025-10-03
@@ -424,12 +612,16 @@ python3 -c "from ipam import create_app; from ipam.extensions import db; app = c
 
 ## Changelog
 
-### 2025-10-03
-- ✅ Implemented Application Factory Pattern
-- ✅ REST API with Flask-RESTX and Swagger UI
-- ✅ Modular Blueprint structure (ipam/web/ and ipam/api/)
-- ✅ Fixed circular import issues
-- ✅ Absolute database paths in ipam/config.py
-- ✅ Extended test suite (test_database.py, test_crud_operations.py)
-- ✅ Converted all documentation to English
-- ✅ Added documentation update policy
+### 2025-10-03 - v1.0.0 Production Release
+- ✅ **Security Hardening**: Migrated to Chainguard distroless Python images
+- ✅ **Security Achievement**: Reduced vulnerabilities from 275+ to **0** (100% reduction)
+- ✅ **Container Optimization**: Multi-stage build, image size reduced to ~50-100MB
+- ✅ **CI/CD Pipeline**: Automated testing, security scanning (Trivy), SBOM generation
+- ✅ **GitHub Infrastructure**: Issue templates, project roadmap, automated workflows
+- ✅ **Extensible Export/Import**: Plugin-based architecture (IPAM-004)
+- ✅ **Documentation**: Complete English documentation, GitHub Pages deployment
+- ✅ **Test Suite**: 96 tests passing, all SQLAlchemy 2.0 deprecations fixed
+- ✅ **Release Process**: Established semantic versioning with Git tags and GitHub releases
+- ✅ **REST API**: Flask-RESTX with Swagger UI at /api/v1/docs
+- ✅ **Application Factory Pattern**: Modular Blueprint structure
+- ✅ **Python 3.13**: Upgraded to latest Python version

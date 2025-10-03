@@ -18,6 +18,7 @@ cd /Volumes/development/github/tuxpeople/python-ipam
 ```
 
 This will create 8 issues for the planned features:
+
 - IPAM-010: Subnet Calculator
 - IPAM-011: Network Scanner Integration
 - IPAM-012: Advanced Import Formats
@@ -57,19 +58,21 @@ gh api repos/:owner/:repo/milestones \
 ## Step 3: Assign Issues to Milestones
 
 ### v1.1.0 Issues
+
 ```bash
-gh issue edit <IPAM-010-issue-number> --milestone "v1.1.0"  # Subnet Calculator
-gh issue edit <IPAM-011-issue-number> --milestone "v1.1.0"  # Network Scanner
-gh issue edit <IPAM-012-issue-number> --milestone "v1.1.0"  # Advanced Import Formats
-gh issue edit <IPAM-013-issue-number> --milestone "v1.1.0"  # Advanced Export
-gh issue edit <IPAM-014-issue-number> --milestone "v1.1.0"  # REST API Expansion
-gh issue edit <IPAM-017-issue-number> --milestone "v1.1.0"  # Data Backup & Restore
+gh issue edit 5 --milestone "v1.1.0"  # Subnet Calculator
+gh issue edit 6 --milestone "v1.1.0"  # Network Scanner
+gh issue edit 7 --milestone "v1.1.0"  # Advanced Import Formats
+gh issue edit 8 --milestone "v1.1.0"  # Advanced Export
+gh issue edit 9 --milestone "v1.1.0"  # REST API Expansion
+gh issue edit 12 --milestone "v1.1.0"  # Data Backup & Restore
 ```
 
 ### v1.2.0 Issues
+
 ```bash
-gh issue edit <IPAM-015-issue-number> --milestone "v1.2.0"  # Hybrid Authentication
-gh issue edit <IPAM-016-issue-number> --milestone "v1.2.0"  # User Management UI
+gh issue edit 10 --milestone "v1.2.0"  # Hybrid Authentication
+gh issue edit 11 --milestone "v1.2.0"  # User Management UI
 ```
 
 ## Step 4: Create GitHub Project (Roadmap)
@@ -99,6 +102,7 @@ gh issue edit <IPAM-016-issue-number> --milestone "v1.2.0"  # User Management UI
 ### Configure Project Fields
 
 Add custom fields to track:
+
 - **Priority**: Low, Medium, High, Critical
 - **Category**: Core, UI/UX, API, Security, Data Management, Network Tools
 - **Estimated Effort**: Small (1-2d), Medium (2-4d), High (4-7d)
@@ -166,6 +170,7 @@ done
 ## Roadmap Structure
 
 ### v1.1.0 - Q4 2025 (Export/Import & Tools)
+
 - IPAM-010: Subnet Calculator
 - IPAM-011: Network Scanner Integration
 - IPAM-012: Advanced Import Formats
@@ -174,10 +179,12 @@ done
 - IPAM-017: Data Backup & Restore
 
 ### v1.2.0 - Q1 2026 (Authentication & Security)
+
 - IPAM-015: Hybrid Authentication System (High Priority)
 - IPAM-016: Local User Management UI
 
 ### v2.0.0 - Q2 2026 (Discovery & Analytics)
+
 - Network discovery tools
 - Advanced reporting and analytics
 - Performance optimizations for large datasets

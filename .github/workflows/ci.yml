@@ -146,26 +146,24 @@ jobs:
           chmod +rx /usr/local/bin/dgoss
 
           # Create goss.yaml test file
+          # NOTE: Distroless containers don't have shell, so only external checks work
+          # (port and http checks). Internal checks (process, file, user) require shell.
           cat > goss.yaml << 'EOF'
           port:
             tcp:5000:
               listening: true
               ip:
               - 0.0.0.0
-          process:
-            gunicorn:
-              running: true
           http:
             http://localhost:5000:
               status: 200
               timeout: 5000
-          file:
-            /app/app.py:
-              exists: true
-          user:
-            nonroot:
-              exists: true
-              uid: 65532
+            http://localhost:5000/api/v1/networks:
+              status: 200
+              timeout: 5000
+            http://localhost:5000/api/v1/hosts:
+              status: 200
+              timeout: 5000
           EOF
 
           # Run dgoss tests

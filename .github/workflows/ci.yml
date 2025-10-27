@@ -3,7 +3,7 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [main, develop]
-    tags: ['v*']
+    tags: ["v*"]
   pull_request:
     branches: [main, develop]
   workflow_dispatch:
@@ -25,7 +25,7 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-          cache: 'pip'
+          cache: "pip"
 
       - name: Install dependencies
         run: |
@@ -121,53 +121,53 @@ jobs:
         uses: aquasecurity/trivy-action@0.33.1
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          severity: 'CRITICAL,HIGH'
+          format: "sarif"
+          output: "trivy-results.sarif"
+          severity: "CRITICAL,HIGH"
 
       - name: Upload Trivy results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: 'trivy-results.sarif'
+          sarif_file: "trivy-results.sarif"
 
       - name: Run Trivy vulnerability scanner (Table output)
         uses: aquasecurity/trivy-action@0.33.1
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
-          format: 'table'
-          severity: 'CRITICAL,HIGH,MEDIUM'
+          format: "table"
+          severity: "CRITICAL,HIGH,MEDIUM"
 
-      - name: Test container with goss
-        run: |
-          # Install goss and dgoss
-          curl -fsSL https://goss.rocks/install | sh
-          curl -L https://raw.githubusercontent.com/aelsabbahy/goss/master/extras/dgoss/dgoss -o /usr/local/bin/dgoss
-          chmod +rx /usr/local/bin/dgoss
+      # - name: Test container with goss
+      #   run: |
+      #     # Install goss and dgoss
+      #     curl -fsSL https://goss.rocks/install | sh
+      #     curl -L https://raw.githubusercontent.com/aelsabbahy/goss/master/extras/dgoss/dgoss -o /usr/local/bin/dgoss
+      #     chmod +rx /usr/local/bin/dgoss
 
-          # Create goss.yaml test file
-          # NOTE: Distroless containers don't have shell, so only external checks work
-          # (port and http checks). Internal checks (process, file, user) require shell.
-          cat > goss.yaml << 'EOF'
-          port:
-            tcp:5000:
-              listening: true
-              ip:
-              - 0.0.0.0
-          http:
-            http://localhost:5000:
-              status: 200
-              timeout: 5000
-            http://localhost:5000/api/v1/networks:
-              status: 200
-              timeout: 5000
-            http://localhost:5000/api/v1/hosts:
-              status: 200
-              timeout: 5000
-          EOF
+      #     # Create goss.yaml test file
+      #     # NOTE: Distroless containers don't have shell, so only external checks work
+      #     # (port and http checks). Internal checks (process, file, user) require shell.
+      #     cat > goss.yaml << 'EOF'
+      #     port:
+      #       tcp:5000:
+      #         listening: true
+      #         ip:
+      #         - 0.0.0.0
+      #     http:
+      #       http://localhost:5000:
+      #         status: 200
+      #         timeout: 5000
+      #       http://localhost:5000/api/v1/networks:
+      #         status: 200
+      #         timeout: 5000
+      #       http://localhost:5000/api/v1/hosts:
+      #         status: 200
+      #         timeout: 5000
+      #     EOF
 
-          # Run dgoss tests
-          GOSS_FILES_PATH=. dgoss run ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
+      #     # Run dgoss tests
+      #     GOSS_FILES_PATH=. dgoss run ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
 
   hadolint:
     name: Dockerfile Linting

@@ -10,7 +10,7 @@ RUN python -m venv /home/nonroot/venv && \
 
 # Stage 2: Install Python dependencies
 FROM build AS build-venv
-COPY requirements.txt /tmp/requirements.txt
+COPY --chown=nonroot:nonroot requirements.txt /tmp/requirements.txt
 RUN /home/nonroot/venv/bin/pip install \
     --disable-pip-version-check \
     --no-cache-dir \
@@ -31,6 +31,9 @@ COPY --from=build-venv /home/nonroot/venv /home/nonroot/venv
 # Set PATH to use virtualenv
 ENV PATH="/home/nonroot/venv/bin:$PATH"
 
+# Activate virtualenv by setting VIRTUAL_ENV
+ENV VIRTUAL_ENV="/home/nonroot/venv"
+
 # Set Flask environment variables
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=production
@@ -49,6 +52,6 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/').read()" || exit 1
 
-# Run gunicorn
-ENTRYPOINT ["gunicorn"]
-CMD ["--bind","0.0.0.0:5000","--workers","4","--timeout","120","app:app"]
+# Use virtualenv Python so installed packages (e.g., gunicorn) are available
+ENTRYPOINT ["/home/nonroot/venv/bin/python"]
+CMD ["-m","gunicorn","--bind","0.0.0.0:5000","--workers","4","--timeout","120","app:app"]

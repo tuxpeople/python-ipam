@@ -25,8 +25,8 @@ LABEL description="IP Address Management System built with Flask"
 LABEL org.opencontainers.image.source="https://github.com/tuxpeople/python-ipam"
 LABEL org.opencontainers.image.description="Secure IPAM built on Chainguard distroless Python"
 
-# Copy virtualenv from build stage
-COPY --from=build-venv /home/nonroot/venv /home/nonroot/venv
+# Copy virtualenv from build stage with correct ownership
+COPY --from=build-venv --chown=nonroot:nonroot /home/nonroot/venv /home/nonroot/venv
 
 # Set PATH to use virtualenv
 ENV PATH="/home/nonroot/venv/bin:$PATH"

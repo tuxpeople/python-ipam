@@ -376,18 +376,18 @@ Complete documentation: **API.md**
 ```dockerfile
 # Stage 1: Build dependencies in -dev image
 FROM cgr.dev/chainguard/python:latest-dev AS build
-RUN python -m venv /home/nonroot/venv && \
-    /home/nonroot/venv/bin/pip install --upgrade 'pip<25.2' setuptools wheel
+RUN python -m venv /tmp/venv && \
+    /tmp/venv/bin/pip install --upgrade 'pip<25.2' setuptools wheel
 
 # Stage 2: Install Python packages
 FROM build AS build-venv
 COPY requirements.txt /tmp/requirements.txt
-RUN /home/nonroot/venv/bin/pip install -r /tmp/requirements.txt
+RUN /tmp/venv/bin/pip install -r /tmp/requirements.txt
 
 # Stage 3: Minimal runtime image (distroless)
 FROM cgr.dev/chainguard/python:latest
-COPY --from=build-venv /home/nonroot/venv /home/nonroot/venv
-ENV PATH="/home/nonroot/venv/bin:$PATH"
+COPY --from=build-venv /tmp/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
 ```
 
 **Kubernetes** (if used):

@@ -388,6 +388,7 @@ RUN /tmp/venv/bin/pip install -r /tmp/requirements.txt
 FROM cgr.dev/chainguard/python:latest
 COPY --from=build-venv /tmp/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
+RUN mkdir -p /tmp && chmod 1777 /tmp
 ```
 
 **Kubernetes** (if used):

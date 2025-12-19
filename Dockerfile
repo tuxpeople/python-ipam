@@ -34,6 +34,9 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Activate virtualenv by setting VIRTUAL_ENV
 ENV VIRTUAL_ENV="/opt/venv"
 
+# Ensure a writable temp directory for Gunicorn workers
+RUN mkdir -p /tmp && chmod 1777 /tmp
+
 # Set Flask environment variables
 ENV FLASK_APP=app.py
 ENV FLASK_ENV=production

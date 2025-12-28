@@ -114,6 +114,9 @@ class IPQuery(Resource):
                     "cname": host.cname,
                     "mac_address": host.mac_address,
                     "status": host.status,
+                    "is_assigned": host.is_assigned,
+                    "last_seen": host.last_seen,
+                    "discovery_source": host.discovery_source,
                     "description": host.description,
                     "network_id": host.network_id,
                     "network": (

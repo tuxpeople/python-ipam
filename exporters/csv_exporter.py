@@ -72,6 +72,9 @@ class CSVExporter(BaseExporter):
                 "Hostname",
                 "MAC Address",
                 "Status",
+                "Is Assigned",
+                "Last Seen",
+                "Discovery Source",
                 "Network",
                 "Description",
             ]
@@ -91,6 +94,9 @@ class CSVExporter(BaseExporter):
                     host.hostname or "",
                     host.mac_address or "",
                     host.status,
+                    host.is_assigned,
+                    host.last_seen.isoformat() if host.last_seen else "",
+                    host.discovery_source or "",
                     network_info,
                     host.description or "",
                 ]

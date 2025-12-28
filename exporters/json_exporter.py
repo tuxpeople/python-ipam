@@ -63,6 +63,11 @@ class JSONExporter(BaseExporter):
                     "hostname": host.hostname,
                     "mac_address": host.mac_address,
                     "status": host.status,
+                    "is_assigned": host.is_assigned,
+                    "last_seen": (
+                        host.last_seen.isoformat() if host.last_seen else None
+                    ),
+                    "discovery_source": host.discovery_source,
                     "description": host.description,
                     "network": network_info,
                 }

@@ -3,10 +3,19 @@
 import os
 
 
+def _get_bool_env(name, default):
+    """Return a boolean from an environment variable."""
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
 class Config:
     """Base configuration."""
 
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key")
+    HOST_ASSIGN_ON_CREATE = _get_bool_env("HOST_ASSIGN_ON_CREATE", True)
 
     # Use absolute path for SQLite database in project root
     BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))

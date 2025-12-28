@@ -62,6 +62,9 @@ class Host(db.Model):
     mac_address = db.Column(db.String(17))
     description = db.Column(db.Text)
     status = db.Column(db.String(20), default="active")
+    last_seen = db.Column(db.DateTime)
+    discovery_source = db.Column(db.String(50))
+    is_assigned = db.Column(db.Boolean, default=False, nullable=False)
     network_id = db.Column(
         db.Integer, db.ForeignKey("networks.id"), nullable=True
     )

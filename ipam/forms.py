@@ -2,6 +2,7 @@
 
 from flask_wtf import FlaskForm
 from wtforms import (
+    BooleanField,
     FileField,
     IntegerField,
     SelectField,
@@ -41,6 +42,7 @@ class HostForm(FlaskForm):
             ("reserved", "Reserved"),
         ],
     )
+    is_assigned = BooleanField("Assigned")
     network_id = SelectField("Network", coerce=int, validators=[Optional()])
 
 

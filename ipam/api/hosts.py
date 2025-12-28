@@ -1,8 +1,9 @@
 """Host API endpoints."""
 
 import ipaddress
+from datetime import datetime
 
-from flask import request
+from flask import current_app, request
 from flask_restx import Namespace, Resource, fields
 
 from ipam.extensions import db
@@ -32,6 +33,35 @@ host_list = api.model(
 )
 
 
+def _parse_bool(value):
+    """Parse boolean-like values from API inputs."""
+    if value is None:
+        return None
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "yes", "on"}:
+            return True
+        if normalized in {"0", "false", "no", "off"}:
+            return False
+    raise ValueError("Expected a boolean value")
+
+
+def _parse_datetime(value):
+    """Parse ISO 8601 timestamps from API inputs."""
+    if value is None:
+        return None
+    if isinstance(value, datetime):
+        return value
+    if isinstance(value, str):
+        normalized = value.strip()
+        if normalized.endswith("Z"):
+            normalized = f"{normalized[:-1]}+00:00"
+        return datetime.fromisoformat(normalized)
+    raise ValueError("Expected an ISO 8601 timestamp")
+
+
 @api.route("")
 class HostList(Resource):
     @api.doc("list_hosts")
@@ -41,6 +71,7 @@ class HostList(Resource):
     @api.param("hostname", "Filter by hostname (wildcard supported)")
     @api.param("cname", "Filter by CNAME")
     @api.param("status", "Filter by status (active, inactive, reserved)")
+    @api.param("is_assigned", "Filter by assignment status", type=bool)
     @api.param("mac_address", "Filter by MAC address")
     @api.param("network_id", "Filter by network ID", type=int)
     def get(self):
@@ -57,6 +88,12 @@ class HostList(Resource):
             query = query.filter(Host.cname.ilike(f"%{cname}%"))
         if status := request.args.get("status"):
             query = query.filter(Host.status == status)
+        if "is_assigned" in request.args:
+            try:
+                is_assigned = _parse_bool(request.args.get("is_assigned"))
+            except ValueError as e:
+                api.abort(400, str(e))
+            query = query.filter(Host.is_assigned == is_assigned)
         if mac_address := request.args.get("mac_address"):
             query = query.filter(Host.mac_address == mac_address)
         if network_id := request.args.get("network_id", type=int):
@@ -76,6 +113,9 @@ class HostList(Resource):
                     "cname": h.cname,
                     "mac_address": h.mac_address,
                     "status": h.status,
+                    "is_assigned": h.is_assigned,
+                    "last_seen": h.last_seen,
+                    "discovery_source": h.discovery_source,
                     "description": h.description,
                     "network_id": h.network_id,
                     "network": (
@@ -126,12 +166,28 @@ class HostList(Resource):
                     break
 
         # Create host
+        last_seen = None
+        try:
+            if "last_seen" in data:
+                last_seen = _parse_datetime(data.get("last_seen"))
+            is_assigned = _parse_bool(data.get("is_assigned"))
+        except ValueError as e:
+            api.abort(400, str(e))
+
+        if is_assigned is None:
+            is_assigned = current_app.config.get(
+                "HOST_ASSIGN_ON_CREATE", True
+            )
+
         host_obj = Host(
             ip_address=data["ip_address"],
             hostname=data.get("hostname"),
             cname=data.get("cname"),
             mac_address=data.get("mac_address"),
             status=data.get("status", "active"),
+            is_assigned=is_assigned,
+            last_seen=last_seen,
+            discovery_source=data.get("discovery_source"),
             description=data.get("description"),
             network_id=network_id,
         )
@@ -146,6 +202,9 @@ class HostList(Resource):
             "cname": host_obj.cname,
             "mac_address": host_obj.mac_address,
             "status": host_obj.status,
+            "is_assigned": host_obj.is_assigned,
+            "last_seen": host_obj.last_seen,
+            "discovery_source": host_obj.discovery_source,
             "description": host_obj.description,
             "network_id": host_obj.network_id,
             "network": (
@@ -172,6 +231,9 @@ class HostResource(Resource):
             "cname": host_obj.cname,
             "mac_address": host_obj.mac_address,
             "status": host_obj.status,
+            "is_assigned": host_obj.is_assigned,
+            "last_seen": host_obj.last_seen,
+            "discovery_source": host_obj.discovery_source,
             "description": host_obj.description,
             "network_id": host_obj.network_id,
             "network": (
@@ -223,11 +285,25 @@ class HostResource(Resource):
                     break
 
         # Update fields
+        last_seen = None
+        try:
+            if "last_seen" in data:
+                last_seen = _parse_datetime(data.get("last_seen"))
+            is_assigned = _parse_bool(data.get("is_assigned"))
+        except ValueError as e:
+            api.abort(400, str(e))
+
         host_obj.ip_address = data["ip_address"]
         host_obj.hostname = data.get("hostname")
         host_obj.cname = data.get("cname")
         host_obj.mac_address = data.get("mac_address")
         host_obj.status = data.get("status", "active")
+        if is_assigned is not None:
+            host_obj.is_assigned = is_assigned
+        if "last_seen" in data:
+            host_obj.last_seen = last_seen
+        if "discovery_source" in data:
+            host_obj.discovery_source = data.get("discovery_source")
         host_obj.description = data.get("description")
         host_obj.network_id = network_id
 
@@ -240,6 +316,9 @@ class HostResource(Resource):
             "cname": host_obj.cname,
             "mac_address": host_obj.mac_address,
             "status": host_obj.status,
+            "is_assigned": host_obj.is_assigned,
+            "last_seen": host_obj.last_seen,
+            "discovery_source": host_obj.discovery_source,
             "description": host_obj.description,
             "network_id": host_obj.network_id,
             "network": (

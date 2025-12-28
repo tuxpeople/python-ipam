@@ -35,6 +35,8 @@
     - ✅ Add hosts with IP validation
     - ✅ Hostname and MAC address tracking
     - ✅ Status management (active/inactive/reserved)
+    - ✅ Assignment tracking (is_assigned)
+    - ✅ Discovery metadata (last_seen, discovery_source)
     - ✅ Auto-network detection for hosts
     - ✅ Host-to-network relationships
 

@@ -2,6 +2,7 @@
 
 import json
 import ipaddress
+from datetime import datetime
 from typing import Any, Dict, List, Tuple
 
 from . import BaseImporter
@@ -64,12 +65,20 @@ class JSONImporter(BaseImporter):
 
         hosts = []
         for host_data in hosts_data:
+            discovery_source = host_data.get("discovery_source")
+            if discovery_source is None:
+                discovery_source = ""
+            else:
+                discovery_source = str(discovery_source)
             hosts.append(
                 {
                     "ip_address": host_data.get("ip_address", "").strip(),
                     "hostname": host_data.get("hostname", "").strip(),
                     "mac_address": host_data.get("mac_address", "").strip(),
                     "status": host_data.get("status", "active").strip(),
+                    "is_assigned": host_data.get("is_assigned"),
+                    "last_seen": host_data.get("last_seen"),
+                    "discovery_source": discovery_source.strip(),
                     "description": host_data.get("description", "").strip(),
                 }
             )
@@ -147,6 +156,49 @@ class JSONImporter(BaseImporter):
                 valid_statuses = ["active", "inactive", "reserved"]
                 if host_data.get("status") not in valid_statuses:
                     host_data["status"] = "active"
+
+                # Validate and normalize is_assigned
+                if host_data.get("is_assigned") is not None:
+                    if isinstance(host_data["is_assigned"], bool):
+                        pass
+                    elif isinstance(host_data["is_assigned"], str):
+                        value = host_data["is_assigned"].strip().lower()
+                        if value in ["1", "true", "yes", "on"]:
+                            host_data["is_assigned"] = True
+                        elif value in ["0", "false", "no", "off"]:
+                            host_data["is_assigned"] = False
+                        else:
+                            errors.append(
+                                f"Entry {entry_num}: Invalid is_assigned value"
+                            )
+                            continue
+                    else:
+                        errors.append(
+                            f"Entry {entry_num}: Invalid is_assigned value"
+                        )
+                        continue
+                else:
+                    host_data["is_assigned"] = None
+
+                # Validate last_seen
+                if host_data.get("last_seen"):
+                    try:
+                        normalized = str(host_data["last_seen"]).strip()
+                        if normalized.endswith("Z"):
+                            normalized = f"{normalized[:-1]}+00:00"
+                        host_data["last_seen"] = datetime.fromisoformat(
+                            normalized
+                        )
+                    except ValueError:
+                        errors.append(
+                            f"Entry {entry_num}: Invalid last_seen timestamp"
+                        )
+                        continue
+                else:
+                    host_data["last_seen"] = None
+
+                if not host_data.get("discovery_source"):
+                    host_data["discovery_source"] = None
 
                 valid_data.append(host_data)
 

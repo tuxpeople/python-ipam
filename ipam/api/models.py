@@ -56,6 +56,15 @@ host_model = {
     "status": fields.String(
         description="Host status (active, inactive, reserved)"
     ),
+    "is_assigned": fields.Boolean(
+        description="Whether the host is officially assigned"
+    ),
+    "last_seen": fields.DateTime(
+        description="Last observed timestamp (ISO 8601)"
+    ),
+    "discovery_source": fields.String(
+        description="Discovery source identifier"
+    ),
     "description": fields.String(description="Host description"),
     "network_id": fields.Integer(description="Associated network ID"),
     "network": fields.String(readonly=True, description="Network address"),
@@ -72,6 +81,15 @@ host_input_model = {
     ),
     "status": fields.String(
         description="Host status (active, inactive, reserved)"
+    ),
+    "is_assigned": fields.Boolean(
+        description="Whether the host is officially assigned"
+    ),
+    "last_seen": fields.DateTime(
+        description="Last observed timestamp (ISO 8601)"
+    ),
+    "discovery_source": fields.String(
+        description="Discovery source identifier"
     ),
     "description": fields.String(description="Host description"),
     "network_id": fields.Integer(description="Associated network ID"),

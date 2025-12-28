@@ -158,6 +158,9 @@ GET /api/v1/networks/{id}/hosts
       "cname": "web",
       "mac_address": "aa:bb:cc:dd:ee:ff",
       "status": "active",
+      "is_assigned": true,
+      "last_seen": "2025-12-28T10:01:58",
+      "discovery_source": "nmap",
       "description": "Web server"
     }
   ]
@@ -177,6 +180,7 @@ GET /api/v1/hosts
 - `hostname` (string) - Filter by hostname (wildcard supported)
 - `cname` (string) - Filter by CNAME
 - `status` (string) - Filter by status (active, inactive, reserved)
+- `is_assigned` (bool) - Filter by assignment status
 - `mac_address` (string) - Filter by MAC address
 - `network_id` (int) - Filter by network ID
 
@@ -191,6 +195,9 @@ GET /api/v1/hosts
       "cname": "web",
       "mac_address": "aa:bb:cc:dd:ee:ff",
       "status": "active",
+      "is_assigned": true,
+      "last_seen": "2025-12-28T10:01:58",
+      "discovery_source": "nmap",
       "description": "Web server",
       "network_id": 1,
       "network": "192.168.1.0/24"
@@ -223,12 +230,17 @@ Content-Type: application/json
   "cname": "api",
   "mac_address": "11:22:33:44:55:66",
   "status": "active",
+  "is_assigned": true,
+  "last_seen": "2025-12-28T10:01:58",
+  "discovery_source": "nmap",
   "description": "API server",
   "network_id": 1
 }
 ```
 
-**Note**: If `network_id` is omitted, the system auto-detects the network based on IP address.
+**Notes**:
+- If `network_id` is omitted, the system auto-detects the network based on IP address.
+- If `is_assigned` is omitted, the default is controlled by `HOST_ASSIGN_ON_CREATE`.
 
 **Response**: Created host object (HTTP 201)
 
@@ -243,6 +255,9 @@ Content-Type: application/json
   "cname": "api",
   "mac_address": "11:22:33:44:55:66",
   "status": "active",
+  "is_assigned": true,
+  "last_seen": "2025-12-28T10:01:58",
+  "discovery_source": "nmap",
   "description": "Updated description",
   "network_id": 1
 }
@@ -315,6 +330,9 @@ GET /api/v1/ip/{ip_address}
     "cname": "web",
     "mac_address": "aa:bb:cc:dd:ee:ff",
     "status": "active",
+    "is_assigned": true,
+    "last_seen": "2025-12-28T10:01:58",
+    "discovery_source": "nmap",
     "description": "Web server",
     "network_id": 1,
     "network": "192.168.1.0/24"

@@ -4,6 +4,7 @@ import ipaddress
 
 from flask import (
     Response,
+    current_app,
     flash,
     jsonify,
     redirect,
@@ -85,6 +86,10 @@ def add_host():
     form.network_id.choices = [(0, "Auto-detect")] + [
         (n.id, f"{n.network}/{n.cidr}") for n in Network.query.all()
     ]
+    if request.method == "GET":
+        form.is_assigned.data = current_app.config.get(
+            "HOST_ASSIGN_ON_CREATE", True
+        )
 
     if form.validate_on_submit():
         network_id = form.network_id.data if form.network_id.data != 0 else None
@@ -106,6 +111,7 @@ def add_host():
             mac_address=form.mac_address.data,
             description=form.description.data,
             status=form.status.data,
+            is_assigned=form.is_assigned.data,
             network_id=network_id,
         )
         db.session.add(host)
@@ -175,6 +181,7 @@ def edit_host(host_id):
         host.mac_address = form.mac_address.data
         host.description = form.description.data
         host.status = form.status.data
+        host.is_assigned = form.is_assigned.data
         host.network_id = network_id
 
         db.session.commit()
@@ -414,6 +421,7 @@ def _create_networks_from_data(networks_data):
 def _create_hosts_from_data(hosts_data):
     """Create Host objects from validated data."""
     imported_count = 0
+    assign_on_create = current_app.config.get("HOST_ASSIGN_ON_CREATE", True)
 
     for host_data in hosts_data:
         # Check if host already exists
@@ -434,12 +442,19 @@ def _create_hosts_from_data(hosts_data):
                 network_id = network.id
                 break
 
+        is_assigned = host_data.get("is_assigned")
+        if is_assigned is None:
+            is_assigned = assign_on_create
+
         host = Host(
             ip_address=host_data["ip_address"],
             hostname=host_data.get("hostname", ""),
             mac_address=host_data.get("mac_address", ""),
             status=host_data.get("status", "active"),
             description=host_data.get("description", ""),
+            last_seen=host_data.get("last_seen"),
+            discovery_source=host_data.get("discovery_source"),
+            is_assigned=is_assigned,
             network_id=network_id,
         )
 

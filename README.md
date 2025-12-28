@@ -69,6 +69,8 @@ A modern, web-based IP Address Management (IPAM) system built with Flask, SQLite
    cp .env.example .env
    # Edit .env as needed
    ```
+   Optional host assignment behavior:
+   - `HOST_ASSIGN_ON_CREATE=true` marks new hosts as assigned by default.
 
 6. **Initialize database:**
    ```bash
@@ -251,7 +253,13 @@ ipam/
 - `mac_address` - MAC address (optional)
 - `description` - Description (optional)
 - `status` - Status (active/inactive/reserved)
+- `is_assigned` - Whether the host is officially assigned
+- `last_seen` - Last observed timestamp (ISO 8601)
+- `discovery_source` - Discovery source identifier
 - `network_id` - Foreign Key to Networks
+
+Note: SQLite does not auto-migrate schema changes. For upgrades, add new
+columns manually or recreate the database.
 
 ## Development Guidelines
 

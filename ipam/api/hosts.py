@@ -175,9 +175,7 @@ class HostList(Resource):
             api.abort(400, str(e))
 
         if is_assigned is None:
-            is_assigned = current_app.config.get(
-                "HOST_ASSIGN_ON_CREATE", True
-            )
+            is_assigned = current_app.config.get("HOST_ASSIGN_ON_CREATE", True)
 
         host_obj = Host(
             ip_address=data["ip_address"],

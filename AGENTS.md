@@ -21,6 +21,14 @@ Claude Code-specific configuration and standards for the Python IPAM project.
 - Documentation updates should be committed together with code changes
 - Never commit code without updating related documentation
 
+## Release Guardrails
+
+- Do not tag or create a release unless the latest CI build is successful.
+
+## Release Guardrails
+
+- Do not tag or create a release unless the latest CI build is successful.
+
 ## Project Overview
 
 **Python IPAM** is a modern IP Address Management (IPAM) system based on:

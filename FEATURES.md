@@ -10,8 +10,9 @@
 | Core Features | 9 | 0 | 3 | 12 |
 | API Integration | 2 | 0 | 0 | 2 |
 | UI/UX | 6 | 0 | 2 | 8 |
-| Data Management | 4 | 0 | 2 | 6 |
+| Data Management | 4 | 0 | 5 | 9 |
 | Testing | 6 | 0 | 1 | 7 |
+| Security | 0 | 0 | 2 | 2 |
 
 ---
 
@@ -328,6 +329,17 @@
   - **Technical Notes**: Consider using python-nmap library
 
 ### Data Management
+- **[IPAM-024]** 📅 IP Lease History
+  - **Priority**: Medium | **Category**: Data Management
+  - **Estimated Effort**: Medium (2-3 days)
+  - **Description**: Track assignment and metadata changes for hosts and networks
+  - **Acceptance Criteria**:
+    - Record create/update/delete events with timestamp and actor
+    - Persist history entries in a dedicated table
+    - UI for viewing history on host and network details
+    - API endpoints for history retrieval
+    - Export history entries in CSV/JSON
+
 - **[IPAM-012]** 📅 Advanced Import Formats
   - **Priority**: Low | **Category**: Data Management
   - **Estimated Effort**: Medium (2-3 days)
@@ -390,6 +402,16 @@
     ```
   - **Dependencies**: [IPAM-004] plugin system for format support
 
+- **[IPAM-027]** 📅 Custom Fields
+  - **Priority**: Medium | **Category**: Data Management
+  - **Estimated Effort**: Medium (2-3 days)
+  - **Description**: User-defined fields for hosts and networks
+  - **Acceptance Criteria**:
+    - Admin UI to define custom fields (string/int/bool/date)
+    - API support for reading and writing custom fields
+    - Export/import includes custom field values
+    - Validation for required fields and type constraints
+
 - **[IPAM-017]** 📅 Data Backup & Restore
   - **Priority**: Medium | **Category**: Data Management
   - **Estimated Effort**: Small (1-2 days)
@@ -416,7 +438,30 @@
     - Add password strength validation
     - Implement user audit trail
 
+### Core Validation
+- **[IPAM-026]** 📅 IP Conflict Detection
+  - **Priority**: Medium | **Category**: Core
+  - **Estimated Effort**: Medium (2-3 days)
+  - **Description**: Detect duplicate IPs and overlapping ranges
+  - **Acceptance Criteria**:
+    - Detect duplicate IPs within a network
+    - Detect overlapping networks and DHCP range overlaps
+    - UI warnings on create/update
+    - API returns structured conflict errors
+    - Background validation for existing data
+
 ### Security & Authentication
+- **[IPAM-025]** 📅 Role-Based Access Control
+  - **Priority**: High | **Category**: Security
+  - **Estimated Effort**: Medium (3-4 days)
+  - **Description**: Fine-grained permissions across UI and API
+  - **Acceptance Criteria**:
+    - Roles: ReadOnly, Editor, Admin, APIOnly
+    - Enforce permissions on UI routes and API endpoints
+    - Admin UI for role assignment
+    - Configurable default role for new users
+    - Audit log entries for role changes
+
 - **[IPAM-015]** 📅 Hybrid Authentication System
   - **Priority**: High | **Category**: Security
   - **Estimated Effort**: Medium (3-4 days)
@@ -511,6 +556,11 @@
 - 📅 Hybrid authentication system (local + OIDC)
 - 📅 User management interface
 - 📅 Role-based access control
+- 📅 IP lease history
+
+### v1.3.0 (Planned - Q2 2026)
+- 📅 IP conflict detection
+- 📅 Custom fields for hosts and networks
 
 ### v2.0.0 (Planned - Q2 2026)
 - 📅 Network discovery tools

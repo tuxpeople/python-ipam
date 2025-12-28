@@ -1,7 +1,9 @@
 """API Blueprint for IPAM REST API."""
 
-from flask import Blueprint
+from flask import Blueprint, current_app, jsonify, request
 from flask_restx import Api
+
+from ipam.extensions import limiter
 
 # Create API blueprint
 api_bp = Blueprint("api", __name__, url_prefix="/api/v1")
@@ -14,6 +16,38 @@ api = Api(
     description="Complete RESTful API for IP Address Management (IPAM)",
     doc="/docs",
 )
+
+
+def _get_token():
+    """Extract API token from headers."""
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.lower().startswith("bearer "):
+        return auth_header.split(None, 1)[1].strip()
+    return request.headers.get("X-API-Key")
+
+
+def _is_auth_exempt(path):
+    """Return True if the path should bypass auth."""
+    return path.endswith("/docs") or path.endswith("/swagger.json")
+
+
+def configure_api(app):
+    """Configure API auth and rate limiting."""
+
+    @api_bp.before_request
+    def require_api_token():
+        if request.method == "OPTIONS" or _is_auth_exempt(request.path):
+            return None
+        tokens = current_app.config.get("API_TOKENS", [])
+        if not tokens:
+            return None
+        token = _get_token()
+        if token in tokens:
+            return None
+        return jsonify({"message": "Unauthorized"}), 401
+
+    if app.config.get("RATELIMIT_ENABLED", True):
+        limiter.limit(app.config["API_RATE_LIMIT"])(api_bp)
 
 # Import after api is created to avoid circular imports
 from ipam.api import backups, dhcp_ranges, hosts, ip_management, networks

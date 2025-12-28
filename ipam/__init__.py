@@ -6,7 +6,7 @@ from flask import Flask
 
 from ipam.config import config
 from ipam.cli import init_cli
-from ipam.extensions import db, migrate
+from ipam.extensions import db, limiter, migrate
 
 
 def create_app(config_name=None):
@@ -30,13 +30,15 @@ def create_app(config_name=None):
     # Initialize extensions
     db.init_app(app)
     migrate.init_app(app, db)
+    limiter.init_app(app)
 
     # Register blueprints
-    from ipam.api import api_bp
+    from ipam.api import api_bp, configure_api
     from ipam.web import web_bp
 
     app.register_blueprint(web_bp)
     app.register_blueprint(api_bp)
+    configure_api(app)
 
     # Register export/import plugins
     with app.app_context():

@@ -27,8 +27,21 @@ The Swagger UI provides:
 
 ## Authentication
 
-**Current Status**: No authentication required (development mode)
-**Planned**: API key authentication (see IPAM-023 in FEATURES.md)
+API requests require a token when `API_TOKENS` is configured.
+
+**Headers**:
+- `Authorization: Bearer <token>` (preferred)
+- `X-API-Key: <token>` (alternative)
+
+Requests without a valid token return `401 Unauthorized`.
+Authentication is disabled when `API_TOKENS` is empty.
+
+## Rate Limiting
+
+Rate limits apply to API endpoints when `RATELIMIT_ENABLED=true`.
+Default limit: `200 per minute` (configurable via `API_RATE_LIMIT`).
+Use `RATELIMIT_STORAGE_URI` to configure the limiter backend. For
+multi-process or multi-pod deployments, use a shared backend like Redis.
 
 ## Getting Started
 

@@ -24,6 +24,16 @@ class Config:
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     BACKUP_DIR = os.environ.get("BACKUP_DIR", os.path.join(BASE_DIR, "backups"))
+    API_TOKENS = [
+        token.strip()
+        for token in os.environ.get("API_TOKENS", "").split(",")
+        if token.strip()
+    ]
+    API_RATE_LIMIT = os.environ.get("API_RATE_LIMIT", "200 per minute")
+    RATELIMIT_STORAGE_URI = os.environ.get(
+        "RATELIMIT_STORAGE_URI", "memory://"
+    )
+    RATELIMIT_ENABLED = _get_bool_env("RATELIMIT_ENABLED", True)
 
 
 class DevelopmentConfig(Config):

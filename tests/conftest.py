@@ -20,6 +20,8 @@ def app():
             "TESTING": True,
             "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
             "WTF_CSRF_ENABLED": False,
+            "API_TOKENS": ["test-token"],
+            "RATELIMIT_ENABLED": False,
         }
     )
 

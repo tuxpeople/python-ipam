@@ -71,6 +71,11 @@ A modern, web-based IP Address Management (IPAM) system built with Flask, SQLite
    ```
    Optional host assignment behavior:
    - `HOST_ASSIGN_ON_CREATE=true` marks new hosts as assigned by default.
+   API authentication and rate limiting:
+   - `API_TOKENS=token1,token2` enables token auth for `/api/v1` (empty disables).
+   - `API_RATE_LIMIT=200 per minute` sets the global API limit.
+   - `RATELIMIT_ENABLED=true` toggles rate limiting.
+   - `RATELIMIT_STORAGE_URI=memory://` sets the Flask-Limiter backend.
 
 6. **Initialize database (migrations):**
    ```bash
@@ -159,6 +164,10 @@ docker run -p 5000:5000 python-ipam:dev
 ## REST API
 
 The complete REST API is available at `/api/v1`. Interactive API documentation (Swagger UI) can be found at http://localhost:5000/api/v1/docs
+API endpoints require a token when `API_TOKENS` is configured. Use
+`Authorization: Bearer <token>` or `X-API-Key: <token>`. Rate limiting
+can be enabled with `RATELIMIT_ENABLED=true` and configured via
+`API_RATE_LIMIT` and `RATELIMIT_STORAGE_URI`.
 
 ### Main Endpoints:
 

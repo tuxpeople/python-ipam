@@ -1,14 +1,14 @@
 # 🚀 Python IPAM - Features & Roadmap
 
 **Version**: 1.1.0
-**Last Updated**: 2025-10-03
+**Last Updated**: 2025-12-28
 
 ## 📊 Project Status Overview
 
 | Category | Completed | In Progress | Planned | Total |
 |----------|-----------|-------------|---------|-------|
 | Core Features | 9 | 0 | 3 | 12 |
-| API Integration | 1 | 0 | 0 | 1 |
+| API Integration | 2 | 0 | 0 | 2 |
 | UI/UX | 6 | 0 | 2 | 8 |
 | Data Management | 4 | 0 | 2 | 6 |
 | Testing | 6 | 0 | 1 | 7 |
@@ -284,7 +284,18 @@
     - `API.md` - Complete API documentation
     - `tests/test_database.py` - Database initialization tests
   - **Completed**: API fully operational at http://127.0.0.1:5000/api/v1 with Swagger UI at /api/v1/docs
-  - **Notes**: Authentication and rate limiting planned for future release (see roadmap)
+  - **Notes**: API authentication and rate limiting are now supported.
+
+- **[IPAM-014]** ✅ REST API Expansion (Auth + Rate Limiting)
+  - **Priority**: Medium | **Category**: API
+  - **Status**: Complete
+  - **Description**: Token authentication and rate limiting for all API endpoints
+  - **Acceptance Criteria**:
+    - ✅ Token-based authentication via `Authorization: Bearer` or `X-API-Key`
+    - ✅ Swagger UI remains publicly accessible
+    - ✅ Configurable rate limit defaults and limiter backend
+    - ✅ Environment-driven configuration (`API_TOKENS`, `API_RATE_LIMIT`)
+    - ✅ Optional rate limiting toggle (`RATELIMIT_ENABLED`)
 
 ---
 
@@ -388,19 +399,6 @@
     - One-click restore from backup
     - Complete database migration utilities
     - Backup verification and integrity checks
-
-### API & Integration
-- **[IPAM-014]** 📅 REST API Expansion
-  - **Priority**: Medium | **Category**: API
-  - **Estimated Effort**: Medium (3-4 days)
-  - **Description**: Complete RESTful API with authentication
-  - **Acceptance Criteria**:
-    - CRUD operations for all resources
-    - API authentication (token-based)
-    - OpenAPI/Swagger documentation
-    - Rate limiting and pagination
-  - **Dependencies**: [IPAM-015] for authentication system
-  - **Technical Notes**: Consider Flask-RESTX for auto-documentation
 
 - **[IPAM-016]** 📅 Local User Management UI
   - **Priority**: Medium | **Category**: UI/Security

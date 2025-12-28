@@ -15,7 +15,9 @@ RUN /tmp/venv/bin/pip install \
     --disable-pip-version-check \
     --no-cache-dir \
     -r /tmp/requirements.txt
+USER 0
 RUN mkdir -p /tmp && chmod 1777 /tmp
+USER nonroot
 
 # Stage 3: Final minimal runtime image
 # hadolint ignore=DL3007

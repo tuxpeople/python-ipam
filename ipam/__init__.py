@@ -36,9 +36,9 @@ def create_app(config_name=None):
     from ipam.api import api_bp, configure_api
     from ipam.web import web_bp
 
+    configure_api(app)
     app.register_blueprint(web_bp)
     app.register_blueprint(api_bp)
-    configure_api(app)
 
     # Register export/import plugins
     with app.app_context():

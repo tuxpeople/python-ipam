@@ -31,8 +31,20 @@ def _is_auth_exempt(path):
     return path.endswith("/docs") or path.endswith("/swagger.json")
 
 
+def _get_rate_limit():
+    """Return the configured API rate limit."""
+    return current_app.config.get("API_RATE_LIMIT", "200 per minute")
+
+
+@limiter.request_filter
+def _skip_rate_limits():
+    return not current_app.config.get("RATELIMIT_ENABLED", True)
+
+
 def configure_api(app):
     """Configure API auth and rate limiting."""
+    if getattr(api_bp, "_auth_configured", False):
+        return
 
     @api_bp.before_request
     def require_api_token():
@@ -46,8 +58,8 @@ def configure_api(app):
             return None
         return jsonify({"message": "Unauthorized"}), 401
 
-    if app.config.get("RATELIMIT_ENABLED", True):
-        limiter.limit(app.config["API_RATE_LIMIT"])(api_bp)
+    api_bp._auth_configured = True
+    limiter.limit(_get_rate_limit)(api_bp)
 
 # Import after api is created to avoid circular imports
 from ipam.api import backups, dhcp_ranges, hosts, ip_management, networks

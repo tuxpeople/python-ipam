@@ -61,6 +61,7 @@ def configure_api(app):
     api_bp._auth_configured = True
     limiter.limit(_get_rate_limit)(api_bp)
 
+
 # Import after api is created to avoid circular imports
 from ipam.api import backups, dhcp_ranges, hosts, ip_management, networks
 

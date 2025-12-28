@@ -30,9 +30,7 @@ class Config:
         if token.strip()
     ]
     API_RATE_LIMIT = os.environ.get("API_RATE_LIMIT", "200 per minute")
-    RATELIMIT_STORAGE_URI = os.environ.get(
-        "RATELIMIT_STORAGE_URI", "memory://"
-    )
+    RATELIMIT_STORAGE_URI = os.environ.get("RATELIMIT_STORAGE_URI", "memory://")
     RATELIMIT_ENABLED = _get_bool_env("RATELIMIT_ENABLED", True)
 
 

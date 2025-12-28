@@ -4,7 +4,7 @@ import ipaddress
 
 from flask_restx import Namespace, Resource
 
-from ipam.models import Network, Host
+from ipam.models import DhcpRange, Host, Network
 from ipam.api.models import next_ip_model, available_ips_model, error_model
 
 api = Namespace("ip", description="IP address management operations")
@@ -13,6 +13,18 @@ api = Namespace("ip", description="IP address management operations")
 next_ip = api.model("NextIP", next_ip_model)
 available_ips = api.model("AvailableIPs", available_ips_model)
 error = api.model("Error", error_model)
+
+
+def _in_active_dhcp_range(ip_address, ranges):
+    """Return True if IP is inside any active DHCP range."""
+    for range_obj in ranges:
+        if not range_obj.is_active:
+            continue
+        start_ip = ipaddress.IPv4Address(range_obj.start_ip)
+        end_ip = ipaddress.IPv4Address(range_obj.end_ip)
+        if start_ip <= ip_address <= end_ip:
+            return True
+    return False
 
 
 @api.route("/networks/<int:network_id>/next-ip")
@@ -36,15 +48,21 @@ class NextAvailableIP(Resource):
             ipaddress.IPv4Address(h.ip_address)
             for h in Host.query.filter_by(network_id=network_id).all()
         }
+        dhcp_ranges = DhcpRange.query.filter_by(
+            network_id=network_id, is_active=True
+        ).all()
 
         # Find first available IP
         for ip in net.hosts():
-            if ip not in used_ips:
-                return {
-                    "ip_address": str(ip),
-                    "network": f"{network.network}/{network.cidr}",
-                    "network_id": network.id,
-                }
+            if ip in used_ips:
+                continue
+            if _in_active_dhcp_range(ip, dhcp_ranges):
+                continue
+            return {
+                "ip_address": str(ip),
+                "network": f"{network.network}/{network.cidr}",
+                "network_id": network.id,
+            }
 
         # No available IPs
         api.abort(400, "No available IP addresses in this network")
@@ -72,9 +90,16 @@ class AvailableIPs(Resource):
             ipaddress.IPv4Address(h.ip_address)
             for h in Host.query.filter_by(network_id=network_id).all()
         }
+        dhcp_ranges = DhcpRange.query.filter_by(
+            network_id=network_id, is_active=True
+        ).all()
 
         # Find all available IPs
-        available = [str(ip) for ip in net.hosts() if ip not in used_ips]
+        available = [
+            str(ip)
+            for ip in net.hosts()
+            if ip not in used_ips and not _in_active_dhcp_range(ip, dhcp_ranges)
+        ]
 
         # Apply limit if specified
         if limit:
@@ -134,6 +159,35 @@ class IPQuery(Resource):
                 f"{network.network}/{network.cidr}", strict=False
             )
             if ip in net:
+                dhcp_range = None
+                for range_obj in network.dhcp_ranges:
+                    if not range_obj.is_active:
+                        continue
+                    start_ip = ipaddress.IPv4Address(range_obj.start_ip)
+                    end_ip = ipaddress.IPv4Address(range_obj.end_ip)
+                    if start_ip <= ip <= end_ip:
+                        dhcp_range = range_obj
+                        break
+
+                if dhcp_range:
+                    return {
+                        "ip_address": ip_address,
+                        "status": "dhcp",
+                        "dhcp_range": {
+                            "id": dhcp_range.id,
+                            "start_ip": dhcp_range.start_ip,
+                            "end_ip": dhcp_range.end_ip,
+                            "network_id": dhcp_range.network_id,
+                        },
+                        "network": {
+                            "id": network.id,
+                            "network": f"{network.network}/{network.cidr}",
+                            "name": network.name,
+                            "domain": network.domain,
+                            "vlan_id": network.vlan_id,
+                            "location": network.location,
+                        },
+                    }
                 return {
                     "ip_address": ip_address,
                     "status": "available",

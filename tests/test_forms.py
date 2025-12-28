@@ -2,7 +2,7 @@
 
 import pytest
 
-from ipam.forms import HostForm, NetworkForm
+from ipam.forms import DhcpRangeForm, HostForm, NetworkForm
 
 
 class TestNetworkForm:
@@ -90,3 +90,19 @@ class TestHostForm:
         form = HostForm(data=form_data)
         form.network_id.choices = [(0, "Auto-detect")]
         assert form.validate()
+
+
+class TestDhcpRangeForm:
+    def test_valid_dhcp_range_form(self, app_context):
+        form_data = {
+            "start_ip": "192.168.1.100",
+            "end_ip": "192.168.1.150",
+            "is_active": True,
+        }
+        form = DhcpRangeForm(data=form_data)
+        assert form.validate()
+
+    def test_invalid_dhcp_range_form(self, app_context):
+        form_data = {"start_ip": "invalid-ip", "end_ip": "192.168.1.10"}
+        form = DhcpRangeForm(data=form_data)
+        assert not form.validate()

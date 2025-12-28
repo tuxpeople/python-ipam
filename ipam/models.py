@@ -23,6 +23,12 @@ class Network(db.Model):
     hosts = db.relationship(
         "Host", backref="network_ref", lazy=True, cascade="all, delete-orphan"
     )
+    dhcp_ranges = db.relationship(
+        "DhcpRange",
+        backref="network_ref",
+        lazy=True,
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self):
         return f"<Network {self.network}/{self.cidr}>"
@@ -71,3 +77,21 @@ class Host(db.Model):
 
     def __repr__(self):
         return f"<Host {self.ip_address}>"
+
+
+class DhcpRange(db.Model):
+    """DHCP range model."""
+
+    __tablename__ = "dhcp_ranges"
+
+    id = db.Column(db.Integer, primary_key=True)
+    network_id = db.Column(
+        db.Integer, db.ForeignKey("networks.id"), nullable=False
+    )
+    start_ip = db.Column(db.String(15), nullable=False)
+    end_ip = db.Column(db.String(15), nullable=False)
+    description = db.Column(db.Text)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
+
+    def __repr__(self):
+        return f"<DhcpRange {self.start_ip}-{self.end_ip}>"

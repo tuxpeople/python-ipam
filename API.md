@@ -36,7 +36,8 @@ The Swagger UI provides:
 
 ```bash
 # Initialize database (first time only)
-python3 -c "from ipam import create_app; from ipam.extensions import db; app = create_app(); app.app_context().push(); db.create_all()"
+export FLASK_APP=app.py
+flask db upgrade
 
 # Start the development server
 python app.py
@@ -272,6 +273,107 @@ DELETE /api/v1/hosts/{id}
 
 **Response**: HTTP 204 (No Content)
 
+### DHCP Ranges
+
+#### List DHCP Ranges
+```http
+GET /api/v1/dhcp-ranges
+```
+
+**Query Parameters**:
+- `page` (int, default: 1) - Page number
+- `per_page` (int, default: 50) - Items per page
+- `network_id` (int) - Filter by network ID
+
+**Response**:
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "network_id": 1,
+      "start_ip": "192.168.1.100",
+      "end_ip": "192.168.1.150",
+      "description": "Office DHCP pool",
+      "is_active": true
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 50,
+    "total_items": 1,
+    "total_pages": 1
+  }
+}
+```
+
+#### Create DHCP Range
+```http
+POST /api/v1/dhcp-ranges
+Content-Type: application/json
+
+{
+  "network_id": 1,
+  "start_ip": "192.168.1.100",
+  "end_ip": "192.168.1.150",
+  "description": "Office DHCP pool",
+  "is_active": true
+}
+```
+
+**Response**: Created DHCP range object (HTTP 201)
+
+#### Get DHCP Range
+```http
+GET /api/v1/dhcp-ranges/{id}
+```
+
+**Response**: Single DHCP range object
+
+#### Update DHCP Range
+```http
+PUT /api/v1/dhcp-ranges/{id}
+Content-Type: application/json
+
+{
+  "network_id": 1,
+  "start_ip": "192.168.1.110",
+  "end_ip": "192.168.1.160",
+  "description": "Updated DHCP pool",
+  "is_active": false
+}
+```
+
+**Response**: Updated DHCP range object
+
+#### Delete DHCP Range
+```http
+DELETE /api/v1/dhcp-ranges/{id}
+```
+
+**Response**: HTTP 204 (No Content)
+
+#### Network DHCP Ranges
+```http
+GET /api/v1/networks/{id}/dhcp-ranges
+```
+
+**Response**:
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "network_id": 1,
+      "start_ip": "192.168.1.100",
+      "end_ip": "192.168.1.150",
+      "description": "Office DHCP pool",
+      "is_active": true
+    }
+  ]
+}
+```
+
 ### IP Management
 
 #### Get Next Available IP
@@ -297,6 +399,7 @@ GET /api/v1/ip/networks/{network_id}/available-ips?limit=10
 
 **Query Parameters**:
 - `limit` (int, optional) - Limit number of IPs returned
+Note: Active DHCP ranges are excluded from available IPs.
 
 **Response**:
 ```json
@@ -345,6 +448,28 @@ GET /api/v1/ip/{ip_address}
 {
   "ip_address": "192.168.1.45",
   "status": "available",
+  "network": {
+    "id": 1,
+    "network": "192.168.1.0/24",
+    "name": "Office Network",
+    "domain": "office.local",
+    "vlan_id": 100,
+    "location": "Building A"
+  }
+}
+```
+
+**Response (DHCP Range)**:
+```json
+{
+  "ip_address": "192.168.1.120",
+  "status": "dhcp",
+  "dhcp_range": {
+    "id": 1,
+    "start_ip": "192.168.1.100",
+    "end_ip": "192.168.1.150",
+    "network_id": 1
+  },
   "network": {
     "id": 1,
     "network": "192.168.1.0/24",

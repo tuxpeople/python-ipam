@@ -14,11 +14,36 @@ from flask import (
 )
 
 from ipam.extensions import db
-from ipam.forms import HostForm, ImportForm, NetworkForm
-from ipam.models import Host, Network
+from ipam.forms import DhcpRangeForm, HostForm, ImportForm, NetworkForm
+from ipam.models import DhcpRange, Host, Network
 from ipam.web import web_bp
 from exporters import get_exporter, get_available_exporters
 from importers import get_importer, get_available_importers
+
+
+def _validate_dhcp_range(network, start_ip, end_ip, exclude_range_id=None):
+    """Validate DHCP range boundaries and overlaps."""
+    net = ipaddress.IPv4Network(
+        f"{network.network}/{network.cidr}", strict=False
+    )
+    if start_ip not in net or end_ip not in net:
+        return "DHCP range must be within the selected network"
+    if start_ip > end_ip:
+        return "Start IP must be less than or equal to End IP"
+
+    query = DhcpRange.query.filter_by(network_id=network.id)
+    if exclude_range_id:
+        query = query.filter(DhcpRange.id != exclude_range_id)
+    for existing in query.all():
+        existing_start = ipaddress.IPv4Address(existing.start_ip)
+        existing_end = ipaddress.IPv4Address(existing.end_ip)
+        overlaps = not (end_ip < existing_start or start_ip > existing_end)
+        if overlaps:
+            return (
+                "DHCP range overlaps an existing range: "
+                f"{existing.start_ip}-{existing.end_ip}"
+            )
+    return None
 
 
 @web_bp.route("/")
@@ -127,6 +152,7 @@ def edit_network(network_id):
     """Edit existing network."""
     network = Network.query.get_or_404(network_id)
     form = NetworkForm(obj=network)
+    dhcp_range_form = DhcpRangeForm()
 
     if form.validate_on_submit():
         try:
@@ -150,7 +176,52 @@ def edit_network(network_id):
         except ValueError as e:
             flash(f"Invalid network: {e}", "error")
 
-    return render_template("edit_network.html", form=form, network=network)
+    return render_template(
+        "edit_network.html",
+        form=form,
+        network=network,
+        dhcp_range_form=dhcp_range_form,
+    )
+
+
+@web_bp.route("/networks/<int:network_id>/dhcp-ranges", methods=["POST"])
+def add_dhcp_range(network_id):
+    """Add DHCP range to a network."""
+    network = Network.query.get_or_404(network_id)
+    form = DhcpRangeForm()
+    if not form.validate_on_submit():
+        flash("Invalid DHCP range data.", "error")
+        return redirect(url_for("web.edit_network", network_id=network_id))
+
+    start_ip = ipaddress.IPv4Address(form.start_ip.data)
+    end_ip = ipaddress.IPv4Address(form.end_ip.data)
+    error = _validate_dhcp_range(network, start_ip, end_ip)
+    if error:
+        flash(error, "error")
+        return redirect(url_for("web.edit_network", network_id=network_id))
+
+    dhcp_range = DhcpRange(
+        network_id=network.id,
+        start_ip=str(start_ip),
+        end_ip=str(end_ip),
+        description=form.description.data,
+        is_active=form.is_active.data,
+    )
+    db.session.add(dhcp_range)
+    db.session.commit()
+    flash("DHCP range added successfully!", "success")
+    return redirect(url_for("web.edit_network", network_id=network_id))
+
+
+@web_bp.route("/dhcp-ranges/<int:range_id>/delete", methods=["POST"])
+def delete_dhcp_range(range_id):
+    """Delete a DHCP range."""
+    dhcp_range = DhcpRange.query.get_or_404(range_id)
+    network_id = dhcp_range.network_id
+    db.session.delete(dhcp_range)
+    db.session.commit()
+    flash("DHCP range deleted successfully!", "success")
+    return redirect(url_for("web.edit_network", network_id=network_id))
 
 
 @web_bp.route("/edit_host/<int:host_id>", methods=["GET", "POST"])

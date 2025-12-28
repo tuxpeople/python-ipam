@@ -5,7 +5,7 @@ import ipaddress
 import pytest
 
 from ipam.extensions import db
-from ipam.models import Host, Network
+from ipam.models import DhcpRange, Host, Network
 
 
 class TestNetworkModel:
@@ -132,3 +132,43 @@ class TestHostModel:
 
         assert host.network_ref == network
         assert host in network.hosts
+
+
+class TestDhcpRangeModel:
+    def test_dhcp_range_creation(self, app_context):
+        network = Network(network="10.0.0.0", cidr=24)
+        db.session.add(network)
+        db.session.commit()
+
+        dhcp_range = DhcpRange(
+            network_id=network.id,
+            start_ip="10.0.0.10",
+            end_ip="10.0.0.50",
+            description="Test range",
+            is_active=True,
+        )
+        db.session.add(dhcp_range)
+        db.session.commit()
+
+        assert dhcp_range.id is not None
+        assert dhcp_range.network_ref == network
+        assert dhcp_range.start_ip == "10.0.0.10"
+
+    def test_dhcp_range_cascade_delete(self, app_context):
+        network = Network(network="10.0.1.0", cidr=24)
+        db.session.add(network)
+        db.session.commit()
+
+        dhcp_range = DhcpRange(
+            network_id=network.id,
+            start_ip="10.0.1.10",
+            end_ip="10.0.1.20",
+        )
+        db.session.add(dhcp_range)
+        db.session.commit()
+
+        range_id = dhcp_range.id
+        db.session.delete(network)
+        db.session.commit()
+
+        assert DhcpRange.query.filter_by(id=range_id).first() is None

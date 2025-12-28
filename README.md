@@ -72,12 +72,16 @@ A modern, web-based IP Address Management (IPAM) system built with Flask, SQLite
    Optional host assignment behavior:
    - `HOST_ASSIGN_ON_CREATE=true` marks new hosts as assigned by default.
 
-6. **Initialize database:**
+6. **Initialize database (migrations):**
    ```bash
-   python3 -c "from ipam import create_app; from ipam.extensions import db; app = create_app(); app.app_context().push(); db.create_all()"
+   export FLASK_APP=app.py
+   flask db upgrade
    ```
-   Tables are created automatically on application startup; this command is
-   useful for pre-creating the database in scripted setups.
+   For new schema changes, create a migration first:
+   ```bash
+   flask db migrate -m "describe change"
+   flask db upgrade
+   ```
 
 7. **Start application:**
    ```bash
@@ -258,8 +262,15 @@ ipam/
 - `discovery_source` - Discovery source identifier
 - `network_id` - Foreign Key to Networks
 
-Note: SQLite does not auto-migrate schema changes. For upgrades, add new
-columns manually or recreate the database.
+Note: After upgrading, run `flask db upgrade` to apply schema changes.
+
+### DHCP Ranges Table
+- `id` - Primary Key
+- `network_id` - Foreign Key to Networks
+- `start_ip` - Range start IP address
+- `end_ip` - Range end IP address
+- `description` - Description (optional)
+- `is_active` - Whether the range is active
 
 ## Development Guidelines
 

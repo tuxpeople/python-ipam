@@ -39,6 +39,7 @@
     - ✅ Discovery metadata (last_seen, discovery_source)
     - ✅ Auto-network detection for hosts
     - ✅ Host-to-network relationships
+    - ✅ DHCP range management per network
 
 ### Data Management
 - **[IPAM-003]** ✅ Extensible Export System

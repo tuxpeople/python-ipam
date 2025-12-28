@@ -152,6 +152,88 @@
             </div>
         </div>
         {% endif %}
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-broadcast"></i> DHCP Ranges
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('web.add_dhcp_range', network_id=network.id) }}">
+                    {{ dhcp_range_form.hidden_tag() }}
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                {{ dhcp_range_form.start_ip.label(class="form-label") }}
+                                {{ dhcp_range_form.start_ip(class="form-control") }}
+                                <div class="form-text">Range start IP</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                {{ dhcp_range_form.end_ip.label(class="form-label") }}
+                                {{ dhcp_range_form.end_ip(class="form-control") }}
+                                <div class="form-text">Range end IP</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3 form-check mt-4">
+                                {{ dhcp_range_form.is_active(class="form-check-input") }}
+                                {{ dhcp_range_form.is_active.label(class="form-check-label") }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        {{ dhcp_range_form.description.label(class="form-label") }}
+                        {{ dhcp_range_form.description(class="form-control", rows="2") }}
+                    </div>
+                    <button type="submit" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-plus-circle"></i> Add DHCP Range
+                    </button>
+                </form>
+
+                {% if network.dhcp_ranges %}
+                <div class="table-responsive mt-3">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Range</th>
+                                <th>Status</th>
+                                <th>Description</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dhcp_range in network.dhcp_ranges %}
+                            <tr>
+                                <td>{{ dhcp_range.start_ip }} - {{ dhcp_range.end_ip }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if dhcp_range.is_active else 'secondary' }}">
+                                        {{ 'Active' if dhcp_range.is_active else 'Inactive' }}
+                                    </span>
+                                </td>
+                                <td>{{ dhcp_range.description or '-' }}</td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('web.delete_dhcp_range', range_id=dhcp_range.id) }}">
+                                        {{ dhcp_range_form.hidden_tag() }}
+                                        <button type="submit" class="btn btn-outline-danger btn-sm">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info mt-3 mb-0">
+                    <i class="bi bi-info-circle"></i> No DHCP ranges defined for this network.
+                </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

@@ -5,7 +5,7 @@ import os
 from flask import Flask
 
 from ipam.config import config
-from ipam.extensions import db
+from ipam.extensions import db, migrate
 
 
 def create_app(config_name=None):
@@ -28,13 +28,7 @@ def create_app(config_name=None):
 
     # Initialize extensions
     db.init_app(app)
-
-    # Create database tables
-    with app.app_context():
-        # Ensure models are registered before creating tables.
-        from ipam import models  # pylint: disable=unused-import
-
-        db.create_all()
+    migrate.init_app(app, db)
 
     # Register blueprints
     from ipam.api import api_bp

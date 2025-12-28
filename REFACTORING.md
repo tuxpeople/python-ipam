@@ -151,6 +151,20 @@ class Host(db.Model):
 
     def __repr__(self):
         return f"<Host {self.ip_address}>"
+
+
+class DhcpRange(db.Model):
+    """DHCP range model."""
+    __tablename__ = 'dhcp_ranges'
+
+    id = db.Column(db.Integer, primary_key=True)
+    network_id = db.Column(
+        db.Integer, db.ForeignKey('networks.id'), nullable=False
+    )
+    start_ip = db.Column(db.String(15), nullable=False)
+    end_ip = db.Column(db.String(15), nullable=False)
+    description = db.Column(db.Text)
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
 ```
 
 ### Step 3: Create Forms Module
@@ -215,6 +229,16 @@ class ImportForm(FlaskForm):
         choices=[('csv', 'CSV'), ('json', 'JSON')],
     )
     file = FileField('File', validators=[DataRequired()])
+
+
+class DhcpRangeForm(FlaskForm):
+    """DHCP range creation/edit form."""
+    start_ip = StringField(
+        'Start IP', validators=[DataRequired(), IPAddress()]
+    )
+    end_ip = StringField('End IP', validators=[DataRequired(), IPAddress()])
+    description = TextAreaField('Description')
+    is_active = BooleanField('Active')
 ```
 
 ### Step 4: Create Configuration Module
@@ -383,13 +407,11 @@ from ipam.web import networks, hosts, dashboard
 ```python
 """Application entry point."""
 
-from ipam import create_app, db
+from ipam import create_app
 
 app = create_app()
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True, host='0.0.0.0')
 ```
 
@@ -409,6 +431,7 @@ if __name__ == '__main__':
 - ✅ Update `requirements.txt` (added Flask-RESTX)
 - ✅ Test database migrations (created test_database.py)
 - ✅ Update documentation (API.md, README.md, FEATURES.md, REFACTORING.md)
+- ✅ Add Flask-Migrate for versioned schema upgrades
 
 ## Testing Strategy
 

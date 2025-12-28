@@ -42,6 +42,28 @@ network_input_model = {
     "location": fields.String(description="Physical location"),
 }
 
+# DHCP range models
+dhcp_range_model = {
+    "id": fields.Integer(readonly=True, description="DHCP range ID"),
+    "network_id": fields.Integer(description="Associated network ID"),
+    "start_ip": fields.String(
+        required=True, description="Range start IP address"
+    ),
+    "end_ip": fields.String(required=True, description="Range end IP address"),
+    "description": fields.String(description="Range description"),
+    "is_active": fields.Boolean(description="Whether the range is active"),
+}
+
+dhcp_range_input_model = {
+    "network_id": fields.Integer(required=True, description="Network ID"),
+    "start_ip": fields.String(
+        required=True, description="Range start IP address"
+    ),
+    "end_ip": fields.String(required=True, description="Range end IP address"),
+    "description": fields.String(description="Range description"),
+    "is_active": fields.Boolean(description="Whether the range is active"),
+}
+
 # Host models
 host_model = {
     "id": fields.Integer(readonly=True, description="Host ID"),

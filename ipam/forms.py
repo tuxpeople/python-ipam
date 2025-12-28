@@ -60,3 +60,12 @@ class ImportForm(FlaskForm):
         choices=[],  # Will be populated dynamically
         validators=[DataRequired()],
     )
+
+
+class DhcpRangeForm(FlaskForm):
+    """DHCP range creation/edit form."""
+
+    start_ip = StringField("Start IP", validators=[DataRequired(), IPAddress()])
+    end_ip = StringField("End IP", validators=[DataRequired(), IPAddress()])
+    description = TextAreaField("Description")
+    is_active = BooleanField("Active", default=True)

@@ -6,8 +6,10 @@ from flask import request
 from flask_restx import Namespace, Resource, fields
 
 from ipam.extensions import db
-from ipam.models import Network
+from ipam.models import DhcpRange, Network
 from ipam.api.models import (
+    dhcp_range_model,
+    dhcp_range_input_model,
     network_model,
     network_input_model,
     pagination_model,
@@ -29,6 +31,28 @@ network_list = api.model(
         "data": fields.List(fields.Nested(network)),
         "pagination": fields.Nested(pagination),
     },
+)
+
+# DHCP range models
+dhcp_range = api.model("DhcpRange", dhcp_range_model)
+dhcp_range_input = api.model("DhcpRangeInput", dhcp_range_input_model)
+dhcp_range_input_network = api.model(
+    "DhcpRangeInputNetwork",
+    {
+        "start_ip": fields.String(
+            required=True, description="Range start IP address"
+        ),
+        "end_ip": fields.String(
+            required=True, description="Range end IP address"
+        ),
+        "description": fields.String(description="Range description"),
+        "is_active": fields.Boolean(description="Whether the range is active"),
+    },
+)
+
+dhcp_range_list = api.model(
+    "DhcpRangeList",
+    {"data": fields.List(fields.Nested(dhcp_range))},
 )
 
 
@@ -273,3 +297,82 @@ class NetworkHosts(Resource):
                 for h in network_obj.hosts
             ],
         }
+
+
+@api.route("/<int:id>/dhcp-ranges")
+@api.param("id", "The network identifier")
+class NetworkDhcpRanges(Resource):
+    @api.doc("get_network_dhcp_ranges")
+    @api.marshal_with(dhcp_range_list)
+    @api.response(404, "Network not found")
+    def get(self, id):
+        """Get DHCP ranges for a specific network."""
+        network_obj = Network.query.get_or_404(id)
+        return {
+            "data": [
+                {
+                    "id": r.id,
+                    "network_id": r.network_id,
+                    "start_ip": r.start_ip,
+                    "end_ip": r.end_ip,
+                    "description": r.description,
+                    "is_active": r.is_active,
+                }
+                for r in network_obj.dhcp_ranges
+            ]
+        }
+
+    @api.doc("create_network_dhcp_range")
+    @api.expect(dhcp_range_input_network, validate=True)
+    @api.marshal_with(dhcp_range, code=201)
+    @api.response(400, "Validation Error", error)
+    def post(self, id):
+        """Create a DHCP range for a network."""
+        network_obj = Network.query.get_or_404(id)
+        data = request.json
+
+        try:
+            start_ip = ipaddress.IPv4Address(data["start_ip"])
+            end_ip = ipaddress.IPv4Address(data["end_ip"])
+        except ValueError as e:
+            api.abort(400, f"Invalid IP address: {e}")
+
+        net = ipaddress.IPv4Network(
+            f"{network_obj.network}/{network_obj.cidr}", strict=False
+        )
+        if start_ip not in net or end_ip not in net:
+            api.abort(400, "DHCP range must be within the selected network")
+        if start_ip > end_ip:
+            api.abort(400, "Start IP must be less than or equal to End IP")
+
+        for existing in DhcpRange.query.filter_by(
+            network_id=network_obj.id
+        ).all():
+            existing_start = ipaddress.IPv4Address(existing.start_ip)
+            existing_end = ipaddress.IPv4Address(existing.end_ip)
+            overlaps = not (end_ip < existing_start or start_ip > existing_end)
+            if overlaps:
+                api.abort(
+                    400,
+                    "DHCP range overlaps an existing range: "
+                    f"{existing.start_ip}-{existing.end_ip}",
+                )
+
+        range_obj = DhcpRange(
+            network_id=network_obj.id,
+            start_ip=str(start_ip),
+            end_ip=str(end_ip),
+            description=data.get("description"),
+            is_active=data.get("is_active", True),
+        )
+        db.session.add(range_obj)
+        db.session.commit()
+
+        return {
+            "id": range_obj.id,
+            "network_id": range_obj.network_id,
+            "start_ip": range_obj.start_ip,
+            "end_ip": range_obj.end_ip,
+            "description": range_obj.description,
+            "is_active": range_obj.is_active,
+        }, 201

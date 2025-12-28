@@ -16,9 +16,10 @@ api = Api(
 )
 
 # Import after api is created to avoid circular imports
-from ipam.api import networks, hosts, ip_management
+from ipam.api import dhcp_ranges, hosts, ip_management, networks
 
 # Register namespaces
 api.add_namespace(networks.api, path="/networks")
 api.add_namespace(hosts.api, path="/hosts")
 api.add_namespace(ip_management.api, path="/ip")
+api.add_namespace(dhcp_ranges.api, path="/dhcp-ranges")

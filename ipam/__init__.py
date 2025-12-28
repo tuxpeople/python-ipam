@@ -31,6 +31,9 @@ def create_app(config_name=None):
 
     # Create database tables
     with app.app_context():
+        # Ensure models are registered before creating tables.
+        from ipam import models  # pylint: disable=unused-import
+
         db.create_all()
 
     # Register blueprints

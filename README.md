@@ -74,6 +74,8 @@ A modern, web-based IP Address Management (IPAM) system built with Flask, SQLite
    ```bash
    python3 -c "from ipam import create_app; from ipam.extensions import db; app = create_app(); app.app_context().push(); db.create_all()"
    ```
+   Tables are created automatically on application startup; this command is
+   useful for pre-creating the database in scripted setups.
 
 7. **Start application:**
    ```bash

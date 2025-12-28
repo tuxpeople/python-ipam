@@ -271,7 +271,9 @@ ipam/
 - `discovery_source` - Discovery source identifier
 - `network_id` - Foreign Key to Networks
 
-Note: After upgrading, run `flask db upgrade` to apply schema changes.
+Note: After upgrading, run `flask db upgrade` to apply schema changes. If
+your database predates Alembic migrations, run
+`flask db stamp 7b4a1d0f9b2a` before `flask db upgrade`.
 
 ### DHCP Ranges Table
 - `id` - Primary Key

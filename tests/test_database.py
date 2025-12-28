@@ -7,7 +7,7 @@ import pytest
 
 from ipam import create_app
 from ipam.extensions import db
-from ipam.models import Host, Network
+from ipam.models import DhcpRange, Host, Network
 
 
 class TestDatabaseInitialization:
@@ -118,6 +118,40 @@ class TestDatabaseInitialization:
         os.close(db_fd)
         os.unlink(db_path)
 
+    def test_dhcp_range_table_schema(self):
+        """Test that DHCP ranges table has correct columns."""
+        # Create temporary database file
+        db_fd, db_path = tempfile.mkstemp()
+
+        app = create_app("default")
+        app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
+        app.config["TESTING"] = True
+
+        with app.app_context():
+            db.create_all()
+
+            inspector = db.inspect(db.engine)
+            columns = [c["name"] for c in inspector.get_columns("dhcp_ranges")]
+
+            required_columns = [
+                "id",
+                "network_id",
+                "start_ip",
+                "end_ip",
+                "description",
+                "is_active",
+            ]
+
+            for col in required_columns:
+                assert (
+                    col in columns
+                ), f"Column '{col}' missing from dhcp_ranges table"
+
+            db.drop_all()
+
+        os.close(db_fd)
+        os.unlink(db_path)
+
     def test_database_relationships(self):
         """Test that database relationships work correctly."""
         # Create temporary database file
@@ -153,6 +187,19 @@ class TestDatabaseInitialization:
             assert len(network.hosts) == 1
             assert network.hosts[0].hostname == "test-host"
             assert host.network_ref.name == "Test Network"
+
+            # Create DHCP range for network
+            dhcp_range = DhcpRange(
+                network_id=network.id,
+                start_ip="192.168.1.50",
+                end_ip="192.168.1.100",
+            )
+            db.session.add(dhcp_range)
+            db.session.commit()
+
+            assert len(network.dhcp_ranges) == 1
+            assert network.dhcp_ranges[0].start_ip == "192.168.1.50"
+            assert dhcp_range.network_ref.name == "Test Network"
 
             db.drop_all()
 

@@ -141,6 +141,9 @@ docker run -d -p 5000:5000 \
   -v $(pwd)/ipam.db:/app/ipam.db \
   ghcr.io/tuxpeople/python-ipam:latest
 
+# The container runs migrations automatically on startup.
+# Set IPAM_RUN_MIGRATIONS=false to disable.
+
 # Or use Docker Compose
 docker-compose up -d
 

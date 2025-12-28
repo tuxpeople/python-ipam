@@ -17,6 +17,12 @@ from ipam.extensions import db
 from ipam.forms import DhcpRangeForm, HostForm, ImportForm, NetworkForm
 from ipam.models import DhcpRange, Host, Network
 from ipam.web import web_bp
+from ipam.backup import (
+    create_backup,
+    list_backups,
+    restore_backup,
+    verify_backup,
+)
 from exporters import get_exporter, get_available_exporters
 from importers import get_importer, get_available_importers
 
@@ -222,6 +228,62 @@ def delete_dhcp_range(range_id):
     db.session.commit()
     flash("DHCP range deleted successfully!", "success")
     return redirect(url_for("web.edit_network", network_id=network_id))
+
+
+@web_bp.route("/backups")
+def backups():
+    """List available backups."""
+    try:
+        backup_list = list_backups()
+    except ValueError as e:
+        flash(str(e), "error")
+        backup_list = []
+    return render_template("backups.html", backups=backup_list)
+
+
+@web_bp.route("/backups/create", methods=["POST"])
+def create_backup_route():
+    """Create a new backup."""
+    try:
+        result = create_backup()
+        message = (
+            f"Backup created: {result['name']} "
+            f"(integrity: {result['integrity_message']})"
+        )
+        flash(message, "success")
+    except ValueError as e:
+        flash(str(e), "error")
+    return redirect(url_for("web.backups"))
+
+
+@web_bp.route("/backups/<string:name>/verify", methods=["POST"])
+def verify_backup_route(name):
+    """Verify a backup."""
+    try:
+        result = verify_backup(name)
+        status = "success" if result["integrity_ok"] else "error"
+        flash(
+            f"Integrity check for {name}: {result['integrity_message']}",
+            status,
+        )
+    except ValueError as e:
+        flash(str(e), "error")
+    return redirect(url_for("web.backups"))
+
+
+@web_bp.route("/backups/<string:name>/restore", methods=["POST"])
+def restore_backup_route(name):
+    """Restore a backup."""
+    try:
+        result = restore_backup(name)
+        flash(
+            f"Backup restored: {result['name']} "
+            f"(integrity: {result['integrity_message']})",
+            "success",
+        )
+    except ValueError as e:
+        flash(str(e), "error")
+    return redirect(url_for("web.backups"))
 
 
 @web_bp.route("/edit_host/<int:host_id>", methods=["GET", "POST"])

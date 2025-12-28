@@ -146,3 +146,13 @@ error_model = {
     "message": fields.String(description="Error message"),
     "errors": fields.Raw(description="Detailed error information"),
 }
+
+# Backup models
+backup_model = {
+    "name": fields.String(description="Backup filename"),
+    "size_bytes": fields.Integer(description="Backup size in bytes"),
+    "created_at": fields.String(description="Creation time (ISO 8601)"),
+    "integrity_ok": fields.Boolean(description="Integrity check status"),
+    "integrity_message": fields.String(description="Integrity check output"),
+    "restored": fields.Boolean(description="Restore status"),
+}

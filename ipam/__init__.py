@@ -5,6 +5,7 @@ import os
 from flask import Flask
 
 from ipam.config import config
+from ipam.cli import init_cli
 from ipam.extensions import db, migrate
 
 
@@ -54,5 +55,7 @@ def create_app(config_name=None):
         register_exporter("dnsmasq-dhcp", DNSmasqExporter("dhcp"))
         register_importer("csv", CSVImporter())
         register_importer("json", JSONImporter())
+
+    init_cli(app)
 
     return app

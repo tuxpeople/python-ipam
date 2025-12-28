@@ -62,6 +62,15 @@
     - ✅ Abstract base class for importers
     - ✅ Format auto-detection by extension
 
+- **[IPAM-017]** ✅ Data Backup & Restore
+  - **Priority**: Medium | **Category**: Data Management
+  - **Description**: Backup and restore utilities with verification
+  - **Acceptance Criteria**:
+    - ✅ Scheduled backups via CLI (cron-friendly)
+    - ✅ One-click restore from backup
+    - ✅ Backup verification and integrity checks
+    - ✅ Database migration utilities via Flask-Migrate
+
 ### UI/UX
 - **[IPAM-005]** ✅ Responsive Web Interface
   - **Priority**: High | **Category**: UI/UX

@@ -272,6 +272,24 @@ Note: After upgrading, run `flask db upgrade` to apply schema changes.
 - `description` - Description (optional)
 - `is_active` - Whether the range is active
 
+## Backups & Restore
+
+Backups are stored in `BACKUP_DIR` (default: `./backups`).
+
+**CLI commands**:
+```bash
+export FLASK_APP=app.py
+flask backup create
+flask backup list
+flask backup verify ipam-backup-YYYYmmdd-HHMMSSZ.db
+flask backup restore ipam-backup-YYYYmmdd-HHMMSSZ.db
+```
+
+**Scheduled backups** (cron example):
+```bash
+0 3 * * * cd /path/to/python-ipam && FLASK_APP=app.py flask backup create
+```
+
 ## Development Guidelines
 
 1. **Code Style**: Follow PEP 8

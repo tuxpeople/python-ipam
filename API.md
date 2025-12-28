@@ -374,6 +374,72 @@ GET /api/v1/networks/{id}/dhcp-ranges
 }
 ```
 
+### Backups
+
+#### List Backups
+```http
+GET /api/v1/backups
+```
+
+**Query Parameters**:
+- `page` (int, default: 1) - Page number
+- `per_page` (int, default: 50) - Items per page
+
+**Response**:
+```json
+{
+  "data": [
+    {
+      "name": "ipam-backup-20251228-120000Z.db",
+      "size_bytes": 40960,
+      "created_at": "2025-12-28T12:00:00+00:00"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "per_page": 50,
+    "total_items": 1,
+    "total_pages": 1
+  }
+}
+```
+
+#### Create Backup
+```http
+POST /api/v1/backups
+```
+
+**Response**: Created backup object (HTTP 201)
+
+#### Verify Backup
+```http
+GET /api/v1/backups/{name}/verify
+```
+
+**Response**:
+```json
+{
+  "name": "ipam-backup-20251228-120000Z.db",
+  "integrity_ok": true,
+  "integrity_message": "ok"
+}
+```
+
+#### Restore Backup
+```http
+POST /api/v1/backups/{name}/restore
+```
+
+**Response**:
+```json
+{
+  "name": "ipam-backup-20251228-120000Z.db",
+  "restored": true,
+  "integrity_ok": true,
+  "integrity_message": "ok"
+}
+```
+
 ### IP Management
 
 #### Get Next Available IP

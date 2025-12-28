@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Backups - Python IPAM{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1><i class="bi bi-database"></i> Backups</h1>
+    <form method="POST" action="{{ url_for('web.create_backup_route') }}">
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Create Backup
+        </button>
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <table id="backupsTable" class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>Filename</th>
+                    <th>Size</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for backup in backups %}
+                <tr>
+                    <td>{{ backup.name }}</td>
+                    <td>{{ (backup.size_bytes / 1024) | round(1) }} KB</td>
+                    <td>{{ backup.created_at | replace('T', ' ') }}</td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <form method="POST" action="{{ url_for('web.verify_backup_route', name=backup.name) }}">
+                                <button type="submit" class="btn btn-outline-secondary" title="Verify">
+                                    <i class="bi bi-shield-check"></i>
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ url_for('web.restore_backup_route', name=backup.name) }}">
+                                <button type="submit" class="btn btn-outline-danger" title="Restore"
+                                        onclick="return confirm('Restore will replace the current database. Continue?');">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    $('#backupsTable').DataTable({
+        responsive: true,
+        pageLength: 25,
+        order: [[2, 'desc']],
+        columnDefs: [
+            { targets: [3], orderable: false }
+        ]
+    });
+});
+</script>
+{% endblock %}

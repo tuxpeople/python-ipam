@@ -23,6 +23,7 @@ class Config:
         "DATABASE_URL", f"sqlite:///{os.path.join(BASE_DIR, 'ipam.db')}"
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    BACKUP_DIR = os.environ.get("BACKUP_DIR", os.path.join(BASE_DIR, "backups"))
 
 
 class DevelopmentConfig(Config):

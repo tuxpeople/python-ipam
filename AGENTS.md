@@ -25,10 +25,6 @@ Claude Code-specific configuration and standards for the Python IPAM project.
 
 - Do not tag or create a release unless the latest CI build is successful.
 
-## Release Guardrails
-
-- Do not tag or create a release unless the latest CI build is successful.
-
 ## Project Overview
 
 **Python IPAM** is a modern IP Address Management (IPAM) system based on:

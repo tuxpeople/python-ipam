@@ -15,6 +15,7 @@ RUN /tmp/venv/bin/pip install \
     --disable-pip-version-check \
     --no-cache-dir \
     -r /tmp/requirements.txt
+RUN mkdir -p /tmp && chmod 1777 /tmp
 
 # Stage 3: Final minimal runtime image
 # hadolint ignore=DL3007
@@ -35,7 +36,7 @@ ENV PATH="/opt/venv/bin:$PATH"
 ENV VIRTUAL_ENV="/opt/venv"
 
 # Ensure a writable temp directory for Gunicorn workers
-RUN mkdir -p /tmp && chmod 1777 /tmp
+COPY --from=build-venv /tmp /tmp
 
 # Set Flask environment variables
 ENV FLASK_APP=app.py

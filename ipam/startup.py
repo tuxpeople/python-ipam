@@ -29,13 +29,28 @@ def build_gunicorn_args(argv):
 
 def run_migrations():
     """Run Alembic migrations within the Flask app context."""
-    from flask_migrate import upgrade
+    from flask_migrate import stamp, upgrade
 
     from ipam import create_app
+    from ipam.extensions import db
 
     app = create_app()
     with app.app_context():
-        upgrade()
+        # Check if database has tables but no migration history
+        inspector = db.inspect(db.engine)
+        tables = inspector.get_table_names()
+        has_alembic_version = "alembic_version" in tables
+        has_tables = len(tables) > 0
+
+        if has_tables and not has_alembic_version:
+            # Database was created with db.create_all(), stamp it
+            print(
+                "Database exists without migration history, stamping as head"
+            )
+            stamp()
+        else:
+            # Run normal migrations
+            upgrade()
 
 
 def main(argv=None, env=None, exec_fn=None):

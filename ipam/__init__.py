@@ -32,12 +32,8 @@ def create_app(config_name=None):
     migrate.init_app(app, db)
     limiter.init_app(app)
 
-    # Import models before creating tables
+    # Import models for Flask-Migrate/Alembic
     from ipam.models import Host, Network  # noqa: F401
-
-    # Create database tables
-    with app.app_context():
-        db.create_all()
 
     # Register blueprints
     from ipam.api import api_bp, configure_api

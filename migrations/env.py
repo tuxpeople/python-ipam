@@ -1,5 +1,6 @@
 """Alembic environment configuration."""
 
+import os
 from logging.config import fileConfig
 
 from alembic import context
@@ -9,7 +10,10 @@ from ipam.extensions import db
 
 config = context.config
 
-if config.config_file_name is not None:
+# Configure logging only if alembic.ini exists (optional for containers)
+if config.config_file_name is not None and os.path.exists(
+    config.config_file_name
+):
     fileConfig(config.config_file_name)
 
 target_metadata = db.metadata

@@ -21,9 +21,9 @@ class TestMigrationsStructure:
         env_content = Path("migrations/env.py").read_text()
 
         # Check that env.py has the file existence check
-        assert "os.path.exists" in env_content, (
-            "env.py should check if config file exists before loading"
-        )
+        assert (
+            "os.path.exists" in env_content
+        ), "env.py should check if config file exists before loading"
 
         # Check that it handles optional alembic.ini
         assert (
@@ -62,6 +62,6 @@ class TestMigrationsStructure:
 
         # The file check should prevent FileNotFoundError
         if not os.path.exists(alembic_ini_path):
-            assert "os.path.exists" in env_content, (
-                "env.py must check for file existence when alembic.ini is missing"
-            )
+            assert (
+                "os.path.exists" in env_content
+            ), "env.py must check for file existence when alembic.ini is missing"

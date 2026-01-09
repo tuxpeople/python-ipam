@@ -23,9 +23,7 @@ def test_main_execs_with_default_args_when_none():
         captured["cmd"] = cmd
         captured["args"] = args
 
-    startup.main(
-        argv=[], env={"IPAM_RUN_MIGRATIONS": "false"}, exec_fn=exec_fn
-    )
+    startup.main(argv=[], env={"IPAM_RUN_MIGRATIONS": "false"}, exec_fn=exec_fn)
 
     assert captured["cmd"] == startup.DEFAULT_GUNICORN_ARGS[0]
     assert captured["args"] == startup.DEFAULT_GUNICORN_ARGS
@@ -81,9 +79,7 @@ def test_main_skips_migrations_when_disabled(mock_migrations):
     def exec_fn(cmd, args):
         captured["executed"] = True
 
-    startup.main(
-        argv=[], env={"IPAM_RUN_MIGRATIONS": "false"}, exec_fn=exec_fn
-    )
+    startup.main(argv=[], env={"IPAM_RUN_MIGRATIONS": "false"}, exec_fn=exec_fn)
     mock_migrations.assert_not_called()
     assert captured["executed"]
 

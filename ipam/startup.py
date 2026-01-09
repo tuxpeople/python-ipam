@@ -44,9 +44,7 @@ def run_migrations():
 
         if has_tables and not has_alembic_version:
             # Database was created with db.create_all(), stamp it
-            print(
-                "Database exists without migration history, stamping as head"
-            )
+            print("Database exists without migration history, stamping as head")
             stamp()
         else:
             # Run normal migrations

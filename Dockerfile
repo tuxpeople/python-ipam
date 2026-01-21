@@ -3,15 +3,18 @@
 # hadolint ignore=DL3007
 FROM cgr.dev/chainguard/python:latest-dev AS build
 
-# Create virtualenv and upgrade build tools
+# Create virtualenv in its final location and upgrade build tools
 # Pin pip to a fixed version for CVE-2025-8869
-RUN python -m venv /tmp/venv && \
-    /tmp/venv/bin/pip install --upgrade 'pip>=25.3,<26' setuptools wheel
+USER 0
+RUN mkdir -p /opt/venv && chown -R nonroot:nonroot /opt/venv
+USER nonroot
+RUN python -m venv /opt/venv && \
+    /opt/venv/bin/pip install --upgrade 'pip>=25.3,<26' setuptools wheel
 
 # Stage 2: Install Python dependencies
 FROM build AS build-venv
 COPY --chown=nonroot:nonroot requirements.txt /tmp/requirements.txt
-RUN /tmp/venv/bin/pip install \
+RUN /opt/venv/bin/pip install \
     --disable-pip-version-check \
     --no-cache-dir \
     -r /tmp/requirements.txt
@@ -29,7 +32,7 @@ LABEL org.opencontainers.image.source="https://github.com/tuxpeople/python-ipam"
 LABEL org.opencontainers.image.description="Secure IPAM built on Chainguard distroless Python"
 
 # Copy virtualenv from build stage with correct ownership
-COPY --from=build-venv --chown=nonroot:nonroot /tmp/venv /opt/venv
+COPY --from=build-venv --chown=nonroot:nonroot /opt/venv /opt/venv
 
 # Set PATH to use virtualenv
 ENV PATH="/opt/venv/bin:$PATH"

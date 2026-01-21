@@ -954,9 +954,7 @@ class TestEdgeCases:
         """Test importing data with UTF-8 special characters."""
         csv_data = """Network,CIDR,VLAN ID,Location,Description
 192.168.1.0,24,100,München,Netzwerk für Büro
-10.0.0.0,16,200,São Paulo,Rede do escritório""".encode(
-            "utf-8"
-        )
+10.0.0.0,16,200,São Paulo,Rede do escritório""".encode("utf-8")
 
         data = {
             "import_type": "networks",

@@ -3,7 +3,6 @@
 import os
 import sys
 
-
 DEFAULT_GUNICORN_ARGS = [
     "gunicorn",
     "--bind",

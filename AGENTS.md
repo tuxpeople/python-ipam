@@ -258,6 +258,18 @@ HTML/Jinja2 template standards:
 - DataTables for tables
 - Bootstrap Icons (`bi-*`)
 
+## MCP Servers
+
+This project is configured with MCP servers via `.mcp.json`:
+
+- **context7**: fetch up-to-date documentation for Flask, SQLAlchemy, and other
+  libraries instead of relying on potentially outdated training knowledge
+- **playwright**: browser automation for end-to-end testing of the web UI
+- **sqlite**: direct inspection of `./ipam.db` (schema, ad-hoc debug queries)
+
+On first use in Claude Code, approve the servers when prompted (`/mcp` shows
+connection status).
+
 ## Environment & Tools
 
 ### Local Development
@@ -286,6 +298,12 @@ python app.py  # Flask dev server on :5000
 # - REST API: http://localhost:5000/api/v1
 # - Swagger UI: http://localhost:5000/api/v1/docs
 ```
+
+**Mobile/iPhone Access** (for testing responsive UI):
+```bash
+cloudflared tunnel --url http://localhost:5000
+```
+Provides a temporary public URL pointing to the local dev server.
 
 ### Docker Development
 
@@ -319,6 +337,18 @@ shellcheck run_tests.sh
 ./run_tests.sh  # Complete test suite with coverage
 make test       # Makefile target
 ```
+
+## Pre-Commit Quality Checklist
+
+- [ ] `black . --check --line-length 80` clean?
+- [ ] `pytest -v` – all tests passing?
+- [ ] `pylint` clean (no new warnings)?
+- [ ] No `*.db` file committed?
+- [ ] No API key / secret in code?
+- [ ] Conventional Commit format followed?
+- [ ] No AI signature in the commit?
+- [ ] Documentation checked: does `README.md`, `API.md`, `FEATURES.md`, or
+  `CLAUDE.md`/`AGENTS.md` need updating for this change?
 
 ## API Documentation
 

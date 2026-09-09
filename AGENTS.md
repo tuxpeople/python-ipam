@@ -418,7 +418,10 @@ Complete documentation: **API.md**
 - `1.0.0` - Specific patch version
 - `1.0` - Minor version (updates with new patches)
 - `1` - Major version (updates with new minors/patches)
-- `main-<sha>` - Git commit SHA for main branch builds
+
+All tags are created by the `release.yml` `build` job after a release-please
+PR merge – a regular `main` push does **not** produce a new image (see
+`## Releases` above).
 
 **Multi-stage Build**:
 ```dockerfile
@@ -534,7 +537,7 @@ no manual `git tag` or `gh release create` anymore.
 3. Merge that PR when you want to ship a release. This automatically:
    - Creates the Git tag `vX.Y.Z` and a GitHub Release with categorized
      changelog
-   - Triggers the existing `ci.yml` tag-push build (Docker image + SBOM +
+   - Triggers the `build` job in `release.yml` (Docker image + SBOM +
      Trivy scan, pushed to GHCR with `X.Y.Z`, `X.Y`, `X`, `latest` tags)
 4. **No manual tag, no manual release notes, no manual Docker verification
    step** – all of the above happens automatically from the merge.
@@ -558,12 +561,26 @@ it immediately.
 
 ### CI/CD Integration
 
-The GitHub Actions workflow automatically:
-- Builds Docker image on tag push (tags starting with `v`)
-- Generates SBOM with Anchore
-- Scans with Trivy (fails on CRITICAL/HIGH)
-- Pushes to GHCR with multiple version tags
-- Creates tags: `1.0.0`, `1.0`, `1`, `latest` (from Git tag `v1.0.0`)
+Two workflows, split by cost – cheap checks on every push, the expensive
+build only on release:
+
+- **`tests.yml`** (every push/PR to `main`/`develop`): `lint` (Black+Pylint),
+  `pytest` (tests+coverage), `hadolint` (Dockerfile), `image-scan`
+  (fast, single-arch Trivy scan, no push) – all four run in parallel.
+- **`release.yml`** (push to `main` maintains the release-please PR; only
+  merging it, or manual `workflow_dispatch`, runs the `build` job):
+  - Multi-arch Docker build (`linux/amd64,linux/arm64`), pushed to GHCR
+  - Image signed with cosign (keyless, by digest)
+  - SBOM generation (Trivy, CycloneDX) – attached to the image in the
+    registry (`cosign attach sbom`), uploaded to the GitHub Release, and
+    uploaded as a workflow artifact
+  - Trivy scan: SARIF upload to Code scanning (informational) + table-output
+    scan with `exit-code: "1"` (fails the job on CRITICAL/HIGH)
+  - Tags: `X.Y.Z`, `X.Y`, `X`, `latest` (read from `version.txt`, which
+    release-please's `simple` release-type maintains)
+
+A regular `main` push therefore does **not** produce a new image – only a
+merged release PR does. See `## Releases` above for the full flow.
 
 ---
 

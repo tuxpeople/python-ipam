@@ -133,13 +133,14 @@ jobs:
         with:
           sarif_file: "trivy-results.sarif"
 
-      - name: Run Trivy vulnerability scanner (Table output)
+      - name: Run Trivy vulnerability scanner (Table output, fails build)
         if: github.event_name != 'pull_request'
         uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
           format: "table"
-          severity: "CRITICAL,HIGH,MEDIUM"
+          severity: "CRITICAL,HIGH"
+          exit-code: "1"
 
       # - name: Test container with goss
       #   run: |

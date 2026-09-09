@@ -55,15 +55,6 @@ jobs:
       - name: Run pytest with coverage
         run: pytest --cov=ipam --cov-report=xml --cov-report=html --cov-report=term -v
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
-        with:
-          files: ./coverage.xml
-          flags: unittests
-          name: codecov-python-ipam
-          token: ${{ secrets.CODECOV_TOKEN }}
-        continue-on-error: true
-
   hadolint:
     name: Dockerfile Linting
     runs-on: ubuntu-latest

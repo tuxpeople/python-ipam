@@ -51,14 +51,11 @@ Claude Code-specific configuration and standards for the Python IPAM project.
 
 ### Python (Google Style Guide)
 
-**Formatter**: Black with 80 character line length
+**Formatter/Linter**: [Ruff](https://docs.astral.sh/ruff/), 80 character line length
+(config in `pyproject.toml`)
 ```bash
-black . --line-length 80
-```
-
-**Linting**: Pylint with Google configuration
-```bash
-pylint --rcfile=https://google.github.io/styleguide/pylintrc app.py tests/
+ruff check .
+ruff format --check .
 ```
 
 **Naming Conventions**:
@@ -331,9 +328,9 @@ docker-compose up -d
 
 **Linting/Formatting (local)**:
 ```bash
-# Python Code (requirements-dev.txt: black, pylint, pytest-cov)
-black . --line-length 80
-pylint app.py tests/
+# Python Code (requirements-dev.txt: ruff, pytest-cov)
+ruff check .
+ruff format --check .
 
 # Dockerfile
 hadolint Dockerfile
@@ -350,9 +347,9 @@ make test       # Makefile target
 
 ## Pre-Commit Quality Checklist
 
-- [ ] `black . --check --line-length 80` clean?
+- [ ] `ruff check .` clean?
+- [ ] `ruff format --check .` clean?
 - [ ] `pytest -v` – all tests passing?
-- [ ] `pylint` clean (no new warnings)?
 - [ ] No `*.db` file committed?
 - [ ] No API key / secret in code?
 - [ ] Conventional Commit format followed?
@@ -564,9 +561,10 @@ it immediately.
 Two workflows, split by cost – cheap checks on every push, the expensive
 build only on release:
 
-- **`tests.yml`** (every push/PR to `main`/`develop`): `lint` (Black+Pylint),
-  `pytest` (tests+coverage), `hadolint` (Dockerfile), `image-scan`
-  (fast, single-arch Trivy scan, no push) – all four run in parallel.
+- **`tests.yml`** (every push/PR to `main`/`develop`): `lint` (Ruff
+  check+format), `pytest` (tests+coverage), `hadolint` (Dockerfile),
+  `image-scan` (fast, single-arch Trivy scan, no push) – all four run in
+  parallel.
 - **`release.yml`** (push to `main` maintains the release-please PR; only
   merging it, or manual `workflow_dispatch`, runs the `build` job):
   - Multi-arch Docker build (`linux/amd64,linux/arm64`), pushed to GHCR

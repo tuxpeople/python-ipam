@@ -18,9 +18,9 @@ echo "Prüfe Dependencies..."
 pip install -r requirements.txt > /dev/null 2>&1
 
 # Linting (optional, falls installiert)
-if command -v flake8 &> /dev/null; then
-    echo "Führe Code-Linting aus..."
-    flake8 app.py tests/ --max-line-length=100 --ignore=E501,W503
+if command -v ruff &> /dev/null; then
+    echo "Führe Code-Linting aus (ruff)..."
+    ruff check .
 fi
 
 # Tests ausführen

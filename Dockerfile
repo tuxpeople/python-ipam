@@ -4,12 +4,13 @@
 FROM cgr.dev/chainguard/python:latest-dev AS build
 
 # Create virtualenv in its final location and upgrade build tools
-# Pin pip to a fixed version for CVE-2025-8869
+# Pin pip >=26.2 for CVE-2025-8869 and the CVE-2026-1703/3219/6357/8643/13346
+# family (wheel extraction / entry-point path traversal, all fixed by 26.2.0)
 USER 0
 RUN mkdir -p /opt/venv && chown -R nonroot:nonroot /opt/venv
 USER nonroot
 RUN python -m venv /opt/venv && \
-    /opt/venv/bin/pip install --upgrade 'pip>=25.3,<26' setuptools wheel
+    /opt/venv/bin/pip install --upgrade 'pip>=26.2,<27' setuptools wheel
 
 # Stage 2: Install Python dependencies
 FROM build AS build-venv

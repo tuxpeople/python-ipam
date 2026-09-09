@@ -3,6 +3,8 @@
   "extends": [
     "config:recommended"
   ],
+  "semanticCommitType": "deps",
+  "semanticCommitScope": null,
   "automerge": true,
   "automergeType": "pr",
   "platformAutomerge": true,

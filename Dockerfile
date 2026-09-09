@@ -19,6 +19,11 @@ RUN /opt/venv/bin/pip install \
     --disable-pip-version-check \
     --no-cache-dir \
     -r /tmp/requirements.txt
+# Drop the build toolchain from the runtime venv: it is never invoked at
+# runtime (distroless image has no shell) and its bundled/vendored deps
+# (pip/_vendor msgpack + setuptools, setuptools, wheel) are the only source
+# of Trivy findings in the final image.
+RUN /opt/venv/bin/pip uninstall --yes pip setuptools wheel
 USER 0
 RUN mkdir -p /tmp && chmod 1777 /tmp
 USER nonroot

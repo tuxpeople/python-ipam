@@ -35,6 +35,15 @@ body:
     validations:
       required: false
 
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of Scope
+      description: What should explicitly NOT be part of this feature? Helps keep the implementation focused.
+      placeholder: This should not include...
+    validations:
+      required: false
+
   - type: dropdown
     id: category
     attributes:

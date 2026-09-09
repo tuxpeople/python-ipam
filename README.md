@@ -47,6 +47,14 @@ A modern, web-based IP Address Management (IPAM) system built with Flask, SQLite
 
 2. **Install Python and create the project environment** (pyenv + pyenv-virtualenv):
    ```bash
+   ./scripts/pyenv.sh
+   ```
+   Reads the target version and env name from `pyproject.toml`, installs
+   Python, creates `python-ipam-env`, runs `pyenv local`, and installs the
+   dependencies. Re-run it after a Python version bump to migrate the env.
+
+   Manual equivalent:
+   ```bash
    pyenv install 3.14
    pyenv virtualenv 3.14 python-ipam-env
    pyenv local python-ipam-env   # writes .python-version, auto-activates

@@ -283,6 +283,16 @@ connection status).
 
 **pyenv Setup** (pyenv + pyenv-virtualenv):
 ```bash
+./scripts/pyenv.sh
+```
+Reads the Python version (`requires-python`) and project name from
+`pyproject.toml`, installs the interpreter, creates/migrates the
+`python-ipam-env` virtualenv, runs `pyenv local`, and installs
+`requirements.txt` + `requirements-dev.txt`. Re-run it after bumping
+`requires-python`.
+
+Manual equivalent:
+```bash
 pyenv install 3.14
 pyenv virtualenv 3.14 python-ipam-env
 pyenv local python-ipam-env   # writes .python-version (the env name), auto-activates

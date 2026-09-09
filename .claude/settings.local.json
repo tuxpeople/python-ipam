@@ -42,5 +42,10 @@
     ],
     "deny": [],
     "ask": []
-  }
+  },
+  "enabledMcpjsonServers": [
+    "context7",
+    "playwright",
+    "sqlite"
+  ]
 }

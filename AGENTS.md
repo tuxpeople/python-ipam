@@ -24,6 +24,15 @@ Claude Code-specific configuration and standards for the Python IPAM project.
 ## Release Guardrails
 
 - Do not tag or create a release unless the latest CI build is successful.
+- Before merging the release-please PR: check GitHub's *Security → Code
+  scanning* tab for new CRITICAL/HIGH Trivy findings since the last release.
+  - Fix available (dependency bump, base image update) → apply as a normal
+    `fix`/`docker` commit first, let it flow into the same or next release.
+  - No fix available / false positive → dismiss in the GitHub UI with a
+    reason ("no fix available", "not affected") instead of ignoring it, so
+    it doesn't stay open indefinitely.
+  - Claude Code must not merge a release PR while an unaddressed CRITICAL
+    finding is open – flag it to the user first.
 
 ## Testing Expectations
 
@@ -513,127 +522,38 @@ This project follows [Semantic Versioning 2.0.0](https://semver.org/):
 
 ### Creating a Release
 
-**IMPORTANT**: Every version MUST have:
-1. Git tag (annotated)
-2. GitHub Release with changelog
-3. Docker image published to GHCR
+**Automated via [release-please](https://github.com/googleapis/release-please)** –
+no manual `git tag` or `gh release create` anymore.
 
-**Release Checklist**:
+**Flow**:
+1. Merge Conventional-Commit-formatted commits (`feat`, `fix`, ...) to `main`
+   as usual (PR or direct commit).
+2. release-please opens/updates a release PR (`chore(main): release X.Y.Z`)
+   with an auto-generated changelog preview.
+3. Merge that PR when you want to ship a release. This automatically:
+   - Creates the Git tag `vX.Y.Z` and a GitHub Release with categorized
+     changelog
+   - Triggers the existing `ci.yml` tag-push build (Docker image + SBOM +
+     Trivy scan, pushed to GHCR with `X.Y.Z`, `X.Y`, `X`, `latest` tags)
+4. **No manual tag, no manual release notes, no manual Docker verification
+   step** – all of the above happens automatically from the merge.
 
-1. **Update Version** (if not already done):
-   ```bash
-   # Update version in relevant files if needed
-   # (Currently no __version__ file, but could be added)
-   ```
+**One-time setup** (already done for this repo, see below):
+- Repo-Setting *Settings → Actions → General → Workflow permissions* →
+  "Allow GitHub Actions to create and approve pull requests" enabled
+- *Settings → General → Pull Requests* → "Allow merge commits" **disabled**
+  (squash-merge only) – otherwise the release-please changelog gets
+  duplicate entries
 
-2. **Run Full Test Suite**:
-   ```bash
-   pytest -v
-   black . --check --line-length 80
-   hadolint Dockerfile
-   ```
-
-3. **Update Documentation**:
-   - Check README.md, API.md, FEATURES.md for accuracy
-   - Update CLAUDE.md changelog (see below)
-   - Ensure all recent changes are documented
-
-4. **Create Git Tag**:
-   ```bash
-   # Create annotated tag with version (must start with 'v' for CI/CD)
-   git tag -a v1.0.0 -m "v1.0.0"
-
-   # Push tag to GitHub (triggers Docker build)
-   git push origin v1.0.0
-   ```
-
-5. **Create GitHub Release**:
-   ```bash
-   # Create release with changelog (title should be version only)
-   gh release create v1.0.0 \
-     --title "v1.0.0" \
-     --notes-file /tmp/release-notes.md
-   ```
-
-   **Release Notes Template** (`/tmp/release-notes.md`):
-   ```markdown
-   # Python IPAM v1.0.0
-
-   Brief description of the release.
-
-   ## 🚀 Features
-   - New feature 1
-   - New feature 2
-
-   ## 🐛 Bug Fixes
-   - Fix for issue #123
-
-   ## 🔒 Security
-   - Security improvements
-
-   ## 📦 Container Image
-   \`\`\`bash
-   docker pull ghcr.io/tuxpeople/python-ipam:1.0.0
-   docker pull ghcr.io/tuxpeople/python-ipam:1.0
-   docker pull ghcr.io/tuxpeople/python-ipam:1
-   docker pull ghcr.io/tuxpeople/python-ipam:latest
-   \`\`\`
-
-   ## 🔄 Migration Notes
-   - Breaking changes (if any)
-   - Upgrade instructions
-
-   ## 📝 Full Changelog
-   https://github.com/tuxpeople/python-ipam/compare/v0.9.0...v1.0.0
-   ```
-
-6. **Verify Docker Image**:
-   ```bash
-   # CI/CD automatically builds and pushes to GHCR on tag push
-   # Verify all tags are available (wait ~5 minutes for build)
-   docker pull ghcr.io/tuxpeople/python-ipam:1.0.0
-   docker pull ghcr.io/tuxpeople/python-ipam:1.0
-   docker pull ghcr.io/tuxpeople/python-ipam:1
-   docker pull ghcr.io/tuxpeople/python-ipam:latest
-   ```
-
-7. **Update CLAUDE.md Changelog** (after release):
-   ```markdown
-   ### 2025-10-03 - v1.0.0
-   - ✅ First production release
-   - ✅ Chainguard distroless migration (0 vulnerabilities)
-   - ✅ Complete CI/CD pipeline
-   ```
+**Version bump mapping**: `feat` → Minor, `fix`/`docker`/`perf` → Patch,
+`feat!` or `BREAKING CHANGE:` footer → Major. Config: `release-please-config.json`,
+current version tracked in `.release-please-manifest.json`.
 
 ### Hotfix Release Process
 
-For urgent bug fixes:
-
-1. Create branch from tag:
-   ```bash
-   git checkout -b hotfix/v1.0.1 v1.0.0
-   ```
-
-2. Apply fix and test:
-   ```bash
-   # Make changes
-   pytest -v
-   git commit -m "fix: critical bug in network calculation"
-   ```
-
-3. Tag and release:
-   ```bash
-   git tag -a v1.0.1 -m "v1.0.1"
-   git push origin v1.0.1
-   gh release create v1.0.1 --title "v1.0.1" --notes "Critical bug fix"
-   ```
-
-4. Merge back to main:
-   ```bash
-   git checkout main
-   git merge hotfix/v1.0.1
-   git push origin main
-   ```
+No special process needed – a `fix:` commit on `main` is picked up by
+release-please like any other change. Merge the resulting release PR to ship
+it immediately.
 
 ### CI/CD Integration
 
@@ -648,19 +568,3 @@ The GitHub Actions workflow automatically:
 
 **Last Update**: 2025-10-03
 **Maintainer**: Python IPAM Team
-
-## Changelog
-
-### 2025-10-03 - v1.0.0 Production Release
-- ✅ **Security Hardening**: Migrated to Chainguard distroless Python images
-- ✅ **Security Achievement**: Reduced vulnerabilities from 275+ to **0** (100% reduction)
-- ✅ **Container Optimization**: Multi-stage build, image size reduced to ~50-100MB
-- ✅ **CI/CD Pipeline**: Automated testing, security scanning (Trivy), SBOM generation
-- ✅ **GitHub Infrastructure**: Issue templates, project roadmap, automated workflows
-- ✅ **Extensible Export/Import**: Plugin-based architecture (IPAM-004)
-- ✅ **Documentation**: Complete English documentation, GitHub Pages deployment
-- ✅ **Test Suite**: 96 tests passing, all SQLAlchemy 2.0 deprecations fixed
-- ✅ **Release Process**: Established semantic versioning with Git tags and GitHub releases
-- ✅ **REST API**: Flask-RESTX with Swagger UI at /api/v1/docs
-- ✅ **Application Factory Pattern**: Modular Blueprint structure
-- ✅ **Python 3.13**: Upgraded to latest Python version

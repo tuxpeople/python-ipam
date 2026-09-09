@@ -290,7 +290,7 @@ pyenv install 3.13
 pyenv local 3.13
 python -m venv venv
 source venv/bin/activate
-pip install -r requirements.txt
+pip install -r requirements.txt -r requirements-dev.txt
 ```
 
 **Database Initialization**:
@@ -331,7 +331,7 @@ docker-compose up -d
 
 **Linting/Formatting (local)**:
 ```bash
-# Python Code
+# Python Code (requirements-dev.txt: black, pylint, pytest-cov)
 black . --line-length 80
 pylint app.py tests/
 

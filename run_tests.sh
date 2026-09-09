@@ -30,7 +30,7 @@ pytest -v
 # Coverage-Report
 echo ""
 echo "Erstelle Coverage-Report..."
-pytest --cov=app --cov-report=term-missing --cov-report=html
+pytest --cov=ipam --cov-report=term-missing --cov-report=html
 
 echo ""
 echo "=== Tests abgeschlossen ==="

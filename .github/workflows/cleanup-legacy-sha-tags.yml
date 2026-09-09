@@ -1,0 +1,29 @@
+name: Cleanup Legacy sha-* Image Tags
+
+# One-time cleanup: the old ci.yml (replaced by tests.yml + release.yml)
+# tagged every push to main with sha-<commit>, producing ~100+ images with
+# no release value. Manual trigger only -- this is a one-off, not ongoing
+# maintenance (see cleanup-untagged.yml for that). Delete this file once
+# the backlog is cleared.
+#
+# actions/delete-package-versions deletes at most 100 versions per run --
+# re-run manually if versions with a sha-* tag remain afterwards.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Delete versions tagged sha-*
+        uses: actions/delete-package-versions@v5
+        with:
+          owner: tuxpeople
+          package-name: python-ipam
+          package-type: container
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-versions-to-keep: 0
+          ignore-versions: "^(?!sha-).*$"

@@ -1,0 +1,27 @@
+name: Cleanup Untagged Container Versions
+
+# Recurring maintenance: every release build produces per-platform
+# manifests (amd64/arm64) that show up as untagged once superseded. This
+# never touches tagged versions (vX.Y.Z, latest, etc.) -- only prunes old
+# untagged ones, keeping a safety buffer of the most recent.
+
+on:
+  schedule:
+    - cron: "0 3 1 * *" # monthly, 1st at 03:00 UTC
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Delete old untagged versions
+        uses: actions/delete-package-versions@v5
+        with:
+          owner: tuxpeople
+          package-name: python-ipam
+          package-type: container
+          token: ${{ secrets.GITHUB_TOKEN }}
+          delete-only-untagged-versions: true
+          min-versions-to-keep: 10

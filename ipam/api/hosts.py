@@ -6,14 +6,14 @@ from datetime import datetime
 from flask import current_app, request
 from flask_restx import Namespace, Resource, fields
 
+from ipam.api.models import (
+    error_model,
+    host_input_model,
+    host_model,
+    pagination_model,
+)
 from ipam.extensions import db
 from ipam.models import Host, Network
-from ipam.api.models import (
-    host_model,
-    host_input_model,
-    pagination_model,
-    error_model,
-)
 
 api = Namespace("hosts", description="Host management operations")
 
@@ -331,7 +331,6 @@ class HostResource(Resource):
     @api.response(404, "Host not found")
     def delete(self, id):
         """Delete a host."""
-        db, Host, _ = get_models()
         host_obj = Host.query.get_or_404(id)
 
         db.session.delete(host_obj)

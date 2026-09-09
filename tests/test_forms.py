@@ -1,7 +1,5 @@
 """Test WTForms."""
 
-import pytest
-
 from ipam.forms import DhcpRangeForm, HostForm, NetworkForm
 
 

@@ -1,9 +1,9 @@
 """JSON import functionality."""
 
-import json
 import ipaddress
+import json
 from datetime import datetime
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from . import BaseImporter
 
@@ -16,10 +16,10 @@ class JSONImporter(BaseImporter):
         return "JSON"
 
     @property
-    def file_extensions(self) -> List[str]:
+    def file_extensions(self) -> list[str]:
         return ["json"]
 
-    def import_networks(self, file_content: bytes) -> List[Dict[str, Any]]:
+    def import_networks(self, file_content: bytes) -> list[dict[str, Any]]:
         """Import networks from JSON content."""
         json_content = file_content.decode("utf-8")
         data = json.loads(json_content)
@@ -48,7 +48,7 @@ class JSONImporter(BaseImporter):
 
         return networks
 
-    def import_hosts(self, file_content: bytes) -> List[Dict[str, Any]]:
+    def import_hosts(self, file_content: bytes) -> list[dict[str, Any]]:
         """Import hosts from JSON content."""
         json_content = file_content.decode("utf-8")
         data = json.loads(json_content)
@@ -86,8 +86,8 @@ class JSONImporter(BaseImporter):
         return hosts
 
     def validate_networks_data(
-        self, data: List[Dict[str, Any]]
-    ) -> Tuple[List[Dict[str, Any]], List[str]]:
+        self, data: list[dict[str, Any]]
+    ) -> tuple[list[dict[str, Any]], list[str]]:
         """Validate networks data."""
         valid_data = []
         errors = []
@@ -132,8 +132,8 @@ class JSONImporter(BaseImporter):
         return valid_data, errors
 
     def validate_hosts_data(
-        self, data: List[Dict[str, Any]]
-    ) -> Tuple[List[Dict[str, Any]], List[str]]:
+        self, data: list[dict[str, Any]]
+    ) -> tuple[list[dict[str, Any]], list[str]]:
         """Validate hosts data."""
         valid_data = []
         errors = []

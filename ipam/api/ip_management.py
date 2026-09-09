@@ -4,8 +4,8 @@ import ipaddress
 
 from flask_restx import Namespace, Resource
 
+from ipam.api.models import available_ips_model, error_model, next_ip_model
 from ipam.models import DhcpRange, Host, Network
-from ipam.api.models import next_ip_model, available_ips_model, error_model
 
 api = Namespace("ip", description="IP address management operations")
 

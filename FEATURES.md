@@ -107,9 +107,9 @@
   - **Priority**: High | **Category**: Development
   - **Description**: Google Style Guide compliance and tooling
   - **Acceptance Criteria**:
-    - ✅ Black formatting (80 char limit)
+    - ✅ Ruff formatting (80 char limit)
     - ✅ Google-style imports and structure
-    - ✅ Pylint compliance
+    - ✅ Ruff linting compliance
     - ✅ Git hooks and standards
 
 ---

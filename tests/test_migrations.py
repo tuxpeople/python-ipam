@@ -21,14 +21,14 @@ class TestMigrationsStructure:
         env_content = Path("migrations/env.py").read_text()
 
         # Check that env.py has the file existence check
-        assert (
-            "os.path.exists" in env_content
-        ), "env.py should check if config file exists before loading"
+        assert "os.path.exists" in env_content, (
+            "env.py should check if config file exists before loading"
+        )
 
         # Check that it handles optional alembic.ini
-        assert (
-            "config.config_file_name is not None" in env_content
-        ), "env.py should check for None config_file_name"
+        assert "config.config_file_name is not None" in env_content, (
+            "env.py should check for None config_file_name"
+        )
 
     def test_migrations_versions_exists(self):
         """Test that migrations/versions directory exists."""
@@ -47,9 +47,9 @@ class TestMigrationsStructure:
             if f.name != "__init__.py" and "__pycache__" not in str(f)
         ]
 
-        assert (
-            len(migration_files) > 0
-        ), "At least one migration file should exist"
+        assert len(migration_files) > 0, (
+            "At least one migration file should exist"
+        )
 
     def test_alembic_ini_not_required(self):
         """Test that alembic.ini is not required (container-friendly)."""
@@ -62,6 +62,6 @@ class TestMigrationsStructure:
 
         # The file check should prevent FileNotFoundError
         if not os.path.exists(alembic_ini_path):
-            assert (
-                "os.path.exists" in env_content
-            ), "env.py must check for file existence when alembic.ini is missing"
+            assert "os.path.exists" in env_content, (
+                "env.py must check for file existence when alembic.ini is missing"
+            )

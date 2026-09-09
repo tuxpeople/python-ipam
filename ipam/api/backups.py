@@ -1,8 +1,7 @@
 """Backup and restore API endpoints."""
 
-from flask_restx import Namespace, Resource, fields
-
 from flask import request
+from flask_restx import Namespace, Resource, fields
 
 from ipam.api.models import backup_model, error_model, pagination_model
 from ipam.backup import (

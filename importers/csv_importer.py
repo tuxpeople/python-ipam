@@ -4,7 +4,7 @@ import csv
 import io
 import ipaddress
 from datetime import datetime
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 from . import BaseImporter
 
@@ -17,10 +17,10 @@ class CSVImporter(BaseImporter):
         return "CSV"
 
     @property
-    def file_extensions(self) -> List[str]:
+    def file_extensions(self) -> list[str]:
         return ["csv"]
 
-    def import_networks(self, file_content: bytes) -> List[Dict[str, Any]]:
+    def import_networks(self, file_content: bytes) -> list[dict[str, Any]]:
         """Import networks from CSV content."""
         csv_content = file_content.decode("utf-8")
         csv_reader = csv.DictReader(io.StringIO(csv_content))
@@ -39,7 +39,7 @@ class CSVImporter(BaseImporter):
 
         return networks
 
-    def import_hosts(self, file_content: bytes) -> List[Dict[str, Any]]:
+    def import_hosts(self, file_content: bytes) -> list[dict[str, Any]]:
         """Import hosts from CSV content."""
         csv_content = file_content.decode("utf-8")
         csv_reader = csv.DictReader(io.StringIO(csv_content))
@@ -62,8 +62,8 @@ class CSVImporter(BaseImporter):
         return hosts
 
     def validate_networks_data(
-        self, data: List[Dict[str, Any]]
-    ) -> Tuple[List[Dict[str, Any]], List[str]]:
+        self, data: list[dict[str, Any]]
+    ) -> tuple[list[dict[str, Any]], list[str]]:
         """Validate networks data."""
         valid_data = []
         errors = []
@@ -108,8 +108,8 @@ class CSVImporter(BaseImporter):
         return valid_data, errors
 
     def validate_hosts_data(
-        self, data: List[Dict[str, Any]]
-    ) -> Tuple[List[Dict[str, Any]], List[str]]:
+        self, data: list[dict[str, Any]]
+    ) -> tuple[list[dict[str, Any]], list[str]]:
         """Validate hosts data."""
         valid_data = []
         errors = []

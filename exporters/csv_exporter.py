@@ -2,7 +2,7 @@
 
 import csv
 import io
-from typing import Any, List
+from typing import Any
 
 from . import BaseExporter
 
@@ -22,7 +22,7 @@ class CSVExporter(BaseExporter):
     def mime_type(self) -> str:
         return "text/csv"
 
-    def export_networks(self, networks: List[Any]) -> bytes:
+    def export_networks(self, networks: list[Any]) -> bytes:
         """Export networks to CSV format."""
         output = io.StringIO()
         writer = csv.writer(output)
@@ -60,7 +60,7 @@ class CSVExporter(BaseExporter):
 
         return output.getvalue().encode("utf-8")
 
-    def export_hosts(self, hosts: List[Any]) -> bytes:
+    def export_hosts(self, hosts: list[Any]) -> bytes:
         """Export hosts to CSV format."""
         output = io.StringIO()
         writer = csv.writer(output)

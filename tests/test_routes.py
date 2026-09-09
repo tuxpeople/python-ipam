@@ -2,8 +2,6 @@
 
 import json
 
-import pytest
-
 from ipam.extensions import db
 from ipam.models import Host, Network
 

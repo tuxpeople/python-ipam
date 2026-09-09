@@ -1,7 +1,5 @@
 """Tests for CRUD operations on networks and hosts."""
 
-import pytest
-
 from ipam.extensions import db
 from ipam.models import Host, Network
 

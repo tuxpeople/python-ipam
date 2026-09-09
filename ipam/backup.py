@@ -5,8 +5,7 @@ from __future__ import annotations
 import os
 import sqlite3
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Dict, List
+from datetime import UTC, datetime
 
 from flask import current_app
 from sqlalchemy.engine import make_url
@@ -42,7 +41,7 @@ def _get_backup_dir() -> str:
 
 def _backup_name() -> str:
     """Return a timestamped backup filename."""
-    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%SZ")
+    timestamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%SZ")
     return f"ipam-backup-{timestamp}.db"
 
 
@@ -55,7 +54,7 @@ def _resolve_backup_path(name: str) -> str:
     return candidate
 
 
-def _integrity_check(path: str) -> Dict[str, str]:
+def _integrity_check(path: str) -> dict[str, str]:
     """Run SQLite integrity check on the given database file."""
     conn = sqlite3.connect(path)
     try:
@@ -65,7 +64,7 @@ def _integrity_check(path: str) -> Dict[str, str]:
     return {"ok": result == "ok", "message": result}
 
 
-def list_backups() -> List[BackupInfo]:
+def list_backups() -> list[BackupInfo]:
     """List available backups."""
     backup_dir = _get_backup_dir()
     backups = []
@@ -74,9 +73,7 @@ def list_backups() -> List[BackupInfo]:
             continue
         path = os.path.join(backup_dir, entry)
         stat = os.stat(path)
-        created_at = datetime.fromtimestamp(
-            stat.st_mtime, tz=timezone.utc
-        ).isoformat()
+        created_at = datetime.fromtimestamp(stat.st_mtime, tz=UTC).isoformat()
         backups.append(
             BackupInfo(
                 name=entry, size_bytes=stat.st_size, created_at=created_at
@@ -85,7 +82,7 @@ def list_backups() -> List[BackupInfo]:
     return backups
 
 
-def create_backup() -> Dict[str, object]:
+def create_backup() -> dict[str, object]:
     """Create a SQLite backup and return metadata."""
     db_path = _get_db_path()
     if not os.path.exists(db_path):
@@ -108,15 +105,13 @@ def create_backup() -> Dict[str, object]:
     return {
         "name": name,
         "size_bytes": stat.st_size,
-        "created_at": datetime.fromtimestamp(
-            stat.st_mtime, tz=timezone.utc
-        ).isoformat(),
+        "created_at": datetime.fromtimestamp(stat.st_mtime, tz=UTC).isoformat(),
         "integrity_ok": integrity["ok"],
         "integrity_message": integrity["message"],
     }
 
 
-def verify_backup(name: str) -> Dict[str, object]:
+def verify_backup(name: str) -> dict[str, object]:
     """Verify integrity of a backup file."""
     backup_path = _resolve_backup_path(name)
     if not os.path.exists(backup_path):
@@ -129,7 +124,7 @@ def verify_backup(name: str) -> Dict[str, object]:
     }
 
 
-def restore_backup(name: str) -> Dict[str, object]:
+def restore_backup(name: str) -> dict[str, object]:
     """Restore database from a backup file."""
     backup_path = _resolve_backup_path(name)
     if not os.path.exists(backup_path):

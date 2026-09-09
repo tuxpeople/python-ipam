@@ -64,7 +64,7 @@ jobs:
       # Safety net -- tests.yml already ran on the same commit.
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.14"
+          python-version-file: pyproject.toml
           cache: "pip"
       - name: Install dependencies
         run: |

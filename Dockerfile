@@ -58,8 +58,9 @@ COPY --chown=nonroot:nonroot . /app
 EXPOSE 5000
 
 # Healthcheck using Python instead of curl (not available in distroless)
+# Exec (JSON) form: python exits non-zero on failure, so no shell "|| exit 1" needed
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/').read()" || exit 1
+    CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/').read()"]
 
 # Use virtualenv Python so installed packages (e.g., gunicorn) are available
 ENTRYPOINT ["/opt/venv/bin/python","-m","ipam.startup"]

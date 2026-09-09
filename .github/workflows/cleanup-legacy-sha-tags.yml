@@ -1,16 +1,16 @@
-name: Cleanup Legacy sha-* Image Tags
+name: Cleanup Legacy Branch/Commit Image Tags
 
-# One-time cleanup: the old ci.yml (replaced by tests.yml + release.yml)
-# tagged every push to main with sha-<commit>, producing ~100+ images with
-# no release value. Manual trigger only -- this is a one-off, not ongoing
-# maintenance (see cleanup-untagged.yml for that). Delete this file once
-# the backlog is cleared.
+# One-time cleanup: older CI pipelines tagged every push to main with
+# main-<shortsha> (very old) or sha-<commit> (ci.yml, replaced by
+# tests.yml + release.yml) -- neither has release value. Manual trigger
+# only, not ongoing maintenance (see cleanup-untagged.yml for that).
+# Delete this file once the backlog is cleared.
 #
 # NOTE: actions/delete-package-versions' `ignore-versions` regex matches
 # against the version *name*, which for container packages is the digest
-# (sha256:...), not the friendly tag -- it cannot target tags like
-# "sha-<commit>" reliably. Using the GitHub API directly instead, same
-# pattern as pr-cleanup.yml.
+# (sha256:...), not the friendly tag -- it cannot target tags like this
+# reliably. Using the GitHub API directly instead, same pattern as
+# pr-cleanup.yml.
 
 on:
   workflow_dispatch:
@@ -21,7 +21,7 @@ jobs:
     permissions:
       packages: write
     steps:
-      - name: Delete versions tagged sha-*
+      - name: Delete versions tagged sha-* or main-<hash>
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -30,7 +30,7 @@ jobs:
             -H "X-GitHub-Api-Version: 2022-11-28" \
             --paginate \
             "/users/${{ github.repository_owner }}/packages/container/${{ github.event.repository.name }}/versions?per_page=100" \
-            --jq '.[] | select(.metadata.container.tags[]? | startswith("sha-")) | .id' \
+            --jq '.[] | select((.metadata.container.tags // []) as $tags | ($tags | length > 0) and ($tags | all(test("^sha-|^main-[0-9a-f]{6,}$")))) | .id' \
           | while read -r VERSION_ID; do
               echo "Deleting version ${VERSION_ID}"
               gh api \

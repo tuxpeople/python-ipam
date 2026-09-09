@@ -37,9 +37,9 @@ def test_should_run_migrations_default_true():
 def test_should_run_migrations_explicit_true():
     """Test various truthy values."""
     for value in ["true", "TRUE", "1", "yes", "on"]:
-        assert startup.should_run_migrations(
-            {"IPAM_RUN_MIGRATIONS": value}
-        ), f"Failed for value: {value}"
+        assert startup.should_run_migrations({"IPAM_RUN_MIGRATIONS": value}), (
+            f"Failed for value: {value}"
+        )
 
 
 def test_should_run_migrations_explicit_false():

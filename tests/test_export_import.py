@@ -954,7 +954,7 @@ class TestEdgeCases:
         """Test importing data with UTF-8 special characters."""
         csv_data = """Network,CIDR,VLAN ID,Location,Description
 192.168.1.0,24,100,München,Netzwerk für Büro
-10.0.0.0,16,200,São Paulo,Rede do escritório""".encode("utf-8")
+10.0.0.0,16,200,São Paulo,Rede do escritório""".encode()
 
         data = {
             "import_type": "networks",
@@ -1066,7 +1066,7 @@ class TestPerformance:
         csv_lines = ["IP Address,Hostname,MAC Address,Status,Description"]
         for i in range(50):
             csv_lines.append(
-                f"192.168.1.{i+10},host{i:02d},aa:bb:cc:dd:ee:{i:02x},active,Host {i}"
+                f"192.168.1.{i + 10},host{i:02d},aa:bb:cc:dd:ee:{i:02x},active,Host {i}"
             )
         csv_data = "\n".join(csv_lines).encode("utf-8")
 

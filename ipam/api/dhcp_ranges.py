@@ -5,14 +5,14 @@ import ipaddress
 from flask import request
 from flask_restx import Namespace, Resource, fields
 
+from ipam.api.models import (
+    dhcp_range_input_model,
+    dhcp_range_model,
+    error_model,
+    pagination_model,
+)
 from ipam.extensions import db
 from ipam.models import DhcpRange, Network
-from ipam.api.models import (
-    dhcp_range_model,
-    dhcp_range_input_model,
-    pagination_model,
-    error_model,
-)
 
 api = Namespace("dhcp-ranges", description="DHCP range operations")
 

@@ -1,7 +1,7 @@
 """Import plugins for different data formats."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 
 class BaseImporter(ABC):
@@ -15,37 +15,37 @@ class BaseImporter(ABC):
 
     @property
     @abstractmethod
-    def file_extensions(self) -> List[str]:
+    def file_extensions(self) -> list[str]:
         """Supported file extensions (without dots)."""
         pass
 
     @abstractmethod
-    def import_networks(self, file_content: bytes) -> List[Dict[str, Any]]:
+    def import_networks(self, file_content: bytes) -> list[dict[str, Any]]:
         """Import networks from file content. Returns list of network data dicts."""
         pass
 
     @abstractmethod
-    def import_hosts(self, file_content: bytes) -> List[Dict[str, Any]]:
+    def import_hosts(self, file_content: bytes) -> list[dict[str, Any]]:
         """Import hosts from file content. Returns list of host data dicts."""
         pass
 
     @abstractmethod
     def validate_networks_data(
-        self, data: List[Dict[str, Any]]
-    ) -> Tuple[List[Dict[str, Any]], List[str]]:
+        self, data: list[dict[str, Any]]
+    ) -> tuple[list[dict[str, Any]], list[str]]:
         """Validate networks data. Returns (valid_data, error_messages)."""
         pass
 
     @abstractmethod
     def validate_hosts_data(
-        self, data: List[Dict[str, Any]]
-    ) -> Tuple[List[Dict[str, Any]], List[str]]:
+        self, data: list[dict[str, Any]]
+    ) -> tuple[list[dict[str, Any]], list[str]]:
         """Validate hosts data. Returns (valid_data, error_messages)."""
         pass
 
 
 # Registry for available importers
-_importers: Dict[str, BaseImporter] = {}
+_importers: dict[str, BaseImporter] = {}
 
 
 def register_importer(name: str, importer: BaseImporter) -> None:
@@ -60,7 +60,7 @@ def get_importer(name: str) -> BaseImporter:
     return _importers[name]
 
 
-def get_available_importers() -> Dict[str, BaseImporter]:
+def get_available_importers() -> dict[str, BaseImporter]:
     """Get all available importers."""
     return _importers.copy()
 

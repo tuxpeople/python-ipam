@@ -1,7 +1,16 @@
 [tool.ruff]
 line-length = 80
 target-version = "py311"
-extend-exclude = ["migrations"]
+extend-exclude = ["migrations", "*.md"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP"]
+# Line length is enforced by `ruff format`; E501 would only add noise for
+# long string literals the formatter cannot wrap.
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# Blueprint/namespace modules import submodules for their side effects
+# after the object is created, to avoid circular imports.
+"ipam/api/__init__.py" = ["E402"]
+"ipam/web/__init__.py" = ["E402", "F401"]

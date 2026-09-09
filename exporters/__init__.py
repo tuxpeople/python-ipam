@@ -1,7 +1,7 @@
 """Export plugins for different data formats."""
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List
+from typing import Any
 
 
 class BaseExporter(ABC):
@@ -26,18 +26,18 @@ class BaseExporter(ABC):
         pass
 
     @abstractmethod
-    def export_networks(self, networks: List[Any]) -> bytes:
+    def export_networks(self, networks: list[Any]) -> bytes:
         """Export networks data to format-specific bytes."""
         pass
 
     @abstractmethod
-    def export_hosts(self, hosts: List[Any]) -> bytes:
+    def export_hosts(self, hosts: list[Any]) -> bytes:
         """Export hosts data to format-specific bytes."""
         pass
 
 
 # Registry for available exporters
-_exporters: Dict[str, BaseExporter] = {}
+_exporters: dict[str, BaseExporter] = {}
 
 
 def register_exporter(name: str, exporter: BaseExporter) -> None:
@@ -52,6 +52,6 @@ def get_exporter(name: str) -> BaseExporter:
     return _exporters[name]
 
 
-def get_available_exporters() -> Dict[str, BaseExporter]:
+def get_available_exporters() -> dict[str, BaseExporter]:
     """Get all available exporters."""
     return _exporters.copy()

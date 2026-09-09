@@ -3,8 +3,6 @@
 import os
 import tempfile
 
-import pytest
-
 from ipam import create_app
 from ipam.extensions import db
 from ipam.models import DhcpRange, Host, Network
@@ -71,9 +69,9 @@ class TestDatabaseInitialization:
             ]
 
             for col in required_columns:
-                assert (
-                    col in columns
-                ), f"Column '{col}' missing from networks table"
+                assert col in columns, (
+                    f"Column '{col}' missing from networks table"
+                )
 
             db.drop_all()
 
@@ -109,9 +107,9 @@ class TestDatabaseInitialization:
             ]
 
             for col in required_columns:
-                assert (
-                    col in columns
-                ), f"Column '{col}' missing from hosts table"
+                assert col in columns, (
+                    f"Column '{col}' missing from hosts table"
+                )
 
             db.drop_all()
 
@@ -143,9 +141,9 @@ class TestDatabaseInitialization:
             ]
 
             for col in required_columns:
-                assert (
-                    col in columns
-                ), f"Column '{col}' missing from dhcp_ranges table"
+                assert col in columns, (
+                    f"Column '{col}' missing from dhcp_ranges table"
+                )
 
             db.drop_all()
 

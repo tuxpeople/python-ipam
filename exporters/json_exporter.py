@@ -1,7 +1,7 @@
 """JSON export functionality."""
 
 import json
-from typing import Any, List
+from typing import Any
 
 from . import BaseExporter
 
@@ -21,7 +21,7 @@ class JSONExporter(BaseExporter):
     def mime_type(self) -> str:
         return "application/json"
 
-    def export_networks(self, networks: List[Any]) -> bytes:
+    def export_networks(self, networks: list[Any]) -> bytes:
         """Export networks to JSON format."""
         data = {"export_type": "networks", "export_version": "1.0", "data": []}
 
@@ -44,7 +44,7 @@ class JSONExporter(BaseExporter):
 
         return json.dumps(data, indent=2, ensure_ascii=False).encode("utf-8")
 
-    def export_hosts(self, hosts: List[Any]) -> bytes:
+    def export_hosts(self, hosts: list[Any]) -> bytes:
         """Export hosts to JSON format."""
         data = {"export_type": "hosts", "export_version": "1.0", "data": []}
 

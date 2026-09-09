@@ -1,8 +1,7 @@
 """Test database models."""
 
-import ipaddress
-
 import pytest
+from sqlalchemy.exc import IntegrityError
 
 from ipam.extensions import db
 from ipam.models import DhcpRange, Host, Network
@@ -66,7 +65,7 @@ class TestNetworkModel:
         db.session.commit()
 
         db.session.add(network2)
-        with pytest.raises(Exception):
+        with pytest.raises(IntegrityError):
             db.session.commit()
 
     def test_network_cascade_delete(self, app_context):
@@ -111,7 +110,7 @@ class TestHostModel:
         db.session.commit()
 
         db.session.add(host2)
-        with pytest.raises(Exception):
+        with pytest.raises(IntegrityError):
             db.session.commit()
 
     def test_host_default_status(self, app_context):

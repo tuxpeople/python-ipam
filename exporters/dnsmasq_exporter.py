@@ -1,7 +1,6 @@
 """DNSmasq export functionality."""
 
-from typing import Any, List
-from urllib.parse import parse_qs, urlparse
+from typing import Any
 
 from . import BaseExporter
 
@@ -33,13 +32,13 @@ class DNSmasqExporter(BaseExporter):
     def mime_type(self) -> str:
         return "text/plain"
 
-    def export_networks(self, networks: List[Any]) -> bytes:
+    def export_networks(self, networks: list[Any]) -> bytes:
         """Export networks to DNSmasq format (not applicable for DNSmasq)."""
         raise NotImplementedError(
             "DNSmasq exporter only supports host exports, not networks"
         )
 
-    def export_hosts(self, hosts: List[Any]) -> bytes:
+    def export_hosts(self, hosts: list[Any]) -> bytes:
         """Export hosts to DNSmasq format based on configured mode.
 
         Modes:
@@ -132,7 +131,7 @@ class DNSmasqExporter(BaseExporter):
 
         return "\n".join(lines).encode("utf-8")
 
-    def _generate_host_entries(self, host) -> List[str]:
+    def _generate_host_entries(self, host) -> list[str]:
         """Generate DNSmasq entries for a single host based on mode."""
         entries = []
 

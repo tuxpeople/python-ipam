@@ -4,8 +4,8 @@ import os
 
 from flask import Flask
 
-from ipam.config import config
 from ipam.cli import init_cli
+from ipam.config import config
 from ipam.extensions import db, limiter, migrate
 
 
@@ -33,10 +33,9 @@ def create_app(config_name=None):
     limiter.init_app(app)
 
     # Import models for Flask-Migrate/Alembic
-    from ipam.models import Host, Network  # noqa: F401
-
     # Register blueprints
     from ipam.api import api_bp, configure_api
+    from ipam.models import Host, Network  # noqa: F401
     from ipam.web import web_bp
 
     configure_api(app)

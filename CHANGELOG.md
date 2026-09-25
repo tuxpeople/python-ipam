@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/tuxpeople/python-ipam/compare/v1.3.0...v1.4.0) (2026-09-25)
+
+
+### Features
+
+* **import:** strip matching network domains from hostnames ([b044264](https://github.com/tuxpeople/python-ipam/commit/b0442649dcc2070badb2cd90f37342c985670d02))
+
 ## [1.3.0](https://github.com/tuxpeople/python-ipam/compare/v1.2.0...v1.3.0) (2026-09-25)
 
 

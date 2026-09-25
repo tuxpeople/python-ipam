@@ -17,7 +17,7 @@
                     <strong>Import Guidelines:</strong>
                     <ul class="mb-0 mt-2">
                         <li>Select the appropriate format for your data file</li>
-                        <li>Existing entries (same Network or IP Address) will be skipped</li>
+                        <li>Existing networks (same Network address) are skipped unless updating is enabled; existing hosts are always skipped</li>
                         <li>Invalid rows will be automatically skipped with error messages</li>
                         <li>Support for multiple data formats (CSV, JSON, etc.)</li>
                     </ul>
@@ -54,6 +54,12 @@
                         <div class="form-text">Select a data file to import</div>
                     </div>
 
+                    <div class="form-check mb-3">
+                        {{ form.update_existing(class="form-check-input") }}
+                        {{ form.update_existing.label(class="form-check-label") }}
+                        <div class="form-text">Networks only. Omitted columns or JSON keys preserve existing values; blank values clear optional fields. CIDR changes are rejected.</div>
+                    </div>
+
                     <div class="d-flex justify-content-between">
                         <a href="{{ url_for('web.index') }}" class="btn btn-secondary">
                             <i class="bi bi-arrow-left"></i> Back to Dashboard
@@ -76,9 +82,10 @@
                     <div class="card-body">
                         <div class="mb-3">
                             <strong>Networks CSV:</strong>
-                            <pre class="small bg-light p-2 rounded">Network,CIDR,VLAN ID,Location,Description
-192.168.1.0,24,100,Office,Main office network
-10.0.0.0,16,,Datacenter,Production servers</pre>
+                            <p class="small text-muted">Name and Domain are optional; omit the columns or leave their values blank.</p>
+                            <pre class="small bg-light p-2 rounded">Network,CIDR,Name,Domain,VLAN ID,Location,Description
+192.168.1.0,24,Office LAN,office.example.com,100,Office,Main office network
+10.0.0.0,16,,,,Datacenter,Production servers</pre>
                         </div>
                         <div>
                             <strong>Hosts CSV:</strong>

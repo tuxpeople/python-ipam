@@ -40,9 +40,17 @@ class JSONImporter(BaseImporter):
                 {
                     "network": network_data.get("network", "").strip(),
                     "cidr": str(network_data.get("cidr", "")).strip(),
-                    "vlan_id": str(network_data.get("vlan_id", "")).strip(),
-                    "location": network_data.get("location", "").strip(),
-                    "description": network_data.get("description", "").strip(),
+                    **{
+                        field: str(network_data.get(column) or "").strip()
+                        for field, column in {
+                            "name": "name",
+                            "domain": "domain",
+                            "vlan_id": "vlan_id",
+                            "location": "location",
+                            "description": "description",
+                        }.items()
+                        if column in network_data
+                    },
                 }
             )
 

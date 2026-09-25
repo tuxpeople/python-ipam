@@ -16,7 +16,7 @@
                     <i class="bi bi-info-circle"></i>
                     <strong>CSV Format Requirements:</strong>
                     <ul class="mb-0 mt-2">
-                        <li><strong>Networks:</strong> Headers must include "Network", "CIDR" (required), "VLAN ID", "Location", "Description" (optional)</li>
+                        <li><strong>Networks:</strong> Headers must include "Network", "CIDR" (required), "Name", "Domain", "VLAN ID", "Location", "Description" (optional)</li>
                         <li><strong>Hosts:</strong> Headers must include "IP Address" (required), "Hostname", "MAC Address", "Status", "Description" (optional)</li>
                         <li>Existing entries (same Network or IP Address) will be skipped</li>
                         <li>Invalid rows will be automatically skipped</li>
@@ -63,9 +63,9 @@
                         <h6 class="card-title mb-0">Sample Networks CSV</h6>
                     </div>
                     <div class="card-body">
-                        <pre class="small">Network,CIDR,VLAN ID,Location,Description
-192.168.1.0,24,100,Office,Main office network
-10.0.0.0,16,,Datacenter,Production servers</pre>
+                        <pre class="small">Network,CIDR,Name,Domain,VLAN ID,Location,Description
+192.168.1.0,24,Office LAN,office.example.com,100,Office,Main office network
+10.0.0.0,16,,,,Datacenter,Production servers</pre>
                     </div>
                 </div>
             </div>

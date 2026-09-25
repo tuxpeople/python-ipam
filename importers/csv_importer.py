@@ -31,9 +31,17 @@ class CSVImporter(BaseImporter):
                 {
                     "network": row.get("Network", "").strip(),
                     "cidr": row.get("CIDR", "").strip(),
-                    "vlan_id": row.get("VLAN ID", "").strip(),
-                    "location": row.get("Location", "").strip(),
-                    "description": row.get("Description", "").strip(),
+                    **{
+                        field: str(row.get(column) or "").strip()
+                        for field, column in {
+                            "name": "Name",
+                            "domain": "Domain",
+                            "vlan_id": "VLAN ID",
+                            "location": "Location",
+                            "description": "Description",
+                        }.items()
+                        if column in row
+                    },
                 }
             )
 

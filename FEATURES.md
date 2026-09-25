@@ -57,9 +57,11 @@
   - **Priority**: High | **Category**: Data Management
   - **Description**: Plugin-based import system with validation
   - **Acceptance Criteria**:
-    - ✅ CSV import with validation
+    - ✅ CSV and JSON import with validation
+    - ✅ Optional network names and domains in CSV and JSON imports
     - ✅ Error handling and reporting
     - ✅ Duplicate detection and skipping
+    - ✅ Optional updates of existing networks with CIDR change protection
     - ✅ Abstract base class for importers
     - ✅ Format auto-detection by extension
 

@@ -474,7 +474,13 @@ def import_data():
             if import_type == "networks":
                 raw_data = importer.import_networks(file_content)
                 valid_data, errors = importer.validate_networks_data(raw_data)
-                imported_count = _create_networks_from_data(valid_data)
+                imported_count, updated, skipped, update_errors = (
+                    _create_networks_from_data(
+                        valid_data, update_existing=form.update_existing.data
+                    )
+                )
+                skipped += len(errors)
+                errors.extend(update_errors)
 
                 if errors:
                     flash(
@@ -486,7 +492,9 @@ def import_data():
                         flash(error, "warning")
 
                 flash(
-                    f"Successfully imported {imported_count} networks!",
+                    f"Successfully imported {imported_count} networks! "
+                    f"Created: {imported_count}, updated: {updated}, "
+                    f"skipped: {skipped}.",
                     "success",
                 )
                 return redirect(url_for("web.networks"))
@@ -523,9 +531,12 @@ def import_csv():
     return redirect(url_for("web.import_data"))
 
 
-def _create_networks_from_data(networks_data):
-    """Create Network objects from validated data."""
+def _create_networks_from_data(networks_data, update_existing=False):
+    """Create or update networks, preserving omitted optional fields."""
     imported_count = 0
+    updated = 0
+    skipped = 0
+    errors = []
 
     for network_data in networks_data:
         # Check if network already exists
@@ -533,12 +544,36 @@ def _create_networks_from_data(networks_data):
             network=network_data["network"]
         ).first()
         if existing_network:
+            if not update_existing:
+                skipped += 1
+                continue
+            if existing_network.cidr != network_data["cidr"]:
+                errors.append(
+                    f"Network {existing_network.network}: CIDR changes "
+                    "are not allowed during import; entry skipped."
+                )
+                skipped += 1
+                continue
+            for field in (
+                "name",
+                "domain",
+                "vlan_id",
+                "location",
+                "description",
+            ):
+                if field in network_data:
+                    setattr(
+                        existing_network, field, network_data[field] or None
+                    )
+            updated += 1
             continue
 
         network = Network(
             network=network_data["network"],
             cidr=network_data["cidr"],
             broadcast_address=network_data["broadcast_address"],
+            name=network_data.get("name") or None,
+            domain=network_data.get("domain") or None,
             vlan_id=network_data.get("vlan_id"),
             location=network_data.get("location", ""),
             description=network_data.get("description", ""),
@@ -548,7 +583,7 @@ def _create_networks_from_data(networks_data):
         imported_count += 1
 
     db.session.commit()
-    return imported_count
+    return imported_count, updated, skipped, errors
 
 
 def _create_hosts_from_data(hosts_data):

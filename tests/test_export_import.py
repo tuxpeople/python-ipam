@@ -741,6 +741,129 @@ class TestImportRoutes:
             assert network.cidr == 24
             assert network.vlan_id == 100
 
+    @pytest.mark.parametrize("format_name", ["csv", "json"])
+    @pytest.mark.parametrize(
+        "fields, expected",
+        [
+            ({}, (None, None)),
+            ({"name": "", "domain": ""}, (None, None)),
+            ({"name": None, "domain": None}, (None, None)),
+            ({"name": " Office LAN "}, ("Office LAN", None)),
+            ({"domain": " example.com "}, (None, "example.com")),
+            (
+                {"name": " Office LAN ", "domain": " example.com "},
+                ("Office LAN", "example.com"),
+            ),
+        ],
+    )
+    def test_import_network_optional_metadata(
+        self, client, format_name, fields, expected
+    ):
+        """Persist optional network metadata and accept older input files."""
+        if format_name == "json":
+            content = json.dumps(
+                [{"network": "10.42.0.0", "cidr": 24, **fields}]
+            ).encode("utf-8")
+        else:
+            headers = ["Network", "CIDR"] + [key.title() for key in fields]
+            values = ["10.42.0.0", "24"] + [
+                value or "" for value in fields.values()
+            ]
+            content = (",".join(headers) + "\n" + ",".join(values)).encode(
+                "utf-8"
+            )
+
+        response = client.post(
+            "/import",
+            data={
+                "import_type": "networks",
+                "format_type": format_name,
+                "file": (BytesIO(content), f"networks.{format_name}"),
+            },
+            follow_redirects=True,
+        )
+        assert response.status_code == 200
+        assert b"Successfully imported 1 networks!" in response.data
+        with client.application.app_context():
+            network = Network.query.filter_by(network="10.42.0.0").one()
+            assert (network.name, network.domain) == expected
+
+    @pytest.mark.parametrize("format_name", ["csv", "json"])
+    @pytest.mark.parametrize("enabled", [False, True])
+    @pytest.mark.parametrize("cidr", [24, 25])
+    def test_update_existing_networks(self, client, format_name, enabled, cidr):
+        """Update supplied fields only, preserving identity and CIDR."""
+        with client.application.app_context():
+            network = Network(
+                network="10.42.0.0",
+                cidr=24,
+                name="Old name",
+                domain="old.example.com",
+                location="Office",
+                vlan_id=100,
+                description="Keep this",
+            )
+            db.session.add(network)
+            db.session.flush()
+            network_id = network.id
+            db.session.add(
+                Host(ip_address="10.42.0.200", network_id=network_id)
+            )
+            db.session.commit()
+        if format_name == "csv":
+            content = (
+                "Network,CIDR,Name,Domain,VLAN ID\n"
+                f"10.42.0.0,{cidr},New name,,\n"
+                "10.43.0.0,24,New network,,"
+            ).encode()
+        else:
+            content = json.dumps(
+                [
+                    {
+                        "network": "10.42.0.0",
+                        "cidr": cidr,
+                        "name": "New name",
+                        "domain": None,
+                        "vlan_id": None,
+                    },
+                    {
+                        "network": "10.43.0.0",
+                        "cidr": 24,
+                        "name": "New network",
+                    },
+                ]
+            ).encode()
+        data = {
+            "import_type": "networks",
+            "format_type": format_name,
+            "file": (BytesIO(content), f"networks.{format_name}"),
+        }
+        if enabled:
+            data["update_existing"] = "y"
+        response = client.post("/import", data=data, follow_redirects=True)
+        changed = enabled and cidr == 24
+        assert response.status_code == 200
+        counts = (
+            f"Created: 1, updated: {int(changed)}, skipped: {int(not changed)}."
+        )
+        assert counts.encode() in response.data
+        if enabled and cidr != 24:
+            assert b"CIDR changes" in response.data
+        with client.application.app_context():
+            network = db.session.get(Network, network_id)
+            assert Network.query.count() == 2
+            assert network.network == "10.42.0.0"
+            assert network.cidr == 24
+            assert network.name == ("New name" if changed else "Old name")
+            assert network.domain == (None if changed else "old.example.com")
+            assert network.vlan_id == (None if changed else 100)
+            assert network.location == "Office"
+            assert network.description == "Keep this"
+            assert network.hosts[0].ip_address == "10.42.0.200"
+            created = Network.query.filter_by(network="10.43.0.0").one()
+            assert created.name == "New network"
+            assert created.broadcast_address == "10.43.0.255"
+
     def test_import_hosts_csv(self, client):
         """Test importing hosts via CSV upload."""
         csv_data = b"""IP Address,Hostname,MAC Address,Status,Description

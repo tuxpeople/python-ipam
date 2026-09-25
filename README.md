@@ -337,3 +337,48 @@ flask backup restore ipam-backup-YYYYmmdd-HHMMSSZ.db
 ## Contributing
 
 Contributions are welcome! Please create issues for bug reports or feature requests.
+
+## Network Import
+
+Use the web interface's Import page to upload networks as CSV or JSON.
+CSV requires `Network` and `CIDR`; optional columns include `Name`, `Domain`,
+`VLAN ID`, `Location`, and `Description`. Column names are case-sensitive.
+
+```csv
+Network,CIDR,Name,Domain,VLAN ID,Location,Description
+192.168.1.0,24,Office LAN,office.example.com,100,Office,Main office network
+10.0.0.0,16,,,,Datacenter,Production servers
+```
+
+JSON accepts either an array of network objects or an object containing a
+`data` array. Required keys are `network` and `cidr`; optional keys are `name`,
+`domain`, `vlan_id`, `location`, and `description`.
+
+```json
+{
+  "data": [
+    {
+      "network": "10.20.1.0",
+      "cidr": 24,
+      "vlan_id": 1,
+      "location": "Sennhof",
+      "name": "Default",
+      "domain": "office.example.com"
+    }
+  ]
+}
+```
+
+Names and domains have surrounding whitespace removed. For new networks,
+omitted, empty, or JSON `null` values leave these fields unset. Existing files without these
+fields remain supported. Existing networks are skipped by default.
+
+Enable **Update existing networks** to update entries matched by their exact
+`Network` address (`network` in JSON), preserving their database IDs and linked
+hosts/DHCP ranges. Both `Network` and `CIDR` are still required. CIDR changes
+are rejected and the entire entry is skipped with a warning. Omitted optional
+columns/JSON keys preserve existing values; empty values (including JSON `null`)
+clear them. This applies to name, domain, VLAN ID, location, and description.
+New addresses create new networks. Results report created, updated, and skipped
+entries. The option does not change host imports.
+

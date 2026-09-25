@@ -15,6 +15,7 @@ from ipam.api.models import (
 )
 from ipam.extensions import db
 from ipam.models import DhcpRange, Network
+from ipam.normalize import normalize_network_address
 
 api = Namespace("networks", description="Network management operations")
 
@@ -126,21 +127,24 @@ class NetworkList(Resource):
 
         # Validate network address
         try:
+            normalized_network = normalize_network_address(
+                data["network"], data["cidr"]
+            )
             net = ipaddress.IPv4Network(
-                f"{data['network']}/{data['cidr']}", strict=False
+                f"{normalized_network}/{data['cidr']}", strict=False
             )
             broadcast = str(net.broadcast_address)
         except ValueError as e:
             api.abort(400, f"Invalid network address: {e}")
 
         # Check for duplicate
-        existing = Network.query.filter_by(network=data["network"]).first()
+        existing = Network.query.filter_by(network=normalized_network).first()
         if existing:
             api.abort(400, "Network already exists")
 
         # Create network
         network_obj = Network(
-            network=data["network"],
+            network=normalized_network,
             cidr=data["cidr"],
             broadcast_address=broadcast,
             name=data.get("name"),
@@ -200,25 +204,33 @@ class NetworkUpsert(Resource):
 
         try:
             cidr = int(data["cidr"])
-            net = ipaddress.IPv4Network(
-                f"{data['network']}/{cidr}", strict=False
+            normalized_network = normalize_network_address(
+                data["network"], cidr
             )
         except (TypeError, ValueError) as e:
             api.abort(400, f"Invalid network address: {e}")
 
-        network_obj = Network.query.filter_by(network=data["network"]).first()
+        network_obj = Network.query.filter_by(
+            network=normalized_network
+        ).first()
         created = network_obj is None
 
         if created:
+            net = ipaddress.IPv4Network(
+                f"{normalized_network}/{cidr}", strict=False
+            )
             network_obj = Network(
-                network=data["network"],
+                network=normalized_network,
                 cidr=cidr,
                 broadcast_address=str(net.broadcast_address),
             )
             db.session.add(network_obj)
         elif network_obj.cidr != cidr:
-            network_obj.cidr = cidr
-            network_obj.broadcast_address = str(net.broadcast_address)
+            api.abort(
+                400,
+                "CIDR changes are not allowed via upsert; delete and "
+                "recreate the network instead",
+            )
 
         for field in NETWORK_UPSERT_FIELDS:
             if field in data:
@@ -276,22 +288,30 @@ class NetworkResource(Resource):
         network_obj = Network.query.get_or_404(id)
         data = request.json
 
+        if data["cidr"] != network_obj.cidr:
+            api.abort(
+                400,
+                "CIDR changes are not allowed; delete and recreate the "
+                "network instead",
+            )
+
+        try:
+            normalized_network = normalize_network_address(
+                data["network"], data["cidr"]
+            )
+        except ValueError as e:
+            api.abort(400, f"Invalid network address: {e}")
+
         # Validate network address if changed
-        if (
-            data["network"] != network_obj.network
-            or data["cidr"] != network_obj.cidr
-        ):
-            try:
-                net = ipaddress.IPv4Network(
-                    f"{data['network']}/{data['cidr']}", strict=False
-                )
-                network_obj.broadcast_address = str(net.broadcast_address)
-            except ValueError as e:
-                api.abort(400, f"Invalid network address: {e}")
+        if normalized_network != network_obj.network:
+            net = ipaddress.IPv4Network(
+                f"{normalized_network}/{data['cidr']}", strict=False
+            )
+            network_obj.broadcast_address = str(net.broadcast_address)
 
             # Check for duplicate
             existing = (
-                Network.query.filter_by(network=data["network"])
+                Network.query.filter_by(network=normalized_network)
                 .filter(Network.id != id)
                 .first()
             )
@@ -299,7 +319,7 @@ class NetworkResource(Resource):
                 api.abort(400, "Network already exists")
 
         # Update fields
-        network_obj.network = data["network"]
+        network_obj.network = normalized_network
         network_obj.cidr = data["cidr"]
         network_obj.name = data.get("name")
         network_obj.domain = data.get("domain")

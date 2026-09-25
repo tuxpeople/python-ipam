@@ -14,6 +14,7 @@ from ipam.api.models import (
 )
 from ipam.extensions import db
 from ipam.models import Host, Network
+from ipam.normalize import strip_domain_suffix
 
 api = Namespace("hosts", description="Host management operations")
 
@@ -60,12 +61,6 @@ def _parse_datetime(value):
             normalized = f"{normalized[:-1]}+00:00"
         return datetime.fromisoformat(normalized)
     raise ValueError("Expected an ISO 8601 timestamp")
-
-
-def _auto_detect_network(ip_address):
-    """Return the id of the network containing an IP, if any."""
-    network = Network.find_for_ip(ip_address)
-    return network.id if network else None
 
 
 @api.route("")
@@ -161,8 +156,11 @@ class HostList(Resource):
 
         # Auto-detect network if not provided
         network_id = data.get("network_id")
-        if not network_id:
-            network_id = _auto_detect_network(data["ip_address"])
+        if network_id:
+            network = Network.query.get(network_id)
+        else:
+            network = Network.find_for_ip(data["ip_address"])
+            network_id = network.id if network else None
 
         # Create host
         last_seen = None
@@ -178,7 +176,9 @@ class HostList(Resource):
 
         host_obj = Host(
             ip_address=data["ip_address"],
-            hostname=data.get("hostname"),
+            hostname=strip_domain_suffix(
+                data.get("hostname"), network.domain if network else None
+            ),
             cname=data.get("cname"),
             mac_address=data.get("mac_address"),
             status=data.get("status", "active"),
@@ -260,9 +260,31 @@ class HostUpsert(Resource):
             host_obj = Host(ip_address=data["ip_address"], status="active")
             db.session.add(host_obj)
 
+        # Resolve the network first so its domain is known for hostname
+        # suffix stripping below.
+        if "network_id" in data:
+            network_id = data.get("network_id")
+            network = Network.query.get(network_id) if network_id else None
+            host_obj.network_id = network_id
+        elif created:
+            network = Network.find_for_ip(data["ip_address"])
+            host_obj.network_id = network.id if network else None
+        else:
+            network = (
+                Network.query.get(host_obj.network_id)
+                if host_obj.network_id
+                else None
+            )
+
         for field in HOST_UPSERT_FIELDS:
-            if field in data:
-                setattr(host_obj, field, data[field])
+            if field not in data:
+                continue
+            value = data[field]
+            if field == "hostname":
+                value = strip_domain_suffix(
+                    value, network.domain if network else None
+                )
+            setattr(host_obj, field, value)
 
         try:
             if "is_assigned" in data:
@@ -281,11 +303,6 @@ class HostUpsert(Resource):
 
         if "discovery_source" in data:
             host_obj.discovery_source = data.get("discovery_source")
-
-        if "network_id" in data:
-            host_obj.network_id = data.get("network_id")
-        elif created:
-            host_obj.network_id = _auto_detect_network(data["ip_address"])
 
         db.session.commit()
 
@@ -368,7 +385,10 @@ class HostResource(Resource):
         if data["ip_address"] != host_obj.ip_address and not data.get(
             "network_id"
         ):
-            network_id = _auto_detect_network(data["ip_address"])
+            network = Network.find_for_ip(data["ip_address"])
+            network_id = network.id if network else None
+        else:
+            network = Network.query.get(network_id) if network_id else None
 
         # Update fields
         last_seen = None
@@ -380,7 +400,9 @@ class HostResource(Resource):
             api.abort(400, str(e))
 
         host_obj.ip_address = data["ip_address"]
-        host_obj.hostname = data.get("hostname")
+        host_obj.hostname = strip_domain_suffix(
+            data.get("hostname"), network.domain if network else None
+        )
         host_obj.cname = data.get("cname")
         host_obj.mac_address = data.get("mac_address")
         host_obj.status = data.get("status", "active")

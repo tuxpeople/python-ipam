@@ -412,16 +412,26 @@ IP Address,Hostname,Description
 
 This updates the hostname and description while preserving other host fields.
 
-During CSV and JSON import, hostnames have a matching network domain suffix
-removed before saving: `server01.example.com` becomes `server01` when the
-associated network's domain is `example.com`. Matching is case-insensitive
-and accepts a trailing DNS dot (for example, `server01.example.com.`).
-Only the complete domain suffix, including its separating dot, is removed;
-remaining hostname labels and their case are preserved. Unmatched names,
-names equal to the domain, and names without an associated network/domain
-remain unchanged. New hosts use the auto-detected network; updates use the
-existing association and only normalize explicitly supplied hostnames.
-Omitted hostnames and skipped existing hosts are not modified.
+Hostnames have a matching network domain suffix removed before saving:
+`server01.example.com` becomes `server01` when the associated network's
+domain is `example.com`. Matching is case-insensitive and accepts a
+trailing DNS dot (for example, `server01.example.com.`). Only the complete
+domain suffix, including its separating dot, is removed; remaining hostname
+labels and their case are preserved. Unmatched names, names equal to the
+domain, and names without an associated network/domain remain unchanged.
+New hosts use the auto-detected network; updates use the existing
+association and only normalize explicitly supplied hostnames. Omitted
+hostnames and skipped existing hosts are not modified. This applies
+consistently across CSV/JSON import, the web UI's Add/Edit Host forms, and
+the REST API (`POST`/`PUT`/`upsert`).
+
+Similarly, network addresses accept any host IP within the network, not
+just the base address, and are normalized before matching or saving (for
+example, `10.20.1.42/24` becomes `10.20.1.0/24`). This also applies
+consistently across import, the web UI, and the REST API. Updating a
+network's CIDR is not allowed anywhere (web UI, REST API, or import); the
+network address itself may still be corrected. Delete and recreate the
+network if it needs a different CIDR.
 
 ## Host List
 

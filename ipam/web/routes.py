@@ -24,6 +24,7 @@ from ipam.backup import (
 from ipam.extensions import db
 from ipam.forms import DhcpRangeForm, HostForm, ImportForm, NetworkForm
 from ipam.models import DhcpRange, Host, Network
+from ipam.normalize import normalize_network_address, strip_domain_suffix
 from ipam.web import web_bp
 
 
@@ -88,7 +89,9 @@ def add_network():
             broadcast = str(network_obj.broadcast_address)
 
             network = Network(
-                network=form.network.data,
+                network=normalize_network_address(
+                    form.network.data, form.cidr.data
+                ),
                 cidr=form.cidr.data,
                 broadcast_address=broadcast,
                 name=form.name.data,
@@ -124,20 +127,17 @@ def add_host():
 
     if form.validate_on_submit():
         network_id = form.network_id.data if form.network_id.data != 0 else None
+        network = Network.query.get(network_id) if network_id else None
 
-        if not network_id:
-            ip = ipaddress.IPv4Address(form.ip_address.data)
-            for network in Network.query.all():
-                net = ipaddress.IPv4Network(
-                    f"{network.network}/{network.cidr}", strict=False
-                )
-                if ip in net:
-                    network_id = network.id
-                    break
+        if network is None:
+            network = Network.find_for_ip(form.ip_address.data)
+            network_id = network.id if network else None
 
         host = Host(
             ip_address=form.ip_address.data,
-            hostname=form.hostname.data,
+            hostname=strip_domain_suffix(
+                form.hostname.data, network.domain if network else None
+            ),
             cname=form.cname.data,
             mac_address=form.mac_address.data,
             description=form.description.data,
@@ -161,13 +161,28 @@ def edit_network(network_id):
     dhcp_range_form = DhcpRangeForm()
 
     if form.validate_on_submit():
+        if form.cidr.data != network.cidr:
+            flash(
+                "CIDR changes are not allowed; delete and recreate the "
+                "network instead.",
+                "error",
+            )
+            return render_template(
+                "edit_network.html",
+                form=form,
+                network=network,
+                dhcp_range_form=dhcp_range_form,
+            )
+
         try:
             network_obj = ipaddress.IPv4Network(
                 f"{form.network.data}/{form.cidr.data}", strict=False
             )
             broadcast = str(network_obj.broadcast_address)
 
-            network.network = form.network.data
+            network.network = normalize_network_address(
+                form.network.data, form.cidr.data
+            )
             network.cidr = form.cidr.data
             network.broadcast_address = broadcast
             network.name = form.name.data
@@ -297,19 +312,16 @@ def edit_host(host_id):
 
     if form.validate_on_submit():
         network_id = form.network_id.data if form.network_id.data != 0 else None
+        network = Network.query.get(network_id) if network_id else None
 
-        if not network_id:
-            ip = ipaddress.IPv4Address(form.ip_address.data)
-            for network in Network.query.all():
-                net = ipaddress.IPv4Network(
-                    f"{network.network}/{network.cidr}", strict=False
-                )
-                if ip in net:
-                    network_id = network.id
-                    break
+        if network is None:
+            network = Network.find_for_ip(form.ip_address.data)
+            network_id = network.id if network else None
 
         host.ip_address = form.ip_address.data
-        host.hostname = form.hostname.data
+        host.hostname = strip_domain_suffix(
+            form.hostname.data, network.domain if network else None
+        )
         host.cname = form.cname.data
         host.mac_address = form.mac_address.data
         host.description = form.description.data
@@ -592,20 +604,6 @@ def _create_networks_from_data(networks_data, update_existing=False):
     return imported_count, updated, skipped, errors
 
 
-def _hostname_without_network_domain(hostname, network):
-    """Remove only a matching network domain suffix from an imported name."""
-    if not hostname or network is None or not network.domain:
-        return hostname
-    domain = network.domain.strip().removesuffix(".")
-    if not domain:
-        return hostname
-    name = hostname.removesuffix(".")
-    suffix = f".{domain}"
-    if len(name) > len(suffix) and name.lower().endswith(suffix.lower()):
-        return name[: -len(suffix)]
-    return hostname
-
-
 def _create_hosts_from_data(hosts_data, update_existing=False):
     """Create or update hosts by IP without changing existing associations."""
     imported_count = 0
@@ -634,9 +632,12 @@ def _create_hosts_from_data(hosts_data, update_existing=False):
                 if field in host_data:
                     value = host_data[field]
                     if field == "hostname":
-                        value = _hostname_without_network_domain(
-                            value, existing_host.network_ref
+                        domain = (
+                            existing_host.network_ref.domain
+                            if existing_host.network_ref
+                            else None
                         )
+                        value = strip_domain_suffix(value, domain)
                     if field == "is_assigned":
                         value = bool(value)
                     elif value == "":
@@ -664,8 +665,9 @@ def _create_hosts_from_data(hosts_data, update_existing=False):
 
         host = Host(
             ip_address=host_data["ip_address"],
-            hostname=_hostname_without_network_domain(
-                host_data.get("hostname", ""), matched_network
+            hostname=strip_domain_suffix(
+                host_data.get("hostname", ""),
+                matched_network.domain if matched_network else None,
             ),
             mac_address=host_data.get("mac_address", ""),
             status=host_data.get("status", "active"),

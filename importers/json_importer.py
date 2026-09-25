@@ -5,6 +5,8 @@ import json
 from datetime import datetime
 from typing import Any
 
+from ipam.normalize import normalize_network_address
+
 from . import BaseImporter
 
 
@@ -123,7 +125,9 @@ class JSONImporter(BaseImporter):
                 )
 
                 # Normalize before matching or storing networks.
-                network_data["network"] = str(network_obj.network_address)
+                network_data["network"] = normalize_network_address(
+                    network_data["network"], cidr
+                )
 
                 # Add computed fields
                 network_data["cidr"] = cidr

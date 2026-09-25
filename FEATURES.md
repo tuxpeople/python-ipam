@@ -251,6 +251,7 @@
       - ✅ `GET /api/v1/networks/{id}` - Get specific network details
       - ✅ `POST /api/v1/networks` - Create new network
       - ✅ `PUT /api/v1/networks/{id}` - Update existing network
+      - ✅ `POST /api/v1/networks/upsert` - Create-or-update by network address
       - ✅ `DELETE /api/v1/networks/{id}` - Delete network (with host check)
       - ✅ `GET /api/v1/networks/{id}/hosts` - List hosts in specific network
     - **Host Operations**:
@@ -258,7 +259,19 @@
       - ✅ `GET /api/v1/hosts/{id}` - Get specific host details
       - ✅ `POST /api/v1/hosts` - Create new host
       - ✅ `PUT /api/v1/hosts/{id}` - Update existing host
+      - ✅ `POST /api/v1/hosts/upsert` - Create-or-update by IP address
       - ✅ `DELETE /api/v1/hosts/{id}` - Delete host
+    - **DHCP Range Operations**:
+      - ✅ `POST /api/v1/dhcp-ranges/upsert` - Create-or-update by network + start IP
+    - **Data Consistency**:
+      - ✅ Network address normalization (any host IP in the network
+        normalizes to its base address) applied consistently across
+        POST/PUT/upsert, the web UI, and import
+      - ✅ Matching network domain suffixes stripped from hostnames,
+        applied consistently across POST/PUT/upsert, the web UI, and
+        import
+      - ✅ CIDR-change protection on network updates, applied
+        consistently across PUT/upsert, the web UI, and import
     - **IP Management**:
       - ✅ `GET /api/v1/ip/networks/{id}/next-ip` - Get next available IP in network
       - ✅ `GET /api/v1/ip/networks/{id}/available-ips` - List all available IPs

@@ -40,10 +40,11 @@ class TestNetworkCRUD:
             db.session.commit()
             network_id = network.id
 
-        # Submit edit form
+        # Submit edit form (CIDR unchanged; changing it is rejected -- see
+        # test_edit_network_rejects_cidr_change)
         data = {
             "network": "192.168.101.0",
-            "cidr": 25,
+            "cidr": 24,
             "vlan_id": 200,
             "location": "Updated Location",
             "description": "Updated description",
@@ -58,10 +59,40 @@ class TestNetworkCRUD:
         # Verify changes
         with client.application.app_context():
             updated_network = db.session.get(Network, network_id)
-            assert updated_network.cidr == 25
+            assert updated_network.cidr == 24
             assert updated_network.vlan_id == 200
             assert updated_network.location == "Updated Location"
             assert updated_network.description == "Updated description"
+
+    def test_edit_network_rejects_cidr_change(self, client):
+        """CIDR changes are rejected; recreate the network instead."""
+        with client.application.app_context():
+            network = Network(
+                network="192.168.101.0",
+                cidr=24,
+                broadcast_address="192.168.101.255",
+            )
+            db.session.add(network)
+            db.session.commit()
+            network_id = network.id
+
+        data = {
+            "network": "192.168.101.0",
+            "cidr": 25,
+            "vlan_id": "",
+            "location": "",
+            "description": "",
+        }
+
+        response = client.post(
+            f"/edit_network/{network_id}", data=data, follow_redirects=True
+        )
+        assert response.status_code == 200
+        assert b"CIDR changes are not allowed" in response.data
+
+        with client.application.app_context():
+            unchanged_network = db.session.get(Network, network_id)
+            assert unchanged_network.cidr == 24
 
     def test_delete_network_success(self, client):
         """Test deleting a network without hosts."""
@@ -276,10 +307,11 @@ class TestFormValidation:
             db.session.commit()
             network_id = network.id
 
-        # Submit invalid data
+        # Submit invalid network address (CIDR unchanged, so the CIDR-lock
+        # check doesn't shadow the network-format validation being tested)
         data = {
             "network": "invalid-network",
-            "cidr": 33,  # Invalid CIDR
+            "cidr": 24,
             "vlan_id": "",
             "location": "",
             "description": "",

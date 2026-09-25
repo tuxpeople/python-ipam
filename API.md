@@ -126,6 +126,10 @@ Content-Type: application/json
 }
 ```
 
+`network` accepts any host IP within the network, not just its base
+address, and is normalized before saving (for example, `10.0.0.42`
+with `cidr: 16` is stored as `10.0.0.0`).
+
 **Response**: Created network object (HTTP 201)
 
 #### Update Network
@@ -143,6 +147,10 @@ Content-Type: application/json
   "location": "HQ"
 }
 ```
+
+`network` is normalized the same way as on create. `cidr` may not be
+changed (HTTP 400); delete and recreate the network if it needs a
+different CIDR.
 
 **Response**: Updated network object
 
@@ -163,10 +171,12 @@ Content-Type: application/json
 ```
 
 Creates a network if none with this `network` address exists yet,
-otherwise updates it. `network` and `cidr` are required. Only fields
-present in the request body are changed; fields left out are kept
-as-is on an existing network. Sending a field with an explicit `null`
-clears it.
+otherwise updates it. `network` and `cidr` are required, and `network`
+is normalized the same way as on create (matched against the
+normalized address). Only fields present in the request body are
+changed; fields left out are kept as-is on an existing network.
+Sending a field with an explicit `null` clears it. Changing `cidr` on
+an existing network is rejected (HTTP 400).
 
 This endpoint does not use schema validation (unlike `POST` and `PUT`
 above), since schema validation would reject an explicit `null` on a
@@ -284,6 +294,10 @@ Content-Type: application/json
 **Notes**:
 - If `network_id` is omitted, the system auto-detects the network based on IP address.
 - If `is_assigned` is omitted, the default is controlled by `HOST_ASSIGN_ON_CREATE`.
+- If `hostname` ends with the resolved network's `domain` (the given or
+  auto-detected one), that suffix is stripped before saving, e.g.
+  `server02.corp.local` becomes `server02` for a network with domain
+  `corp.local`.
 
 **Response**: Created host object (HTTP 201)
 
@@ -305,6 +319,10 @@ Content-Type: application/json
   "network_id": 1
 }
 ```
+
+`hostname` has a matching network domain suffix stripped the same way
+as on create, based on the resolved network (the given `network_id`,
+or the current association if omitted).
 
 **Response**: Updated host object
 
@@ -332,7 +350,9 @@ Sending a field with an explicit `null` clears it.
 
 If `network_id` is omitted, it is auto-detected from the IP address
 when a new host is created; on an update, an omitted `network_id`
-leaves the host's current network association untouched.
+leaves the host's current network association untouched. `hostname`
+has a matching domain suffix of the resolved network stripped the
+same way as on `POST`/`PUT`.
 
 This endpoint does not use schema validation (unlike `POST` and `PUT`
 above), since schema validation would reject an explicit `null` on a

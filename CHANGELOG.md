@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.0](https://github.com/tuxpeople/python-ipam/compare/v1.1.6...v1.2.0) (2026-09-25)
+
+
+### Features
+
+* **import:** support optional network metadata and updates ([c7ad8d6](https://github.com/tuxpeople/python-ipam/commit/c7ad8d606afae971c2a2d21c3c0d7a8a63dd5d4e))
+
+
+### Bug Fixes
+
+* **import:** normalize network addresses before matching and saving ([650e6c5](https://github.com/tuxpeople/python-ipam/commit/650e6c5b83fe302f136a4ed604c04c730019c2c9))
+* **ui:** mark JSON import as available ([e812adf](https://github.com/tuxpeople/python-ipam/commit/e812adf30b5375618821aab5d27cea7bbf7dfcd8))
+
 ## [1.1.6](https://github.com/tuxpeople/python-ipam/compare/v1.1.5...v1.1.6) (2026-09-09)
 
 

@@ -1,6 +1,7 @@
 """Test web routes."""
 
 import json
+from datetime import datetime
 
 from ipam.extensions import db
 from ipam.models import Host, Network
@@ -74,6 +75,27 @@ class TestNetworkRoutes:
 
 
 class TestHostRoutes:
+    def test_hosts_last_seen_column(self, client):
+        """Show sortable timestamps and a placeholder for unseen hosts."""
+        with client.application.app_context():
+            db.session.add_all(
+                [
+                    Host(
+                        ip_address="10.42.0.10",
+                        last_seen=datetime(2026, 9, 25, 8, 5, 3),
+                    ),
+                    Host(ip_address="10.42.0.11"),
+                ]
+            )
+            db.session.commit()
+        response = client.get("/hosts")
+        assert response.status_code == 200
+        assert b"<th>Last Seen</th>" in response.data
+        assert b'data-order="2026-09-25 08:05:03"' in response.data
+        assert b"2026-09-25 08:05:03\n" in response.data
+        assert b'data-order="">\n                        -\n' in response.data
+        assert b"targets: [-1], orderable: false" in response.data
+
     def test_hosts_page(self, client):
         response = client.get("/hosts")
         assert response.status_code == 200

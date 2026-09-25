@@ -411,3 +411,9 @@ IP Address,Hostname,Description
 ```
 
 This updates the hostname and description while preserving other host fields.
+
+## Host List
+
+The Hosts table includes a sortable **Last Seen** column showing the stored
+`last_seen` timestamp as `YYYY-MM-DD HH:MM:SS`. Hosts without a timestamp show
+`-`. The displayed value is not converted to the browser's local timezone.

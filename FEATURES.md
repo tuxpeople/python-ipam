@@ -38,6 +38,7 @@
     - ✅ Status management (active/inactive/reserved)
     - ✅ Assignment tracking (is_assigned)
     - ✅ Discovery metadata (last_seen, discovery_source)
+    - ✅ Sortable Last Seen timestamp in the Hosts table
     - ✅ Auto-network detection for hosts
     - ✅ Host-to-network relationships
     - ✅ DHCP range management per network

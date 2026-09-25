@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/tuxpeople/python-ipam/compare/v1.4.0...v1.5.0) (2026-09-25)
+
+
+### Features
+
+* **api:** add upsert endpoints for networks and hosts ([38bef44](https://github.com/tuxpeople/python-ipam/commit/38bef44071abd6ebf61111f903ceb6d4699b3f55))
+
 ## [1.4.0](https://github.com/tuxpeople/python-ipam/compare/v1.3.0...v1.4.0) (2026-09-25)
 
 

@@ -18,7 +18,7 @@
                     <ul class="mb-0 mt-2">
                         <li>Select the appropriate format for your data file</li>
                         <li>Network addresses are normalized using CIDR before matching or saving (e.g. 10.20.1.42/24 becomes 10.20.1.0/24)</li>
-                        <li>Existing networks (same Network address) are skipped unless updating is enabled; existing hosts are always skipped</li>
+                        <li>Existing networks (same Network address) and hosts (same IP Address) are skipped unless updating is enabled</li>
                         <li>Invalid rows will be automatically skipped with error messages</li>
                         <li>Support for multiple data formats (CSV, JSON, etc.)</li>
                     </ul>
@@ -58,7 +58,7 @@
                     <div class="form-check mb-3">
                         {{ form.update_existing(class="form-check-input") }}
                         {{ form.update_existing.label(class="form-check-label") }}
-                        <div class="form-text">Networks only. Omitted columns or JSON keys preserve existing values; blank values clear optional fields. CIDR changes are rejected.</div>
+                        <div class="form-text">Omitted columns or JSON keys preserve existing values; blank values clear optional fields. For hosts, blank Status resets to active and blank Is Assigned resets to false. Network CIDR changes are rejected.</div>
                     </div>
 
                     <div class="d-flex justify-content-between">

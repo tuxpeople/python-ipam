@@ -73,21 +73,26 @@ class JSONImporter(BaseImporter):
 
         hosts = []
         for host_data in hosts_data:
-            discovery_source = host_data.get("discovery_source")
-            if discovery_source is None:
-                discovery_source = ""
-            else:
-                discovery_source = str(discovery_source)
             hosts.append(
                 {
                     "ip_address": host_data.get("ip_address", "").strip(),
-                    "hostname": host_data.get("hostname", "").strip(),
-                    "mac_address": host_data.get("mac_address", "").strip(),
-                    "status": host_data.get("status", "active").strip(),
-                    "is_assigned": host_data.get("is_assigned"),
-                    "last_seen": host_data.get("last_seen"),
-                    "discovery_source": discovery_source.strip(),
-                    "description": host_data.get("description", "").strip(),
+                    **{
+                        field: (
+                            str(host_data[field] or "").strip()
+                            if field not in ("is_assigned", "last_seen")
+                            else host_data[field]
+                        )
+                        for field in (
+                            "hostname",
+                            "mac_address",
+                            "status",
+                            "is_assigned",
+                            "last_seen",
+                            "discovery_source",
+                            "description",
+                        )
+                        if field in host_data
+                    },
                 }
             )
 
@@ -159,6 +164,7 @@ class JSONImporter(BaseImporter):
                 )
                 continue
 
+            supplied_fields = set(host_data)
             try:
                 # Validate IP address format
                 ipaddress.IPv4Address(host_data["ip_address"])
@@ -169,7 +175,7 @@ class JSONImporter(BaseImporter):
                     host_data["status"] = "active"
 
                 # Validate and normalize is_assigned
-                if host_data.get("is_assigned") is not None:
+                if host_data.get("is_assigned") not in (None, ""):
                     if isinstance(host_data["is_assigned"], bool):
                         pass
                     elif isinstance(host_data["is_assigned"], str):
@@ -211,7 +217,9 @@ class JSONImporter(BaseImporter):
                 if not host_data.get("discovery_source"):
                     host_data["discovery_source"] = None
 
-                valid_data.append(host_data)
+                valid_data.append(
+                    {key: host_data[key] for key in supplied_fields}
+                )
 
             except ipaddress.AddressValueError as e:
                 errors.append(

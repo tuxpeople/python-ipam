@@ -373,16 +373,41 @@ Names and domains have surrounding whitespace removed. For new networks,
 omitted, empty, or JSON `null` values leave these fields unset. Existing files without these
 fields remain supported. Existing networks are skipped by default.
 
-Enable **Update existing networks** to update entries matched by their normalized
+Enable **Update existing networks or hosts** to update entries matched by their normalized
 `Network` address (`network` in JSON), preserving their database IDs and linked
 hosts/DHCP ranges. Both `Network` and `CIDR` are still required. CIDR changes
 are rejected and the entire entry is skipped with a warning. Omitted optional
 columns/JSON keys preserve existing values; empty values (including JSON `null`)
 clear them. This applies to name, domain, VLAN ID, location, and description.
 New addresses create new networks. Results report created, updated, and skipped
-entries. The option does not change host imports.
+entries. The option also supports host imports (see below).
 
 Network addresses are normalized using the supplied CIDR before matching or
 saving in both formats: `10.20.1.42` with CIDR `24` becomes `10.20.1.0`.
 This also applies to duplicate detection and updates. Existing stored entries
 with non-network addresses are not automatically corrected.
+
+## Host Import Updates
+
+Enable **Update existing networks or hosts** when importing hosts as CSV or
+JSON to update records matched by `IP Address` (`ip_address` in JSON).
+Existing IDs and network associations are preserved. Without this option,
+existing hosts are skipped. New IP addresses create new hosts as before.
+
+Optional CSV columns are `Hostname`, `MAC Address`, `Status`, `Description`,
+`Last Seen`, `Discovery Source`, and `Is Assigned`. JSON uses `hostname`,
+`mac_address`, `status`, `description`, `last_seen`, `discovery_source`, and
+`is_assigned`. Omitted fields preserve existing values. Empty values or JSON
+`null` clear optional values; empty status resets to `active`, and empty
+assignment resets to `false` on updates. Use explicit `false`/`true` to change
+assignment. New hosts retain the configured assignment default when omitted
+or empty. Invalid status values retain the existing import behavior of
+falling back to `active`; invalid assignment values or timestamps skip the
+entry with an error. Results report created, updated, and skipped entries.
+
+```csv
+IP Address,Hostname,Description
+10.20.1.10,server01,Updated description
+```
+
+This updates the hostname and description while preserving other host fields.

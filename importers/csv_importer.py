@@ -57,13 +57,19 @@ class CSVImporter(BaseImporter):
             hosts.append(
                 {
                     "ip_address": row.get("IP Address", "").strip(),
-                    "hostname": row.get("Hostname", "").strip(),
-                    "mac_address": row.get("MAC Address", "").strip(),
-                    "status": row.get("Status", "active").strip(),
-                    "is_assigned": row.get("Is Assigned", "").strip(),
-                    "last_seen": row.get("Last Seen", "").strip(),
-                    "discovery_source": row.get("Discovery Source", "").strip(),
-                    "description": row.get("Description", "").strip(),
+                    **{
+                        field: (row.get(column) or "").strip()
+                        for field, column in {
+                            "hostname": "Hostname",
+                            "mac_address": "MAC Address",
+                            "status": "Status",
+                            "is_assigned": "Is Assigned",
+                            "last_seen": "Last Seen",
+                            "discovery_source": "Discovery Source",
+                            "description": "Description",
+                        }.items()
+                        if column in row
+                    },
                 }
             )
 
@@ -135,6 +141,7 @@ class CSVImporter(BaseImporter):
                 )
                 continue
 
+            supplied_fields = set(host_data)
             try:
                 # Validate IP address format
                 ipaddress.IPv4Address(host_data["ip_address"])
@@ -179,7 +186,9 @@ class CSVImporter(BaseImporter):
                 if not host_data.get("discovery_source"):
                     host_data["discovery_source"] = None
 
-                valid_data.append(host_data)
+                valid_data.append(
+                    {key: host_data[key] for key in supplied_fields}
+                )
 
             except ipaddress.AddressValueError as e:
                 errors.append(f"Row {row_num}: Invalid IP address - {str(e)}")

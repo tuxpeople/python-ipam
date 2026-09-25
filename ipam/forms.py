@@ -49,7 +49,9 @@ class HostForm(FlaskForm):
 class ImportForm(FlaskForm):
     """Data import form."""
 
-    update_existing = BooleanField("Update existing networks", default=False)
+    update_existing = BooleanField(
+        "Update existing networks or hosts", default=False
+    )
     file = FileField("File", validators=[DataRequired()])
     import_type = SelectField(
         "Import Type",

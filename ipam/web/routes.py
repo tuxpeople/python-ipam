@@ -502,7 +502,10 @@ def import_data():
             elif import_type == "hosts":
                 raw_data = importer.import_hosts(file_content)
                 valid_data, errors = importer.validate_hosts_data(raw_data)
-                imported_count = _create_hosts_from_data(valid_data)
+                imported_count, updated, skipped = _create_hosts_from_data(
+                    valid_data, update_existing=form.update_existing.data
+                )
+                skipped += len(errors)
 
                 if errors:
                     flash(
@@ -514,7 +517,10 @@ def import_data():
                         flash(error, "warning")
 
                 flash(
-                    f"Successfully imported {imported_count} hosts!", "success"
+                    f"Successfully imported {imported_count} hosts! "
+                    f"Created: {imported_count}, updated: {updated}, "
+                    f"skipped: {skipped}.",
+                    "success",
                 )
                 return redirect(url_for("web.hosts"))
 
@@ -586,9 +592,11 @@ def _create_networks_from_data(networks_data, update_existing=False):
     return imported_count, updated, skipped, errors
 
 
-def _create_hosts_from_data(hosts_data):
-    """Create Host objects from validated data."""
+def _create_hosts_from_data(hosts_data, update_existing=False):
+    """Create or update hosts by IP without changing existing associations."""
     imported_count = 0
+    updated = 0
+    skipped = 0
     assign_on_create = current_app.config.get("HOST_ASSIGN_ON_CREATE", True)
 
     for host_data in hosts_data:
@@ -597,6 +605,26 @@ def _create_hosts_from_data(hosts_data):
             ip_address=host_data["ip_address"]
         ).first()
         if existing_host:
+            if not update_existing:
+                skipped += 1
+                continue
+            for field in (
+                "hostname",
+                "mac_address",
+                "status",
+                "description",
+                "last_seen",
+                "discovery_source",
+                "is_assigned",
+            ):
+                if field in host_data:
+                    value = host_data[field]
+                    if field == "is_assigned":
+                        value = bool(value)
+                    elif value == "":
+                        value = None
+                    setattr(existing_host, field, value)
+            updated += 1
             continue
 
         # Auto-detect network
@@ -630,4 +658,4 @@ def _create_hosts_from_data(hosts_data):
         imported_count += 1
 
     db.session.commit()
-    return imported_count
+    return imported_count, updated, skipped

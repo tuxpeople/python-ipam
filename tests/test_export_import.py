@@ -1,7 +1,9 @@
 """Test export and import functionality."""
 
+import csv
 import json
-from io import BytesIO
+from datetime import datetime
+from io import BytesIO, StringIO
 
 import pytest
 
@@ -866,6 +868,110 @@ class TestImportRoutes:
             created = Network.query.filter_by(network="10.43.0.0").one()
             assert created.name == "New network"
             assert created.broadcast_address == "10.43.0.255"
+
+    @pytest.mark.parametrize("format_name", ["csv", "json"])
+    @pytest.mark.parametrize("enabled", [False, True])
+    @pytest.mark.parametrize("mode", ["partial", "clear", "false", "invalid"])
+    def test_update_existing_hosts(self, client, format_name, enabled, mode):
+        """Update supplied host fields without losing identity or metadata."""
+        seen = datetime(2026, 9, 1, 12, 30)
+        with client.application.app_context():
+            network = Network(network="10.42.0.0", cidr=24)
+            db.session.add(network)
+            db.session.flush()
+            network_id = network.id
+            host = Host(
+                ip_address="10.42.0.10",
+                hostname="old",
+                cname="alias",
+                mac_address="aa:bb:cc:dd:ee:ff",
+                status="reserved",
+                description="Keep this",
+                is_assigned=True,
+                last_seen=seen,
+                discovery_source="manual",
+                network_id=network_id,
+            )
+            db.session.add(host)
+            db.session.commit()
+            host_id = host.id
+        row = {"ip_address": "10.42.0.10", "hostname": " new "}
+        if mode == "clear":
+            row.update(
+                {
+                    key: None
+                    for key in (
+                        "mac_address",
+                        "status",
+                        "description",
+                        "is_assigned",
+                        "last_seen",
+                        "discovery_source",
+                    )
+                }
+            )
+        elif mode == "false":
+            row["is_assigned"] = False
+        elif mode == "invalid":
+            row["last_seen"] = "not-a-timestamp"
+        rows = [row, {"ip_address": "10.42.0.11", "hostname": "created"}]
+        if format_name == "json":
+            content = json.dumps({"data": rows}).encode()
+        else:
+            columns = {
+                "ip_address": "IP Address",
+                "hostname": "Hostname",
+                "mac_address": "MAC Address",
+                "status": "Status",
+                "description": "Description",
+                "is_assigned": "Is Assigned",
+                "last_seen": "Last Seen",
+                "discovery_source": "Discovery Source",
+            }
+            output = StringIO()
+            writer = csv.DictWriter(
+                output, fieldnames=[columns[k] for k in row]
+            )
+            writer.writeheader()
+            writer.writerows(
+                {columns[k]: v for k, v in item.items()} for item in rows
+            )
+            content = output.getvalue().encode()
+        data = {
+            "import_type": "hosts",
+            "format_type": format_name,
+            "file": (BytesIO(content), f"hosts.{format_name}"),
+        }
+        if enabled:
+            data["update_existing"] = "y"
+        response = client.post("/import", data=data, follow_redirects=True)
+        changed = enabled and mode != "invalid"
+        assert response.status_code == 200
+        counts = (
+            f"Created: 1, updated: {int(changed)}, skipped: {int(not changed)}."
+        )
+        assert counts.encode() in response.data
+        with client.application.app_context():
+            host = db.session.get(Host, host_id)
+            assert Host.query.count() == 2
+            assert host.network_id == network_id
+            assert host.cname == "alias"
+            assert host.hostname == ("new" if changed else "old")
+            cleared = changed and mode == "clear"
+            assert host.status == ("active" if cleared else "reserved")
+            assert host.description == (None if cleared else "Keep this")
+            assert host.mac_address == (
+                None if cleared else "aa:bb:cc:dd:ee:ff"
+            )
+            assert host.last_seen == (None if cleared else seen)
+            assert host.discovery_source == (None if cleared else "manual")
+            assert host.is_assigned is (
+                not (changed and mode in ("clear", "false"))
+            )
+            created = Host.query.filter_by(ip_address="10.42.0.11").one()
+            assert created.status == "active"
+            assert created.is_assigned is True
+            assert created.network_id == network_id
 
     def test_import_hosts_csv(self, client):
         """Test importing hosts via CSV upload."""

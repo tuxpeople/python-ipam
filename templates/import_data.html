@@ -19,6 +19,7 @@
                         <li>Select the appropriate format for your data file</li>
                         <li>Network addresses are normalized using CIDR before matching or saving (e.g. 10.20.1.42/24 becomes 10.20.1.0/24)</li>
                         <li>Existing networks (same Network address) and hosts (same IP Address) are skipped unless updating is enabled</li>
+                        <li>Matching network domain suffixes are removed from imported hostnames (e.g. server01.example.com becomes server01)</li>
                         <li>Invalid rows will be automatically skipped with error messages</li>
                         <li>Support for multiple data formats (CSV, JSON, etc.)</li>
                     </ul>

@@ -592,6 +592,20 @@ def _create_networks_from_data(networks_data, update_existing=False):
     return imported_count, updated, skipped, errors
 
 
+def _hostname_without_network_domain(hostname, network):
+    """Remove only a matching network domain suffix from an imported name."""
+    if not hostname or network is None or not network.domain:
+        return hostname
+    domain = network.domain.strip().removesuffix(".")
+    if not domain:
+        return hostname
+    name = hostname.removesuffix(".")
+    suffix = f".{domain}"
+    if len(name) > len(suffix) and name.lower().endswith(suffix.lower()):
+        return name[: -len(suffix)]
+    return hostname
+
+
 def _create_hosts_from_data(hosts_data, update_existing=False):
     """Create or update hosts by IP without changing existing associations."""
     imported_count = 0
@@ -619,6 +633,10 @@ def _create_hosts_from_data(hosts_data, update_existing=False):
             ):
                 if field in host_data:
                     value = host_data[field]
+                    if field == "hostname":
+                        value = _hostname_without_network_domain(
+                            value, existing_host.network_ref
+                        )
                     if field == "is_assigned":
                         value = bool(value)
                     elif value == "":
@@ -629,6 +647,7 @@ def _create_hosts_from_data(hosts_data, update_existing=False):
 
         # Auto-detect network
         network_id = None
+        matched_network = None
         ip = ipaddress.IPv4Address(host_data["ip_address"])
         for network in Network.query.all():
             net = ipaddress.IPv4Network(
@@ -636,6 +655,7 @@ def _create_hosts_from_data(hosts_data, update_existing=False):
             )
             if ip in net:
                 network_id = network.id
+                matched_network = network
                 break
 
         is_assigned = host_data.get("is_assigned")
@@ -644,7 +664,9 @@ def _create_hosts_from_data(hosts_data, update_existing=False):
 
         host = Host(
             ip_address=host_data["ip_address"],
-            hostname=host_data.get("hostname", ""),
+            hostname=_hostname_without_network_domain(
+                host_data.get("hostname", ""), matched_network
+            ),
             mac_address=host_data.get("mac_address", ""),
             status=host_data.get("status", "active"),
             description=host_data.get("description", ""),

@@ -412,6 +412,17 @@ IP Address,Hostname,Description
 
 This updates the hostname and description while preserving other host fields.
 
+During CSV and JSON import, hostnames have a matching network domain suffix
+removed before saving: `server01.example.com` becomes `server01` when the
+associated network's domain is `example.com`. Matching is case-insensitive
+and accepts a trailing DNS dot (for example, `server01.example.com.`).
+Only the complete domain suffix, including its separating dot, is removed;
+remaining hostname labels and their case are preserved. Unmatched names,
+names equal to the domain, and names without an associated network/domain
+remain unchanged. New hosts use the auto-detected network; updates use the
+existing association and only normalize explicitly supplied hostnames.
+Omitted hostnames and skipped existing hosts are not modified.
+
 ## Host List
 
 The Hosts table includes a sortable **Last Seen** column showing the stored

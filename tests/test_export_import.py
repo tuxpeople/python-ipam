@@ -973,6 +973,121 @@ class TestImportRoutes:
             assert created.is_assigned is True
             assert created.network_id == network_id
 
+    @pytest.mark.parametrize("format_name", ["csv", "json"])
+    @pytest.mark.parametrize("existing", [False, True])
+    @pytest.mark.parametrize(
+        "domain, hostname, expected",
+        [
+            ("example.com", "server01.example.com", "server01"),
+            ("Example.COM", "Server01.EXAMPLE.com.", "Server01"),
+            ("example.com.", "server01.sub.example.com", "server01.sub"),
+            ("example.com", "server01.other.com", "server01.other.com"),
+            ("example.com", "server01example.com", "server01example.com"),
+            ("example.com", "example.com", "example.com"),
+            ("example.com", "example.com.other", "example.com.other"),
+            ("example.com", "server01", "server01"),
+            (None, "server01.example.com", "server01.example.com"),
+            ("", "server01.example.com", "server01.example.com"),
+            ("example.com", "", ""),
+        ],
+    )
+    def test_import_host_domain_suffix(
+        self, client, format_name, existing, domain, hostname, expected
+    ):
+        """Normalize only a matching domain on new and updated hosts."""
+        with client.application.app_context():
+            network = Network(network="10.42.0.0", cidr=24, domain=domain)
+            db.session.add(network)
+            db.session.flush()
+            network_id = network.id
+            if existing:
+                db.session.add(
+                    Host(
+                        ip_address="10.42.0.10",
+                        hostname="old",
+                        network_id=network_id,
+                    )
+                )
+            db.session.commit()
+        if format_name == "csv":
+            content = f"IP Address,Hostname\n10.42.0.10,{hostname}".encode()
+        else:
+            content = json.dumps(
+                [{"ip_address": "10.42.0.10", "hostname": hostname}]
+            ).encode()
+        response = client.post(
+            "/import",
+            data={
+                "import_type": "hosts",
+                "format_type": format_name,
+                "update_existing": "y",
+                "file": (BytesIO(content), f"hosts.{format_name}"),
+            },
+            follow_redirects=True,
+        )
+        assert response.status_code == 200
+        assert b"Successfully imported" in response.data
+        with client.application.app_context():
+            host = Host.query.filter_by(ip_address="10.42.0.10").one()
+            assert (host.hostname or "") == expected
+            assert host.network_id == network_id
+
+    @pytest.mark.parametrize("format_name", ["csv", "json"])
+    @pytest.mark.parametrize(
+        "mode", ["unlinked", "omitted", "skipped", "assigned"]
+    )
+    def test_host_domain_import_preserves_existing_context(
+        self, client, format_name, mode
+    ):
+        """Use existing associations and preserve omitted or skipped names."""
+        with client.application.app_context():
+            network = Network(
+                network="10.42.0.0", cidr=24, domain="example.com"
+            )
+            assigned = Network(network="10.43.0.0", cidr=24, domain="other.com")
+            db.session.add_all([network, assigned])
+            db.session.flush()
+            network_id = None if mode == "unlinked" else assigned.id
+            host = Host(
+                ip_address="10.42.0.10",
+                hostname="old.other.com",
+                network_id=network_id,
+            )
+            db.session.add(host)
+            db.session.commit()
+            host_id = host.id
+        row = {"ip_address": "10.42.0.10"}
+        if mode != "omitted":
+            row["hostname"] = "new.other.com"
+        if format_name == "json":
+            content = json.dumps([row]).encode()
+        else:
+            content = (
+                "IP Address"
+                + (",Hostname" if "hostname" in row else "")
+                + "\n"
+                + ",".join(row.values())
+            ).encode()
+        data = {
+            "import_type": "hosts",
+            "format_type": format_name,
+            "file": (BytesIO(content), f"hosts.{format_name}"),
+        }
+        if mode != "skipped":
+            data["update_existing"] = "y"
+        response = client.post("/import", data=data, follow_redirects=True)
+        assert response.status_code == 200
+        with client.application.app_context():
+            host = db.session.get(Host, host_id)
+            expected = {
+                "unlinked": "new.other.com",
+                "omitted": "old.other.com",
+                "skipped": "old.other.com",
+                "assigned": "new",
+            }
+            assert host.hostname == expected[mode]
+            assert host.network_id == network_id
+
     def test_import_hosts_csv(self, client):
         """Test importing hosts via CSV upload."""
         csv_data = b"""IP Address,Hostname,MAC Address,Status,Description

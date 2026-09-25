@@ -870,6 +870,31 @@ class TestImportRoutes:
             assert created.broadcast_address == "10.43.0.255"
 
     @pytest.mark.parametrize("format_name", ["csv", "json"])
+    def test_import_networks_rejects_overlap(self, client, format_name):
+        """A new network overlapping an existing one is skipped."""
+        with client.application.app_context():
+            db.session.add(Network(network="10.44.0.0", cidr=16))
+            db.session.commit()
+
+        if format_name == "csv":
+            content = b"Network,CIDR\n10.44.5.0,24"
+        else:
+            content = json.dumps(
+                [{"network": "10.44.5.0", "cidr": 24}]
+            ).encode()
+
+        data = {
+            "import_type": "networks",
+            "format_type": format_name,
+            "file": (BytesIO(content), f"networks.{format_name}"),
+        }
+        response = client.post("/import", data=data, follow_redirects=True)
+        assert response.status_code == 200
+        assert b"overlaps with existing network" in response.data
+        with client.application.app_context():
+            assert Network.query.count() == 1
+
+    @pytest.mark.parametrize("format_name", ["csv", "json"])
     @pytest.mark.parametrize("enabled", [False, True])
     @pytest.mark.parametrize("mode", ["partial", "clear", "false", "invalid"])
     def test_update_existing_hosts(self, client, format_name, enabled, mode):

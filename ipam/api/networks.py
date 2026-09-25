@@ -137,10 +137,19 @@ class NetworkList(Resource):
         except ValueError as e:
             api.abort(400, f"Invalid network address: {e}")
 
-        # Check for duplicate
-        existing = Network.query.filter_by(network=normalized_network).first()
-        if existing:
-            api.abort(400, "Network already exists")
+        # Check for duplicates and overlaps
+        overlapping = Network.find_overlapping(normalized_network, data["cidr"])
+        if overlapping:
+            if (
+                overlapping.network == normalized_network
+                and overlapping.cidr == data["cidr"]
+            ):
+                api.abort(400, "Network already exists")
+            api.abort(
+                400,
+                "Network overlaps with existing network "
+                f"{overlapping.network}/{overlapping.cidr}",
+            )
 
         # Create network
         network_obj = Network(
@@ -216,6 +225,14 @@ class NetworkUpsert(Resource):
         created = network_obj is None
 
         if created:
+            overlapping = Network.find_overlapping(normalized_network, cidr)
+            if overlapping:
+                api.abort(
+                    400,
+                    "Network overlaps with existing network "
+                    f"{overlapping.network}/{overlapping.cidr}",
+                )
+
             net = ipaddress.IPv4Network(
                 f"{normalized_network}/{cidr}", strict=False
             )
@@ -309,14 +326,21 @@ class NetworkResource(Resource):
             )
             network_obj.broadcast_address = str(net.broadcast_address)
 
-            # Check for duplicate
-            existing = (
-                Network.query.filter_by(network=normalized_network)
-                .filter(Network.id != id)
-                .first()
+            # Check for duplicates and overlaps
+            overlapping = Network.find_overlapping(
+                normalized_network, data["cidr"], exclude_id=id
             )
-            if existing:
-                api.abort(400, "Network already exists")
+            if overlapping:
+                if (
+                    overlapping.network == normalized_network
+                    and overlapping.cidr == data["cidr"]
+                ):
+                    api.abort(400, "Network already exists")
+                api.abort(
+                    400,
+                    "Network overlaps with existing network "
+                    f"{overlapping.network}/{overlapping.cidr}",
+                )
 
         # Update fields
         network_obj.network = normalized_network

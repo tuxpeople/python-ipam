@@ -90,9 +90,66 @@ class TestNetworkCRUD:
         assert response.status_code == 200
         assert b"CIDR changes are not allowed" in response.data
 
+    def test_add_network_rejects_overlap(self, client):
+        """Adding a network overlapping an existing one is rejected."""
         with client.application.app_context():
-            unchanged_network = db.session.get(Network, network_id)
-            assert unchanged_network.cidr == 24
+            network = Network(
+                network="192.168.110.0",
+                cidr=16,
+                broadcast_address="192.168.255.255",
+            )
+            db.session.add(network)
+            db.session.commit()
+
+        data = {
+            "network": "192.168.110.5",
+            "cidr": 24,
+            "vlan_id": "",
+            "location": "",
+            "description": "",
+        }
+
+        response = client.post("/add_network", data=data, follow_redirects=True)
+        assert response.status_code == 200
+        assert b"overlaps with existing network" in response.data
+
+        with client.application.app_context():
+            assert Network.query.count() == 1
+
+    def test_edit_network_rejects_overlap(self, client):
+        """Moving a network onto an overlapping range is rejected."""
+        with client.application.app_context():
+            fixed = Network(
+                network="192.168.111.0",
+                cidr=16,
+                broadcast_address="192.168.255.255",
+            )
+            movable = Network(
+                network="192.168.200.0",
+                cidr=24,
+                broadcast_address="192.168.200.255",
+            )
+            db.session.add_all([fixed, movable])
+            db.session.commit()
+            movable_id = movable.id
+
+        data = {
+            "network": "192.168.111.5",
+            "cidr": 24,
+            "vlan_id": "",
+            "location": "",
+            "description": "",
+        }
+
+        response = client.post(
+            f"/edit_network/{movable_id}", data=data, follow_redirects=True
+        )
+        assert response.status_code == 200
+        assert b"overlaps with existing network" in response.data
+
+        with client.application.app_context():
+            unchanged = db.session.get(Network, movable_id)
+            assert unchanged.network == "192.168.200.0"
 
     def test_delete_network_success(self, client):
         """Test deleting a network without hosts."""

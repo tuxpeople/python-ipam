@@ -272,6 +272,9 @@
         import
       - ✅ CIDR-change protection on network updates, applied
         consistently across PUT/upsert, the web UI, and import
+      - ✅ Network overlap rejection (create and update), applied
+        consistently across POST/PUT/upsert, the web UI, and import;
+        no nested/hierarchical subnets (see IPAM-010)
     - **IP Management**:
       - ✅ `GET /api/v1/ip/networks/{id}/next-ip` - Get next available IP in network
       - ✅ `GET /api/v1/ip/networks/{id}/available-ips` - List all available IPs

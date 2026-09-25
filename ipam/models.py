@@ -57,13 +57,37 @@ class Network(db.Model):
 
     @classmethod
     def find_for_ip(cls, ip_address):
-        """Return the network containing an IPv4 address, if any."""
+        """Return the most specific network containing an IPv4 address.
+
+        If multiple networks contain the address (overlapping or
+        nested networks), the one with the highest CIDR (narrowest
+        range) wins.
+        """
         ip = ipaddress.IPv4Address(ip_address)
+        best = None
         for net in cls.query.all():
             net_obj = ipaddress.IPv4Network(
                 f"{net.network}/{net.cidr}", strict=False
             )
-            if ip in net_obj:
+            if ip in net_obj and (best is None or net.cidr > best.cidr):
+                best = net
+        return best
+
+    @classmethod
+    def find_overlapping(cls, network_address, cidr, exclude_id=None):
+        """Return an existing network whose range overlaps the given
+        network/cidr, if any."""
+        candidate = ipaddress.IPv4Network(
+            f"{network_address}/{cidr}", strict=False
+        )
+        query = cls.query
+        if exclude_id is not None:
+            query = query.filter(cls.id != exclude_id)
+        for net in query.all():
+            net_obj = ipaddress.IPv4Network(
+                f"{net.network}/{net.cidr}", strict=False
+            )
+            if candidate.overlaps(net_obj):
                 return net
         return None
 

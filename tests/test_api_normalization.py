@@ -163,3 +163,71 @@ def test_upsert_network_rejects_cidr_change(client):
         headers=AUTH,
     )
     assert response.status_code == 400
+
+
+# --- Network overlap rejection -------------------------------------------
+
+
+def test_post_network_rejects_overlap(client):
+    client.post(
+        "/api/v1/networks",
+        json={"network": "10.33.0.0", "cidr": 16},
+        headers=AUTH,
+    )
+
+    response = client.post(
+        "/api/v1/networks",
+        json={"network": "10.33.5.0", "cidr": 24},
+        headers=AUTH,
+    )
+    assert response.status_code == 400
+
+
+def test_put_network_rejects_overlap(client):
+    client.post(
+        "/api/v1/networks",
+        json={"network": "10.34.0.0", "cidr": 16},
+        headers=AUTH,
+    )
+    movable = client.post(
+        "/api/v1/networks",
+        json={"network": "10.50.0.0", "cidr": 24},
+        headers=AUTH,
+    ).get_json()
+
+    response = client.put(
+        f"/api/v1/networks/{movable['id']}",
+        json={"network": "10.34.5.0", "cidr": 24},
+        headers=AUTH,
+    )
+    assert response.status_code == 400
+
+
+def test_upsert_network_rejects_overlap(client):
+    client.post(
+        "/api/v1/networks/upsert",
+        json={"network": "10.35.0.0", "cidr": 16},
+        headers=AUTH,
+    )
+
+    response = client.post(
+        "/api/v1/networks/upsert",
+        json={"network": "10.35.5.0", "cidr": 24},
+        headers=AUTH,
+    )
+    assert response.status_code == 400
+
+
+def test_upsert_network_allows_disjoint_networks(client):
+    client.post(
+        "/api/v1/networks/upsert",
+        json={"network": "10.36.0.0", "cidr": 24},
+        headers=AUTH,
+    )
+
+    response = client.post(
+        "/api/v1/networks/upsert",
+        json={"network": "10.37.0.0", "cidr": 24},
+        headers=AUTH,
+    )
+    assert response.status_code == 201

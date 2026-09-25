@@ -128,7 +128,9 @@ Content-Type: application/json
 
 `network` accepts any host IP within the network, not just its base
 address, and is normalized before saving (for example, `10.0.0.42`
-with `cidr: 16` is stored as `10.0.0.0`).
+with `cidr: 16` is stored as `10.0.0.0`). Creating a network that
+overlaps an existing one (a subnet, supernet, or any other partial
+overlap) is rejected (HTTP 400); networks may not overlap.
 
 **Response**: Created network object (HTTP 201)
 
@@ -150,7 +152,9 @@ Content-Type: application/json
 
 `network` is normalized the same way as on create. `cidr` may not be
 changed (HTTP 400); delete and recreate the network if it needs a
-different CIDR.
+different CIDR. Moving the network's address onto a range that
+overlaps another existing network is rejected the same way as on
+create.
 
 **Response**: Updated network object
 
@@ -176,7 +180,8 @@ is normalized the same way as on create (matched against the
 normalized address). Only fields present in the request body are
 changed; fields left out are kept as-is on an existing network.
 Sending a field with an explicit `null` clears it. Changing `cidr` on
-an existing network is rejected (HTTP 400).
+an existing network is rejected (HTTP 400), as is creating a network
+that overlaps an existing one.
 
 This endpoint does not use schema validation (unlike `POST` and `PUT`
 above), since schema validation would reject an explicit `null` on a

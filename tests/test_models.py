@@ -84,6 +84,66 @@ class TestNetworkModel:
         remaining_hosts = Host.query.filter_by(network_id=network_id).all()
         assert len(remaining_hosts) == 0
 
+    def test_find_for_ip_prefers_most_specific_network(self, app_context):
+        """With overlapping networks, the narrowest one wins."""
+        wide = Network(
+            network="10.0.0.0", cidr=16, broadcast_address="10.0.255.255"
+        )
+        narrow = Network(
+            network="10.0.1.0", cidr=24, broadcast_address="10.0.1.255"
+        )
+        db.session.add_all([wide, narrow])
+        db.session.commit()
+
+        found = Network.find_for_ip("10.0.1.5")
+        assert found.id == narrow.id
+
+    def test_find_for_ip_falls_back_to_only_match(self, app_context):
+        wide = Network(
+            network="10.0.0.0", cidr=16, broadcast_address="10.0.255.255"
+        )
+        db.session.add(wide)
+        db.session.commit()
+
+        found = Network.find_for_ip("10.0.1.5")
+        assert found.id == wide.id
+
+    def test_find_for_ip_no_match(self, app_context):
+        assert Network.find_for_ip("192.168.99.1") is None
+
+    def test_find_overlapping_detects_supernet_and_subnet(self, app_context):
+        existing = Network(
+            network="10.10.0.0", cidr=16, broadcast_address="10.10.255.255"
+        )
+        db.session.add(existing)
+        db.session.commit()
+
+        # A /24 fully inside the existing /16 overlaps.
+        assert Network.find_overlapping("10.10.5.0", 24).id == existing.id
+        # A /15 that would contain the existing /16 also overlaps.
+        assert Network.find_overlapping("10.10.0.0", 15).id == existing.id
+
+    def test_find_overlapping_no_overlap(self, app_context):
+        existing = Network(
+            network="10.10.0.0", cidr=24, broadcast_address="10.10.0.255"
+        )
+        db.session.add(existing)
+        db.session.commit()
+
+        assert Network.find_overlapping("10.11.0.0", 24) is None
+
+    def test_find_overlapping_excludes_given_id(self, app_context):
+        existing = Network(
+            network="10.10.0.0", cidr=24, broadcast_address="10.10.0.255"
+        )
+        db.session.add(existing)
+        db.session.commit()
+
+        assert (
+            Network.find_overlapping("10.10.0.0", 24, exclude_id=existing.id)
+            is None
+        )
+
 
 class TestHostModel:
     def test_host_creation(self, app_context):

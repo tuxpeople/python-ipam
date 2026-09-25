@@ -83,15 +83,33 @@ def add_network():
     form = NetworkForm()
     if form.validate_on_submit():
         try:
+            normalized_network = normalize_network_address(
+                form.network.data, form.cidr.data
+            )
             network_obj = ipaddress.IPv4Network(
-                f"{form.network.data}/{form.cidr.data}", strict=False
+                f"{normalized_network}/{form.cidr.data}", strict=False
             )
             broadcast = str(network_obj.broadcast_address)
 
+            overlapping = Network.find_overlapping(
+                normalized_network, form.cidr.data
+            )
+            if overlapping:
+                if (
+                    overlapping.network == normalized_network
+                    and overlapping.cidr == form.cidr.data
+                ):
+                    flash("Network already exists", "error")
+                else:
+                    flash(
+                        "Network overlaps with existing network "
+                        f"{overlapping.network}/{overlapping.cidr}",
+                        "error",
+                    )
+                return render_template("add_network.html", form=form)
+
             network = Network(
-                network=normalize_network_address(
-                    form.network.data, form.cidr.data
-                ),
+                network=normalized_network,
                 cidr=form.cidr.data,
                 broadcast_address=broadcast,
                 name=form.name.data,
@@ -175,14 +193,40 @@ def edit_network(network_id):
             )
 
         try:
+            normalized_network = normalize_network_address(
+                form.network.data, form.cidr.data
+            )
             network_obj = ipaddress.IPv4Network(
-                f"{form.network.data}/{form.cidr.data}", strict=False
+                f"{normalized_network}/{form.cidr.data}", strict=False
             )
             broadcast = str(network_obj.broadcast_address)
 
-            network.network = normalize_network_address(
-                form.network.data, form.cidr.data
-            )
+            if normalized_network != network.network:
+                overlapping = Network.find_overlapping(
+                    normalized_network,
+                    form.cidr.data,
+                    exclude_id=network.id,
+                )
+                if overlapping:
+                    if (
+                        overlapping.network == normalized_network
+                        and overlapping.cidr == form.cidr.data
+                    ):
+                        flash("Network already exists", "error")
+                    else:
+                        flash(
+                            "Network overlaps with existing network "
+                            f"{overlapping.network}/{overlapping.cidr}",
+                            "error",
+                        )
+                    return render_template(
+                        "edit_network.html",
+                        form=form,
+                        network=network,
+                        dhcp_range_form=dhcp_range_form,
+                    )
+
+            network.network = normalized_network
             network.cidr = form.cidr.data
             network.broadcast_address = broadcast
             network.name = form.name.data
@@ -584,6 +628,18 @@ def _create_networks_from_data(networks_data, update_existing=False):
                         existing_network, field, network_data[field] or None
                     )
             updated += 1
+            continue
+
+        overlapping = Network.find_overlapping(
+            network_data["network"], network_data["cidr"]
+        )
+        if overlapping:
+            errors.append(
+                f"Network {network_data['network']}: overlaps with "
+                f"existing network {overlapping.network}/"
+                f"{overlapping.cidr}; entry skipped."
+            )
+            skipped += 1
             continue
 
         network = Network(

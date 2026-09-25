@@ -433,6 +433,12 @@ network's CIDR is not allowed anywhere (web UI, REST API, or import); the
 network address itself may still be corrected. Delete and recreate the
 network if it needs a different CIDR.
 
+Networks may not overlap. Creating or moving a network onto a range that
+overlaps an existing network -- as a subnet, a supernet, or any other
+partial overlap -- is rejected consistently across the web UI, the REST
+API, and import. There is currently no concept of nested/hierarchical
+subnets; every network is an independent, non-overlapping range.
+
 ## Host List
 
 The Hosts table includes a sortable **Last Seen** column showing the stored

@@ -146,6 +146,35 @@ Content-Type: application/json
 
 **Response**: Updated network object
 
+#### Upsert Network
+```http
+POST /api/v1/networks/upsert
+Content-Type: application/json
+
+{
+  "network": "10.0.0.0",
+  "cidr": 16,
+  "name": "Corporate Network",
+  "domain": "corp.local",
+  "vlan_id": 200,
+  "description": "Corporate network",
+  "location": "HQ"
+}
+```
+
+Creates a network if none with this `network` address exists yet,
+otherwise updates it. `network` and `cidr` are required. Only fields
+present in the request body are changed; fields left out are kept
+as-is on an existing network. Sending a field with an explicit `null`
+clears it.
+
+This endpoint does not use schema validation (unlike `POST` and `PUT`
+above), since schema validation would reject an explicit `null` on a
+typed field.
+
+**Response**: Network object, HTTP 201 if created or HTTP 200 if
+updated
+
 #### Delete Network
 ```http
 DELETE /api/v1/networks/{id}
@@ -278,6 +307,38 @@ Content-Type: application/json
 ```
 
 **Response**: Updated host object
+
+#### Upsert Host
+```http
+POST /api/v1/hosts/upsert
+Content-Type: application/json
+
+{
+  "ip_address": "192.168.1.100",
+  "hostname": "server02",
+  "mac_address": "11:22:33:44:55:66",
+  "status": "active",
+  "last_seen": "2025-12-28T10:01:58",
+  "discovery_source": "nmap"
+}
+```
+
+Creates a host if none with this `ip_address` exists yet, otherwise
+updates it. `ip_address` is required. Only fields present in the
+request body are changed; fields left out are kept as-is on an
+existing host (e.g. a manually curated `cname` or `description`
+survives a discovery-driven upsert that doesn't know about it).
+Sending a field with an explicit `null` clears it.
+
+If `network_id` is omitted, it is auto-detected from the IP address
+when a new host is created; on an update, an omitted `network_id`
+leaves the host's current network association untouched.
+
+This endpoint does not use schema validation (unlike `POST` and `PUT`
+above), since schema validation would reject an explicit `null` on a
+typed field.
+
+**Response**: Host object, HTTP 201 if created or HTTP 200 if updated
 
 #### Delete Host
 ```http
@@ -647,41 +708,24 @@ print(f"Created host: {created_host['hostname']} with IP {created_host['ip_addre
 
 ## Implementation Status
 
-**Current Status**: ⚠️ Requires refactoring to resolve circular import issues
-
 **Completed**:
-- ✅ All endpoint implementations
+- ✅ All endpoint implementations, including upsert for networks/hosts
 - ✅ Request/response models
 - ✅ Filtering and pagination
 - ✅ Swagger UI integration
 - ✅ Input validation
 - ✅ Error handling
+- ✅ API authentication
+- ✅ Rate limiting
+- ✅ API tests
 
-**Pending**:
-- ⚠️ Fix circular import (requires app.py refactoring)
-- ⏳ API authentication
-- ⏳ Rate limiting
-- ⏳ API tests
-
-## Known Issues
-
-### Circular Import Error
-
-The API implementation encounters a circular import between `app.py` and API modules due to SQLAlchemy model dependencies.
-
-**Error**: `RuntimeError: The current Flask app is not registered with this 'SQLAlchemy' instance`
-
-**Root Cause**: Models defined in `app.py` are imported by API modules, but API blueprint is registered in `app.py`.
-
-**Solution**: See REFACTORING.md for the proposed fix.
+The circular import issue that previously blocked this (see
+REFACTORING.md for the historical write-up) has been resolved.
 
 ## Next Steps
 
-1. **Refactor app.py** - Separate models into dedicated module
-2. **Test API endpoints** - Comprehensive integration tests
-3. **Add authentication** - API key-based auth
-4. **Performance tuning** - Query optimization for large datasets
-5. **API versioning** - Support for future API versions
+1. **Performance tuning** - Query optimization for large datasets
+2. **API versioning** - Support for future API versions
 
 ## Related Documentation
 

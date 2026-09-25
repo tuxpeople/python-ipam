@@ -62,6 +62,18 @@ def _parse_datetime(value):
     raise ValueError("Expected an ISO 8601 timestamp")
 
 
+def _auto_detect_network(ip_address):
+    """Return the id of the network containing an IP, if any."""
+    ip = ipaddress.IPv4Address(ip_address)
+    for net in Network.query.all():
+        net_obj = ipaddress.IPv4Network(
+            f"{net.network}/{net.cidr}", strict=False
+        )
+        if ip in net_obj:
+            return net.id
+    return None
+
+
 @api.route("")
 class HostList(Resource):
     @api.doc("list_hosts")
@@ -156,14 +168,7 @@ class HostList(Resource):
         # Auto-detect network if not provided
         network_id = data.get("network_id")
         if not network_id:
-            networks = Network.query.all()
-            for net in networks:
-                net_obj = ipaddress.IPv4Network(
-                    f"{net.network}/{net.cidr}", strict=False
-                )
-                if ipaddress.IPv4Address(data["ip_address"]) in net_obj:
-                    network_id = net.id
-                    break
+            network_id = _auto_detect_network(data["ip_address"])
 
         # Create host
         last_seen = None
@@ -211,6 +216,103 @@ class HostList(Resource):
                 else None
             ),
         }, 201
+
+
+HOST_UPSERT_FIELDS = (
+    "hostname",
+    "cname",
+    "mac_address",
+    "status",
+    "description",
+)
+
+
+@api.route("/upsert")
+class HostUpsert(Resource):
+    @api.doc("upsert_host")
+    @api.expect(host_input)
+    @api.marshal_with(host)
+    @api.response(200, "Host updated", host)
+    @api.response(201, "Host created", host)
+    @api.response(400, "Validation Error", error)
+    def post(self):
+        """Create or update a host by its IP address.
+
+        Matches an existing host by ``ip_address``. Only fields present
+        in the request body are changed; fields left out of the body
+        are kept as-is on an existing host. Sending a field with an
+        explicit null clears it. ``network_id`` is auto-detected from
+        the IP address when a new host is created without one.
+
+        Validation here is intentionally manual (no ``validate=True``)
+        rather than schema-based: schema validation would reject an
+        explicit ``null`` on a typed field, which upsert relies on to
+        clear it.
+        """
+        data = request.json or {}
+
+        if "ip_address" not in data:
+            api.abort(400, "ip_address is required")
+
+        try:
+            ipaddress.IPv4Address(data["ip_address"])
+        except (TypeError, ValueError) as e:
+            api.abort(400, f"Invalid IP address: {e}")
+
+        host_obj = Host.query.filter_by(ip_address=data["ip_address"]).first()
+        created = host_obj is None
+
+        if created:
+            host_obj = Host(ip_address=data["ip_address"], status="active")
+            db.session.add(host_obj)
+
+        for field in HOST_UPSERT_FIELDS:
+            if field in data:
+                setattr(host_obj, field, data[field])
+
+        try:
+            if "is_assigned" in data:
+                is_assigned = _parse_bool(data.get("is_assigned"))
+                if is_assigned is not None:
+                    host_obj.is_assigned = is_assigned
+            elif created:
+                host_obj.is_assigned = current_app.config.get(
+                    "HOST_ASSIGN_ON_CREATE", True
+                )
+
+            if "last_seen" in data:
+                host_obj.last_seen = _parse_datetime(data.get("last_seen"))
+        except ValueError as e:
+            api.abort(400, str(e))
+
+        if "discovery_source" in data:
+            host_obj.discovery_source = data.get("discovery_source")
+
+        if "network_id" in data:
+            host_obj.network_id = data.get("network_id")
+        elif created:
+            host_obj.network_id = _auto_detect_network(data["ip_address"])
+
+        db.session.commit()
+
+        return {
+            "id": host_obj.id,
+            "ip_address": host_obj.ip_address,
+            "hostname": host_obj.hostname,
+            "cname": host_obj.cname,
+            "mac_address": host_obj.mac_address,
+            "status": host_obj.status,
+            "is_assigned": host_obj.is_assigned,
+            "last_seen": host_obj.last_seen,
+            "discovery_source": host_obj.discovery_source,
+            "description": host_obj.description,
+            "network_id": host_obj.network_id,
+            "network": (
+                f"{host_obj.network_ref.network}/{host_obj.network_ref.cidr}"
+                if host_obj.network_ref
+                else None
+            ),
+        }, 201 if created else 200
 
 
 @api.route("/<int:id>")
@@ -272,15 +374,7 @@ class HostResource(Resource):
         if data["ip_address"] != host_obj.ip_address and not data.get(
             "network_id"
         ):
-            networks = Network.query.all()
-            network_id = None
-            for net in networks:
-                net_obj = ipaddress.IPv4Network(
-                    f"{net.network}/{net.cidr}", strict=False
-                )
-                if ipaddress.IPv4Address(data["ip_address"]) in net_obj:
-                    network_id = net.id
-                    break
+            network_id = _auto_detect_network(data["ip_address"])
 
         # Update fields
         last_seen = None

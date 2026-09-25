@@ -169,6 +169,79 @@ class NetworkList(Resource):
         }, 201
 
 
+NETWORK_UPSERT_FIELDS = ("name", "domain", "vlan_id", "description", "location")
+
+
+@api.route("/upsert")
+class NetworkUpsert(Resource):
+    @api.doc("upsert_network")
+    @api.expect(network_input)
+    @api.marshal_with(network)
+    @api.response(200, "Network updated", network)
+    @api.response(201, "Network created", network)
+    @api.response(400, "Validation Error", error)
+    def post(self):
+        """Create or update a network by its network address.
+
+        Matches an existing network by its ``network`` address. Only
+        fields present in the request body are changed; fields left
+        out of the body are kept as-is on an existing network. Sending
+        a field with an explicit null clears it.
+
+        Validation here is intentionally manual (no ``validate=True``)
+        rather than schema-based: schema validation would reject an
+        explicit ``null`` on a typed field, which upsert relies on to
+        clear it.
+        """
+        data = request.json or {}
+
+        if "network" not in data or "cidr" not in data:
+            api.abort(400, "network and cidr are required")
+
+        try:
+            cidr = int(data["cidr"])
+            net = ipaddress.IPv4Network(
+                f"{data['network']}/{cidr}", strict=False
+            )
+        except (TypeError, ValueError) as e:
+            api.abort(400, f"Invalid network address: {e}")
+
+        network_obj = Network.query.filter_by(network=data["network"]).first()
+        created = network_obj is None
+
+        if created:
+            network_obj = Network(
+                network=data["network"],
+                cidr=cidr,
+                broadcast_address=str(net.broadcast_address),
+            )
+            db.session.add(network_obj)
+        elif network_obj.cidr != cidr:
+            network_obj.cidr = cidr
+            network_obj.broadcast_address = str(net.broadcast_address)
+
+        for field in NETWORK_UPSERT_FIELDS:
+            if field in data:
+                setattr(network_obj, field, data[field])
+
+        db.session.commit()
+
+        return {
+            "id": network_obj.id,
+            "network": network_obj.network,
+            "cidr": network_obj.cidr,
+            "broadcast_address": network_obj.broadcast_address,
+            "name": network_obj.name,
+            "domain": network_obj.domain,
+            "vlan_id": network_obj.vlan_id,
+            "description": network_obj.description,
+            "location": network_obj.location,
+            "total_hosts": network_obj.total_hosts,
+            "used_hosts": network_obj.used_hosts,
+            "available_hosts": network_obj.available_hosts,
+        }, 201 if created else 200
+
+
 @api.route("/<int:id>")
 @api.param("id", "The network identifier")
 class NetworkResource(Resource):

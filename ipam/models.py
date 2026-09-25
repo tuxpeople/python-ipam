@@ -55,6 +55,18 @@ class Network(db.Model):
     def available_hosts(self):
         return self.total_hosts - self.used_hosts
 
+    @classmethod
+    def find_for_ip(cls, ip_address):
+        """Return the network containing an IPv4 address, if any."""
+        ip = ipaddress.IPv4Address(ip_address)
+        for net in cls.query.all():
+            net_obj = ipaddress.IPv4Network(
+                f"{net.network}/{net.cidr}", strict=False
+            )
+            if ip in net_obj:
+                return net
+        return None
+
 
 class Host(db.Model):
     """Host model."""

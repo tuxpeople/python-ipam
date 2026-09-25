@@ -420,6 +420,35 @@ Content-Type: application/json
 
 **Response**: Updated DHCP range object
 
+#### Upsert DHCP Range
+```http
+POST /api/v1/dhcp-ranges/upsert
+Content-Type: application/json
+
+{
+  "network_id": 1,
+  "start_ip": "192.168.1.100",
+  "end_ip": "192.168.1.150",
+  "description": "Office DHCP pool",
+  "is_active": true
+}
+```
+
+Creates a DHCP range if none with this `(network_id, start_ip)` exists
+yet, otherwise updates it. `start_ip` and `end_ip` are always required
+since they define the range; `network_id` may be omitted, in which
+case it is auto-detected from `start_ip` (the request fails with HTTP
+400 if no network contains it). `description` is only changed when
+present in the request body; leaving it out keeps the existing value,
+and an explicit `null` clears it.
+
+This endpoint does not use schema validation (unlike `POST` and `PUT`
+above), since schema validation would reject an explicit `null` on a
+typed field.
+
+**Response**: DHCP range object, HTTP 201 if created or HTTP 200 if
+updated
+
 #### Delete DHCP Range
 ```http
 DELETE /api/v1/dhcp-ranges/{id}

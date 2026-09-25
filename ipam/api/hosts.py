@@ -64,14 +64,8 @@ def _parse_datetime(value):
 
 def _auto_detect_network(ip_address):
     """Return the id of the network containing an IP, if any."""
-    ip = ipaddress.IPv4Address(ip_address)
-    for net in Network.query.all():
-        net_obj = ipaddress.IPv4Network(
-            f"{net.network}/{net.cidr}", strict=False
-        )
-        if ip in net_obj:
-            return net.id
-    return None
+    network = Network.find_for_ip(ip_address)
+    return network.id if network else None
 
 
 @api.route("")

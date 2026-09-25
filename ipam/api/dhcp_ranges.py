@@ -137,6 +137,91 @@ class DhcpRangeList(Resource):
         }, 201
 
 
+@api.route("/upsert")
+class DhcpRangeUpsert(Resource):
+    @api.doc("upsert_dhcp_range")
+    @api.expect(dhcp_range_input)
+    @api.marshal_with(dhcp_range)
+    @api.response(200, "DHCP range updated", dhcp_range)
+    @api.response(201, "DHCP range created", dhcp_range)
+    @api.response(400, "Validation Error", error)
+    def post(self):
+        """Create or update a DHCP range by network and start IP.
+
+        Matches an existing range by ``(network_id, start_ip)``. If
+        ``network_id`` is omitted, it is auto-detected from
+        ``start_ip``. ``start_ip`` and ``end_ip`` are always required
+        since they define the range itself; ``description`` is a
+        patchable field left as-is when omitted, and an explicit null
+        clears it.
+
+        Validation here is intentionally manual (no ``validate=True``)
+        rather than schema-based: schema validation would reject an
+        explicit ``null`` on a typed field, which upsert relies on to
+        clear it.
+        """
+        data = request.json or {}
+
+        if "start_ip" not in data or "end_ip" not in data:
+            api.abort(400, "start_ip and end_ip are required")
+
+        try:
+            start_ip = ipaddress.IPv4Address(data["start_ip"])
+            end_ip = ipaddress.IPv4Address(data["end_ip"])
+        except (TypeError, ValueError) as e:
+            api.abort(400, f"Invalid IP address: {e}")
+
+        if data.get("network_id") is not None:
+            network = Network.query.get_or_404(data["network_id"])
+        else:
+            network = Network.find_for_ip(str(start_ip))
+            if network is None:
+                api.abort(
+                    400,
+                    "No network contains start_ip; specify network_id "
+                    "explicitly",
+                )
+
+        range_obj = DhcpRange.query.filter_by(
+            network_id=network.id, start_ip=str(start_ip)
+        ).first()
+        created = range_obj is None
+
+        error_message = _validate_range(
+            network,
+            start_ip,
+            end_ip,
+            exclude_range_id=None if created else range_obj.id,
+        )
+        if error_message:
+            api.abort(400, error_message)
+
+        if created:
+            range_obj = DhcpRange(network_id=network.id, start_ip=str(start_ip))
+            db.session.add(range_obj)
+
+        range_obj.end_ip = str(end_ip)
+
+        if "description" in data:
+            range_obj.description = data["description"]
+
+        if "is_active" in data and data["is_active"] is not None:
+            range_obj.is_active = bool(data["is_active"])
+        elif created:
+            range_obj.is_active = True
+
+        db.session.commit()
+
+        return {
+            "id": range_obj.id,
+            "network_id": range_obj.network_id,
+            "start_ip": range_obj.start_ip,
+            "end_ip": range_obj.end_ip,
+            "description": range_obj.description,
+            "is_active": range_obj.is_active,
+        }, 201 if created else 200
+
+
 @api.route("/<int:id>")
 @api.param("id", "The DHCP range identifier")
 class DhcpRangeResource(Resource):

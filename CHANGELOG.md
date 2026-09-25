@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.6.0](https://github.com/tuxpeople/python-ipam/compare/v1.5.0...v1.6.0) (2026-09-25)
+
+
+### Features
+
+* **api:** add upsert endpoint for DHCP ranges ([0584d99](https://github.com/tuxpeople/python-ipam/commit/0584d99166c91f4663aa3e11e641cff8ade94630))
+
+
+### Bug Fixes
+
+* apply network/hostname normalization and CIDR-lock everywhere ([f4caf74](https://github.com/tuxpeople/python-ipam/commit/f4caf74ed035b4cc47c83bb58c322bfeae519869))
+
 ## [1.5.0](https://github.com/tuxpeople/python-ipam/compare/v1.4.0...v1.5.0) (2026-09-25)
 
 

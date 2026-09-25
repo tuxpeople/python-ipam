@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.1](https://github.com/tuxpeople/python-ipam/compare/v1.6.0...v1.6.1) (2026-09-25)
+
+
+### Bug Fixes
+
+* reject overlapping networks and pick most-specific match by IP ([790b3f2](https://github.com/tuxpeople/python-ipam/commit/790b3f2944762e15995064fbf862fcf01c12be3c))
+
 ## [1.6.0](https://github.com/tuxpeople/python-ipam/compare/v1.5.0...v1.6.0) (2026-09-25)
 
 

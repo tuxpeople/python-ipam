@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.0](https://github.com/tuxpeople/python-ipam/compare/v1.2.0...v1.3.0) (2026-09-25)
+
+
+### Features
+
+* **hosts:** display last seen timestamps in the host table ([3d945f7](https://github.com/tuxpeople/python-ipam/commit/3d945f7b06f9aea384bf4474d6d48ad0c02a2750))
+* **import:** support updates to existing hosts by IP address ([9286c26](https://github.com/tuxpeople/python-ipam/commit/9286c2614fe1827776a24d44d7decc40299bf94e))
+
 ## [1.2.0](https://github.com/tuxpeople/python-ipam/compare/v1.1.6...v1.2.0) (2026-09-25)
 
 

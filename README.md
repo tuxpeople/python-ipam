@@ -373,7 +373,7 @@ Names and domains have surrounding whitespace removed. For new networks,
 omitted, empty, or JSON `null` values leave these fields unset. Existing files without these
 fields remain supported. Existing networks are skipped by default.
 
-Enable **Update existing networks** to update entries matched by their exact
+Enable **Update existing networks** to update entries matched by their normalized
 `Network` address (`network` in JSON), preserving their database IDs and linked
 hosts/DHCP ranges. Both `Network` and `CIDR` are still required. CIDR changes
 are rejected and the entire entry is skipped with a warning. Omitted optional
@@ -382,3 +382,7 @@ clear them. This applies to name, domain, VLAN ID, location, and description.
 New addresses create new networks. Results report created, updated, and skipped
 entries. The option does not change host imports.
 
+Network addresses are normalized using the supplied CIDR before matching or
+saving in both formats: `10.20.1.42` with CIDR `24` becomes `10.20.1.0`.
+This also applies to duplicate detection and updates. Existing stored entries
+with non-network addresses are not automatically corrected.

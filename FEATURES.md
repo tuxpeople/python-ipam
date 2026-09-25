@@ -62,6 +62,7 @@
     - ✅ Error handling and reporting
     - ✅ Duplicate detection and skipping
     - ✅ Optional updates of existing networks with CIDR change protection
+    - ✅ Network address normalization before duplicate detection and saving
     - ✅ Abstract base class for importers
     - ✅ Format auto-detection by extension
 

@@ -93,6 +93,9 @@ class CSVImporter(BaseImporter):
                     f"{network_data['network']}/{cidr}", strict=False
                 )
 
+                # Normalize before matching or storing networks.
+                network_data["network"] = str(network_obj.network_address)
+
                 # Add computed fields
                 network_data["cidr"] = cidr
                 network_data["broadcast_address"] = str(

@@ -791,7 +791,10 @@ class TestImportRoutes:
     @pytest.mark.parametrize("format_name", ["csv", "json"])
     @pytest.mark.parametrize("enabled", [False, True])
     @pytest.mark.parametrize("cidr", [24, 25])
-    def test_update_existing_networks(self, client, format_name, enabled, cidr):
+    @pytest.mark.parametrize("address", ["10.42.0.0", "10.42.0.42"])
+    def test_update_existing_networks(
+        self, client, format_name, enabled, cidr, address
+    ):
         """Update supplied fields only, preserving identity and CIDR."""
         with client.application.app_context():
             network = Network(
@@ -813,21 +816,21 @@ class TestImportRoutes:
         if format_name == "csv":
             content = (
                 "Network,CIDR,Name,Domain,VLAN ID\n"
-                f"10.42.0.0,{cidr},New name,,\n"
-                "10.43.0.0,24,New network,,"
+                f"{address},{cidr},New name,,\n"
+                "10.43.0.42,24,New network,,"
             ).encode()
         else:
             content = json.dumps(
                 [
                     {
-                        "network": "10.42.0.0",
+                        "network": address,
                         "cidr": cidr,
                         "name": "New name",
                         "domain": None,
                         "vlan_id": None,
                     },
                     {
-                        "network": "10.43.0.0",
+                        "network": "10.43.0.42",
                         "cidr": 24,
                         "name": "New network",
                     },

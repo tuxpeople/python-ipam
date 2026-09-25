@@ -17,6 +17,7 @@
                     <strong>Import Guidelines:</strong>
                     <ul class="mb-0 mt-2">
                         <li>Select the appropriate format for your data file</li>
+                        <li>Network addresses are normalized using CIDR before matching or saving (e.g. 10.20.1.42/24 becomes 10.20.1.0/24)</li>
                         <li>Existing networks (same Network address) are skipped unless updating is enabled; existing hosts are always skipped</li>
                         <li>Invalid rows will be automatically skipped with error messages</li>
                         <li>Support for multiple data formats (CSV, JSON, etc.)</li>

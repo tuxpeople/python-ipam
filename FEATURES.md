@@ -1,7 +1,7 @@
 # 🚀 Python IPAM - Features & Roadmap
 
 **Version**: 1.1.0
-**Last Updated**: 2025-12-28
+**Last Updated**: 2026-09-29
 
 ## 📊 Project Status Overview
 
@@ -9,8 +9,8 @@
 |----------|-----------|-------------|---------|-------|
 | Core Features | 9 | 0 | 3 | 12 |
 | API Integration | 2 | 0 | 0 | 2 |
-| UI/UX | 6 | 0 | 2 | 8 |
-| Data Management | 4 | 0 | 5 | 9 |
+| UI/UX | 6 | 0 | 3 | 9 |
+| Data Management | 4 | 0 | 7 | 11 |
 | Testing | 6 | 0 | 1 | 7 |
 | Security | 0 | 0 | 2 | 2 |
 
@@ -72,6 +72,7 @@
 - **[IPAM-017]** ✅ Data Backup & Restore
   - **Priority**: Medium | **Category**: Data Management
   - **Description**: Backup and restore utilities with verification
+  - **GitHub Issue**: [#12](https://github.com/tuxpeople/python-ipam/issues/12) (still open — consider closing, this is implemented)
   - **Acceptance Criteria**:
     - ✅ Scheduled backups via CLI (cron-friendly)
     - ✅ One-click restore from backup
@@ -312,6 +313,7 @@
 - **[IPAM-014]** ✅ REST API Expansion (Auth + Rate Limiting)
   - **Priority**: Medium | **Category**: API
   - **Status**: Complete
+  - **GitHub Issue**: [#9](https://github.com/tuxpeople/python-ipam/issues/9) (still open — consider closing, this is implemented)
   - **Description**: Token authentication and rate limiting for all API endpoints
   - **Acceptance Criteria**:
     - ✅ Token-based authentication via `Authorization: Bearer` or `X-API-Key`
@@ -328,6 +330,7 @@
 - **[IPAM-010]** 📅 Subnet Calculator
   - **Priority**: Medium | **Category**: Network Tools
   - **Estimated Effort**: Medium (2-3 days)
+  - **GitHub Issue**: [#5](https://github.com/tuxpeople/python-ipam/issues/5)
   - **Description**: Built-in subnet calculator and IP range tools
   - **Acceptance Criteria**:
     - Calculate available subnets from larger networks
@@ -341,6 +344,7 @@
 - **[IPAM-011]** 📅 Network Scanner Integration
   - **Priority**: Medium | **Category**: Discovery
   - **Estimated Effort**: High (4-5 days)
+  - **GitHub Issue**: [#6](https://github.com/tuxpeople/python-ipam/issues/6)
   - **Description**: Scan network ranges for active hosts
   - **Acceptance Criteria**:
     - Ping sweep functionality
@@ -349,6 +353,44 @@
     - Scheduled scan capabilities
   - **Dependencies**: [IPAM-010] for subnet calculations
   - **Technical Notes**: Consider using python-nmap library
+
+- **[IPAM-028]** 📅 Visual Subnet Display
+  - **Priority**: Medium | **Category**: Network Tools
+  - **Estimated Effort**: Medium (2-3 days)
+  - **GitHub Issue**: [#85](https://github.com/tuxpeople/python-ipam/issues/85)
+  - **Description**: Graphical subnet map showing per-IP status instead of just an aggregate utilization percentage
+  - **Acceptance Criteria**:
+    - Visual grid/map of addresses in a subnet, color-coded by status (free, assigned, reserved, network/broadcast/gateway)
+    - Hover/click on a cell shows host details (hostname, MAC, description)
+    - Reasonable handling of large subnets (e.g., compact/paginated view for /16 and larger)
+    - Available on the network detail view
+  - **Dependencies**: Builds on the existing utilization progress bar (IPAM-006); complements the Subnet Calculator (IPAM-010)
+
+### Network Management
+- **[IPAM-029]** 📅 Locations Management
+  - **Priority**: Medium | **Category**: Data Management
+  - **Estimated Effort**: Medium (2-3 days)
+  - **GitHub Issue**: [#86](https://github.com/tuxpeople/python-ipam/issues/86)
+  - **Description**: Dedicated Location entity (CRUD) instead of the current free-text `location` field on Network
+  - **Acceptance Criteria**:
+    - `Location` model/table (name, optional description/address)
+    - CRUD UI for locations (list, add, edit, delete)
+    - Network form uses a Location dropdown instead of free text, with migration path for existing values
+    - Filter networks/hosts by location
+    - REST API endpoints for locations
+
+- **[IPAM-030]** 📅 VLAN Management
+  - **Priority**: Medium | **Category**: Data Management
+  - **Estimated Effort**: Medium (2-3 days)
+  - **GitHub Issue**: [#87](https://github.com/tuxpeople/python-ipam/issues/87)
+  - **Description**: Dedicated VLAN entity (CRUD) instead of the current raw `vlan_id` integer field on Network
+  - **Acceptance Criteria**:
+    - `VLAN` model/table (VLAN ID, name, description)
+    - CRUD UI for VLANs (list, add, edit, delete)
+    - Network form uses a VLAN dropdown/selector instead of a raw integer field
+    - Validation to prevent duplicate/conflicting VLAN IDs
+    - Filter networks/hosts by VLAN
+    - REST API endpoints for VLANs
 
 ### Data Management
 - **[IPAM-024]** 📅 IP Lease History
@@ -365,6 +407,7 @@
 - **[IPAM-012]** 📅 Advanced Import Formats
   - **Priority**: Low | **Category**: Data Management
   - **Estimated Effort**: Medium (2-3 days)
+  - **GitHub Issue**: [#7](https://github.com/tuxpeople/python-ipam/issues/7)
   - **Description**: Support for XML, Excel, and network tool exports
   - **Acceptance Criteria**:
     - XML import/export
@@ -376,6 +419,7 @@
 - **[IPAM-013]** 📅 Advanced Export with Filtering
   - **Priority**: High | **Category**: Data Management
   - **Estimated Effort**: Medium (2-3 days)
+  - **GitHub Issue**: [#8](https://github.com/tuxpeople/python-ipam/issues/8)
   - **Description**: Export all data or filtered subsets with advanced options
   - **Acceptance Criteria**:
     - **Complete Database Export**: All networks, hosts, and relationships
@@ -437,6 +481,7 @@
 - **[IPAM-017]** 📅 Data Backup & Restore
   - **Priority**: Medium | **Category**: Data Management
   - **Estimated Effort**: Small (1-2 days)
+  - **GitHub Issue**: [#12](https://github.com/tuxpeople/python-ipam/issues/12) (already implemented — see Completed Features above; this duplicate entry and the issue should be closed)
   - **Description**: Automated backup and restore functionality
   - **Acceptance Criteria**:
     - Scheduled database backups
@@ -447,6 +492,7 @@
 - **[IPAM-016]** 📅 Local User Management UI
   - **Priority**: Medium | **Category**: UI/Security
   - **Estimated Effort**: Small (1-2 days)
+  - **GitHub Issue**: [#11](https://github.com/tuxpeople/python-ipam/issues/11)
   - **Description**: Admin interface for local user management
   - **Acceptance Criteria**:
     - User list with search and filtering
@@ -486,20 +532,23 @@
 
 - **[IPAM-015]** 📅 Hybrid Authentication System
   - **Priority**: High | **Category**: Security
-  - **Estimated Effort**: Medium (3-4 days)
-  - **Description**: Support both local user management and OIDC via OAuth2 Proxy
+  - **Estimated Effort**: Medium (3-4 days), +1-2 days for LDAP
+  - **GitHub Issue**: [#10](https://github.com/tuxpeople/python-ipam/issues/10)
+  - **Description**: Support local user management, OIDC via OAuth2 Proxy, and direct LDAP/Active Directory authentication
   - **Acceptance Criteria**:
     - **Local Authentication**: Built-in user registration, login, password reset
     - **OAuth2 Proxy Support**: OIDC integration via reverse proxy
+    - **LDAP Authentication**: Direct bind against an LDAP/Active Directory server (configurable server URL, bind DN, user/group search base), with group-to-role mapping
     - **Role-based Access Control**: Admin, User, ReadOnly roles
     - **Configurable Auth Mode**: Environment variable to switch between modes
     - **User Management UI**: Admin interface for local users
-    - **Session Management**: Secure session handling for both modes
+    - **Session Management**: Secure session handling across all modes
   - **Technical Notes**:
     - Use Flask-Login for local authentication
     - Header extraction for proxy-based auth
-    - Unified User model supporting both auth types
-    - Role inheritance from OIDC groups or local assignment
+    - `python-ldap` or `ldap3` for direct LDAP/Active Directory binds
+    - Unified User model supporting all three auth types
+    - Role inheritance from OIDC groups, LDAP groups, or local assignment
   - **Authentication Modes**:
 
     **Mode 1: Local Authentication (Default)**
@@ -526,6 +575,21 @@
           - AUTH_MODE=proxy
           - AUTH_USER_HEADER=X-Forwarded-User
     ```
+
+    **Mode 3: LDAP**
+    ```python
+    # .env
+    AUTH_MODE=ldap
+    LDAP_SERVER_URI=ldaps://ldap.example.com:636
+    LDAP_BASE_DN=dc=example,dc=com
+    LDAP_BIND_DN=cn=service-account,dc=example,dc=com
+    LDAP_BIND_PASSWORD=your-service-account-password
+    LDAP_USER_SEARCH_BASE=ou=users,dc=example,dc=com
+    LDAP_GROUP_SEARCH_BASE=ou=groups,dc=example,dc=com
+    ```
+    - Bind to the LDAP server with a service account, search for the user, then bind as the user to verify credentials
+    - Map LDAP group membership to IPAM roles (Admin/User/ReadOnly)
+    - Support both plain LDAP and LDAPS (TLS)
   - **Implementation Structure**:
     ```python
     # auth/models.py

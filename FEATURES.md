@@ -491,7 +491,7 @@
     - Sync filter: `device_type == "server" AND is_assigned AND hostname is set`
     - Configurable CMDB base URL and API token via environment variables
     - Dry-run/preview mode before writing
-    - Outgoing payload tagged with a distinct `owner` (e.g. `ipam`) so Ansible-reported data keeps precedence on conflicts
+    - Outgoing payload tagged with a distinct `owner` (e.g. `ipam`) for traceability; note that the CMDB has no field-level conflict resolution, so this sync must run before the Ansible `cmdb_report` role (by convention/schedule) if Ansible-reported data should not be overwritten
   - **Dependencies**: Builds on the existing exporter plugin system (IPAM-003)
 
 - **[IPAM-016]** 📅 Local User Management UI

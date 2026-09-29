@@ -10,7 +10,7 @@
 | Core Features | 9 | 0 | 3 | 12 |
 | API Integration | 2 | 0 | 0 | 2 |
 | UI/UX | 6 | 0 | 3 | 9 |
-| Data Management | 4 | 0 | 6 | 10 |
+| Data Management | 4 | 0 | 7 | 11 |
 | Testing | 6 | 0 | 1 | 7 |
 | Security | 0 | 0 | 2 | 2 |
 
@@ -479,6 +479,20 @@
     - API support for reading and writing custom fields
     - Export/import includes custom field values
     - Validation for required fields and type constraints
+
+- **[IPAM-031]** 📅 CMDB Sync Exporter
+  - **Priority**: Medium | **Category**: Data Management
+  - **Estimated Effort**: Medium (2-3 days)
+  - **GitHub Issue**: [#92](https://github.com/tuxpeople/python-ipam/issues/92)
+  - **Description**: Exporter that pushes eligible hosts to the Simple CMDB's `/api/server/upsert` endpoint, so IP allocations for devices not covered by other CMDB data sources (Ansible, inventory_collector) show up as CMDB assets
+  - **Acceptance Criteria**:
+    - Add a `device_type` field to the Host model (`server`, `network`, `storage`, `vip`, `printer`, `iot`, `client`, `infra`), with migration and form/API updates
+    - New exporter module in `ipam/exporters/` targeting the CMDB `/api/server/upsert` endpoint
+    - Sync filter: `device_type == "server" AND is_assigned AND hostname is set`
+    - Configurable CMDB base URL and API token via environment variables
+    - Dry-run/preview mode before writing
+    - Outgoing payload tagged with a distinct `owner` (e.g. `ipam`) so Ansible-reported data keeps precedence on conflicts
+  - **Dependencies**: Builds on the existing exporter plugin system (IPAM-003)
 
 - **[IPAM-016]** 📅 Local User Management UI
   - **Priority**: Medium | **Category**: UI/Security

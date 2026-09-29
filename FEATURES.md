@@ -396,6 +396,7 @@
 - **[IPAM-024]** 📅 IP Lease History
   - **Priority**: Medium | **Category**: Data Management
   - **Estimated Effort**: Medium (2-3 days)
+  - **GitHub Issue**: [#88](https://github.com/tuxpeople/python-ipam/issues/88)
   - **Description**: Track assignment and metadata changes for hosts and networks
   - **Acceptance Criteria**:
     - Record create/update/delete events with timestamp and actor
@@ -471,6 +472,7 @@
 - **[IPAM-027]** 📅 Custom Fields
   - **Priority**: Medium | **Category**: Data Management
   - **Estimated Effort**: Medium (2-3 days)
+  - **GitHub Issue**: [#89](https://github.com/tuxpeople/python-ipam/issues/89)
   - **Description**: User-defined fields for hosts and networks
   - **Acceptance Criteria**:
     - Admin UI to define custom fields (string/int/bool/date)
@@ -499,18 +501,20 @@
 - **[IPAM-026]** 📅 IP Conflict Detection
   - **Priority**: Medium | **Category**: Core
   - **Estimated Effort**: Medium (2-3 days)
+  - **GitHub Issue**: [#90](https://github.com/tuxpeople/python-ipam/issues/90)
   - **Description**: Detect duplicate IPs and overlapping ranges
   - **Acceptance Criteria**:
-    - Detect duplicate IPs within a network
-    - Detect overlapping networks and DHCP range overlaps
-    - UI warnings on create/update
-    - API returns structured conflict errors
-    - Background validation for existing data
+    - ✅ Detect duplicate IPs within a network (DB-level unique constraint on `Host.ip_address`)
+    - ✅ Detect overlapping networks and DHCP range overlaps (`Network.find_overlapping`, enforced in web UI and API)
+    - ✅ UI warnings on create/update (flash messages on overlap)
+    - API returns structured conflict errors (currently a plain message string)
+    - Background validation for existing data (conflicts introduced before these checks existed, e.g. via direct DB edits)
 
 ### Security & Authentication
 - **[IPAM-025]** 📅 Role-Based Access Control
   - **Priority**: High | **Category**: Security
   - **Estimated Effort**: Medium (3-4 days)
+  - **GitHub Issue**: [#91](https://github.com/tuxpeople/python-ipam/issues/91)
   - **Description**: Fine-grained permissions across UI and API
   - **Acceptance Criteria**:
     - Roles: ReadOnly, Editor, Admin, APIOnly

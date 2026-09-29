@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.6.1](https://github.com/tuxpeople/python-ipam/compare/v1.6.0...v1.6.1) (2026-09-29)
+
+
+### Bug Fixes
+
+* reject overlapping networks and pick most-specific match by IP ([790b3f2](https://github.com/tuxpeople/python-ipam/commit/790b3f2944762e15995064fbf862fcf01c12be3c))
+
+
+### Documentation
+
+* add IPAM-031 CMDB sync exporter feature ([82e23b0](https://github.com/tuxpeople/python-ipam/commit/82e23b05e0dcb35b337f6b613e65b58f20a811c1))
+* close out IPAM-014/IPAM-017 issue tracking in FEATURES.md ([a079b5b](https://github.com/tuxpeople/python-ipam/commit/a079b5bdb545bee1a5fb826fcffd85b58f962f97))
+* link remaining planned features to new GitHub issues ([3de5f6b](https://github.com/tuxpeople/python-ipam/commit/3de5f6bd7b96fd80c17c7a740db660f342ef0add))
+* link roadmap entries to GitHub feature request issues ([f1fd530](https://github.com/tuxpeople/python-ipam/commit/f1fd530a9cb917d798b8b7afdff7251787f54b55))
+
 ## [1.6.0](https://github.com/tuxpeople/python-ipam/compare/v1.5.0...v1.6.0) (2026-09-25)
 
 

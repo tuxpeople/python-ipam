@@ -10,7 +10,7 @@
 | Core Features | 9 | 0 | 3 | 12 |
 | API Integration | 2 | 0 | 0 | 2 |
 | UI/UX | 6 | 0 | 3 | 9 |
-| Data Management | 4 | 0 | 7 | 11 |
+| Data Management | 4 | 0 | 6 | 10 |
 | Testing | 6 | 0 | 1 | 7 |
 | Security | 0 | 0 | 2 | 2 |
 
@@ -72,7 +72,7 @@
 - **[IPAM-017]** ✅ Data Backup & Restore
   - **Priority**: Medium | **Category**: Data Management
   - **Description**: Backup and restore utilities with verification
-  - **GitHub Issue**: [#12](https://github.com/tuxpeople/python-ipam/issues/12) (still open — consider closing, this is implemented)
+  - **GitHub Issue**: [#12](https://github.com/tuxpeople/python-ipam/issues/12) (closed)
   - **Acceptance Criteria**:
     - ✅ Scheduled backups via CLI (cron-friendly)
     - ✅ One-click restore from backup
@@ -313,7 +313,7 @@
 - **[IPAM-014]** ✅ REST API Expansion (Auth + Rate Limiting)
   - **Priority**: Medium | **Category**: API
   - **Status**: Complete
-  - **GitHub Issue**: [#9](https://github.com/tuxpeople/python-ipam/issues/9) (still open — consider closing, this is implemented)
+  - **GitHub Issue**: [#9](https://github.com/tuxpeople/python-ipam/issues/9) (closed)
   - **Description**: Token authentication and rate limiting for all API endpoints
   - **Acceptance Criteria**:
     - ✅ Token-based authentication via `Authorization: Bearer` or `X-API-Key`
@@ -477,17 +477,6 @@
     - API support for reading and writing custom fields
     - Export/import includes custom field values
     - Validation for required fields and type constraints
-
-- **[IPAM-017]** 📅 Data Backup & Restore
-  - **Priority**: Medium | **Category**: Data Management
-  - **Estimated Effort**: Small (1-2 days)
-  - **GitHub Issue**: [#12](https://github.com/tuxpeople/python-ipam/issues/12) (already implemented — see Completed Features above; this duplicate entry and the issue should be closed)
-  - **Description**: Automated backup and restore functionality
-  - **Acceptance Criteria**:
-    - Scheduled database backups
-    - One-click restore from backup
-    - Complete database migration utilities
-    - Backup verification and integrity checks
 
 - **[IPAM-016]** 📅 Local User Management UI
   - **Priority**: Medium | **Category**: UI/Security

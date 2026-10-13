@@ -3,7 +3,7 @@ name = "python-ipam"
 # Canonical Python version for the project. CI reads this via
 # actions/setup-python's `python-version-file: pyproject.toml`.
 # `.python-version` is the pyenv-virtualenv env name, not a version.
-requires-python = "==3.14.*"
+requires-python = "==3.15.*"
 
 [tool.ruff]
 line-length = 80

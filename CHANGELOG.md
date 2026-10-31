@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/tuxpeople/python-ipam/compare/v1.6.1...v1.7.0) (2026-10-31)
+
+
+### Features
+
+* **hosts:** track address assignment, leases and observations independently ([2b4ac49](https://github.com/tuxpeople/python-ipam/commit/2b4ac4934e0f8a6c9185a9c141bb3de923b33577))
+
 ## [1.6.1](https://github.com/tuxpeople/python-ipam/compare/v1.6.0...v1.6.1) (2026-09-29)
 
 

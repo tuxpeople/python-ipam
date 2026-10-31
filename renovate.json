@@ -7,7 +7,7 @@
   "semanticCommitScope": null,
   "automerge": true,
   "automergeType": "pr",
-  "platformAutomerge": true,
+  "platformAutomerge": false,
   "packageRules": [
     {
       "matchUpdateTypes": [

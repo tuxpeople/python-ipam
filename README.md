@@ -6,6 +6,9 @@ A modern, web-based IP Address Management (IPAM) system built with Flask, SQLite
 
 - 🌐 **Network Management**: Manage IP networks with CIDR notation
 - 🖥️ **Host Management**: Track IP addresses, hostnames, and MAC addresses
+- 🧭 **Assignment Tracking**: DHCP reservations, static and dynamic
+  assignments, leases and observations as independent facts with
+  per-aspect provenance
 - 🔌 **REST API**: Complete RESTful API with Swagger UI documentation
 - 📊 **Dashboard**: Clear overview of network utilization
 - 🔍 **Advanced Search**: DataTables integration for efficient data filtering
@@ -278,10 +281,22 @@ ipam/
 - `mac_address` - MAC address (optional)
 - `description` - Description (optional)
 - `status` - Status (active/inactive/reserved)
-- `is_assigned` - Whether the host is officially assigned
-- `last_seen` - Last observed timestamp (ISO 8601)
+- `is_assigned` - Legacy curation flag (not authoritative for allocation)
+- `last_seen` - Latest actual observation of the device (UTC)
 - `discovery_source` - Discovery source identifier
 - `network_id` - Foreign Key to Networks
+- `assignment_type` - How the address is assigned: reservation, static,
+  dynamic or unknown (nullable)
+- `assignment_source`, `assignment_last_confirmed_at` - Provenance of the
+  assignment
+- `lease_expires_at`, `lease_source`, `lease_observed_at` - Explicitly
+  observed DHCP lease and its provenance
+- `last_seen_source` - Provenance of `last_seen`
+
+Assignment, lease and observation are independent; the displayed
+allocation state is derived from them and never stored. See
+[API.md](API.md#address-assignment-leases-and-observations) and
+[ADDRESS_ASSIGNMENT_MODEL.md](ADDRESS_ASSIGNMENT_MODEL.md).
 
 Note: After upgrading, run `flask db upgrade` to apply schema changes. If
 your database predates Alembic migrations, run

@@ -43,6 +43,17 @@ class HostForm(FlaskForm):
         ],
     )
     is_assigned = BooleanField("Assigned")
+    assignment_type = SelectField(
+        "Assignment",
+        choices=[
+            ("", "Not set"),
+            ("reservation", "DHCP reservation"),
+            ("static", "Static"),
+            ("dynamic", "Dynamic (DHCP pool)"),
+            ("unknown", "Unknown"),
+        ],
+        validators=[Optional()],
+    )
     network_id = SelectField("Network", coerce=int, validators=[Optional()])
 
 

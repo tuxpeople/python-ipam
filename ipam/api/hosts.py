@@ -1,11 +1,20 @@
 """Host API endpoints."""
 
 import ipaddress
-from datetime import datetime
 
 from flask import current_app, request
 from flask_restx import Namespace, Resource, fields
 
+from ipam.allocation import (
+    ASPECT_FIELDS,
+    ASPECT_FRESHNESS_FIELD,
+    ASSIGNMENT_TYPES,
+    PERSISTENT_ASSIGNMENT_TYPES,
+    normalize_mac,
+    parse_aspect_field,
+    parse_timestamp,
+    to_api_utc,
+)
 from ipam.api.models import (
     error_model,
     host_input_model,
@@ -50,17 +59,111 @@ def _parse_bool(value):
 
 
 def _parse_datetime(value):
-    """Parse ISO 8601 timestamps from API inputs."""
-    if value is None:
-        return None
-    if isinstance(value, datetime):
-        return value
-    if isinstance(value, str):
-        normalized = value.strip()
-        if normalized.endswith("Z"):
-            normalized = f"{normalized[:-1]}+00:00"
-        return datetime.fromisoformat(normalized)
-    raise ValueError("Expected an ISO 8601 timestamp")
+    """Parse a legacy ISO 8601 timestamp (naive input treated as UTC)."""
+    return parse_timestamp(value, require_timezone=False)
+
+
+ASPECT_FIELD_NAMES = tuple(
+    f for fields_ in ASPECT_FIELDS.values() for f in fields_
+)
+
+
+def _parse_aspect_fields(data):
+    """Validate the assignment/lease/observation fields present in ``data``.
+
+    Returns a dict containing only the fields present in the request,
+    normalized for storage. Explicit ``null`` is kept as ``None`` (clear).
+
+    Raises:
+        ValueError: A field has an invalid value.
+    """
+    parsed = {}
+    for field in ASPECT_FIELD_NAMES:
+        if field in data:
+            parsed[field] = parse_aspect_field(field, data[field])
+    return parsed
+
+
+def serialize_host(h):
+    """Return the API representation of a host."""
+    return {
+        "id": h.id,
+        "ip_address": h.ip_address,
+        "hostname": h.hostname,
+        "cname": h.cname,
+        "mac_address": h.mac_address,
+        "status": h.status,
+        "is_assigned": h.is_assigned,
+        "last_seen": to_api_utc(h.last_seen),
+        "discovery_source": h.discovery_source,
+        "description": h.description,
+        "network_id": h.network_id,
+        "network": (
+            f"{h.network_ref.network}/{h.network_ref.cidr}"
+            if h.network_ref
+            else None
+        ),
+        "assignment_type": h.assignment_type,
+        "assignment_source": h.assignment_source,
+        "assignment_last_confirmed_at": to_api_utc(
+            h.assignment_last_confirmed_at
+        ),
+        "lease_expires_at": to_api_utc(h.lease_expires_at),
+        "lease_source": h.lease_source,
+        "lease_observed_at": to_api_utc(h.lease_observed_at),
+        "last_seen_source": h.last_seen_source,
+        "lease_active": h.lease_active,
+        "allocation_state": h.allocation_state,
+        "allocation_label": h.allocation_label,
+    }
+
+
+def _is_older(incoming, stored):
+    """True if an incoming freshness timestamp predates the stored one."""
+    return incoming is not None and stored is not None and incoming < stored
+
+
+def apply_aspect_upsert(host_obj, parsed, created):
+    """Apply assignment/lease/observation fields with reconciliation rules.
+
+    Each aspect is applied independently, so updating or clearing one
+    never touches the other two. For an existing host:
+
+    * An aspect whose freshness timestamp (``assignment_last_confirmed_at``,
+      ``lease_observed_at``, ``last_seen``) is older than the stored one
+      is ignored as a whole, so older data never replaces newer data.
+    * A persistent assignment (reservation/static) is never replaced by
+      ``dynamic`` or ``unknown``; it can only be changed to another
+      persistent type or cleared with an explicit ``null``.
+
+    Returns:
+        A sorted list of aspect names that were ignored.
+    """
+    ignored = []
+    for aspect, fields_ in ASPECT_FIELDS.items():
+        present = {f: parsed[f] for f in fields_ if f in parsed}
+        if not present:
+            continue
+        if not created:
+            freshness = ASPECT_FRESHNESS_FIELD[aspect]
+            if freshness in present and _is_older(
+                present[freshness], getattr(host_obj, freshness)
+            ):
+                ignored.append(aspect)
+                continue
+            new_type = present.get("assignment_type")
+            if (
+                aspect == "assignment"
+                and "assignment_type" in present
+                and new_type is not None
+                and new_type not in PERSISTENT_ASSIGNMENT_TYPES
+                and host_obj.assignment_type in PERSISTENT_ASSIGNMENT_TYPES
+            ):
+                ignored.append(aspect)
+                continue
+        for field, value in present.items():
+            setattr(host_obj, field, value)
+    return sorted(ignored)
 
 
 @api.route("")
@@ -75,6 +178,12 @@ class HostList(Resource):
     @api.param("is_assigned", "Filter by assignment status", type=bool)
     @api.param("mac_address", "Filter by MAC address")
     @api.param("network_id", "Filter by network ID", type=int)
+    @api.param(
+        "assignment_type",
+        "Filter by assignment type ("
+        + ", ".join(ASSIGNMENT_TYPES)
+        + ", or 'unset')",
+    )
     def get(self):
         """List all hosts with optional filtering."""
         page = request.args.get("page", 1, type=int)
@@ -99,6 +208,13 @@ class HostList(Resource):
             query = query.filter(Host.mac_address == mac_address)
         if network_id := request.args.get("network_id", type=int):
             query = query.filter(Host.network_id == network_id)
+        if assignment_type := request.args.get("assignment_type"):
+            if assignment_type == "unset":
+                query = query.filter(Host.assignment_type.is_(None))
+            elif assignment_type in ASSIGNMENT_TYPES:
+                query = query.filter(Host.assignment_type == assignment_type)
+            else:
+                api.abort(400, f"Invalid assignment_type: {assignment_type}")
 
         # Paginate results
         pagination_obj = query.paginate(
@@ -106,27 +222,7 @@ class HostList(Resource):
         )
 
         return {
-            "data": [
-                {
-                    "id": h.id,
-                    "ip_address": h.ip_address,
-                    "hostname": h.hostname,
-                    "cname": h.cname,
-                    "mac_address": h.mac_address,
-                    "status": h.status,
-                    "is_assigned": h.is_assigned,
-                    "last_seen": h.last_seen,
-                    "discovery_source": h.discovery_source,
-                    "description": h.description,
-                    "network_id": h.network_id,
-                    "network": (
-                        f"{h.network_ref.network}/{h.network_ref.cidr}"
-                        if h.network_ref
-                        else None
-                    ),
-                }
-                for h in pagination_obj.items
-            ],
+            "data": [serialize_host(h) for h in pagination_obj.items],
             "pagination": {
                 "page": pagination_obj.page,
                 "per_page": pagination_obj.per_page,
@@ -163,10 +259,8 @@ class HostList(Resource):
             network_id = network.id if network else None
 
         # Create host
-        last_seen = None
         try:
-            if "last_seen" in data:
-                last_seen = _parse_datetime(data.get("last_seen"))
+            aspects = _parse_aspect_fields(data)
             is_assigned = _parse_bool(data.get("is_assigned"))
         except ValueError as e:
             api.abort(400, str(e))
@@ -183,33 +277,16 @@ class HostList(Resource):
             mac_address=data.get("mac_address"),
             status=data.get("status", "active"),
             is_assigned=is_assigned,
-            last_seen=last_seen,
             discovery_source=data.get("discovery_source"),
             description=data.get("description"),
             network_id=network_id,
+            **aspects,
         )
 
         db.session.add(host_obj)
         db.session.commit()
 
-        return {
-            "id": host_obj.id,
-            "ip_address": host_obj.ip_address,
-            "hostname": host_obj.hostname,
-            "cname": host_obj.cname,
-            "mac_address": host_obj.mac_address,
-            "status": host_obj.status,
-            "is_assigned": host_obj.is_assigned,
-            "last_seen": host_obj.last_seen,
-            "discovery_source": host_obj.discovery_source,
-            "description": host_obj.description,
-            "network_id": host_obj.network_id,
-            "network": (
-                f"{host_obj.network_ref.network}/{host_obj.network_ref.cidr}"
-                if host_obj.network_ref
-                else None
-            ),
-        }, 201
+        return serialize_host(host_obj), 201
 
 
 HOST_UPSERT_FIELDS = (
@@ -242,6 +319,15 @@ class HostUpsert(Resource):
         rather than schema-based: schema validation would reject an
         explicit ``null`` on a typed field, which upsert relies on to
         clear it.
+
+        Assignment, lease and observation fields are reconciled per
+        aspect (see :func:`apply_aspect_upsert`): stale updates and
+        attempts to replace a reservation/static assignment with
+        ``dynamic``/``unknown`` are ignored and reported in the
+        ``X-IPAM-Ignored-Aspects`` response header. Changing the MAC of a
+        host with a persistent assignment returns 409 unless
+        ``confirm_mac_change`` is true; a confirmed change clears lease
+        and observation data not supplied in the same request.
         """
         data = request.json or {}
 
@@ -253,8 +339,44 @@ class HostUpsert(Resource):
         except (TypeError, ValueError) as e:
             api.abort(400, f"Invalid IP address: {e}")
 
+        # Validate everything before touching the database.
+        try:
+            aspects = _parse_aspect_fields(data)
+            is_assigned = (
+                _parse_bool(data.get("is_assigned"))
+                if "is_assigned" in data
+                else None
+            )
+            confirm_mac_change = bool(
+                _parse_bool(data.get("confirm_mac_change"))
+            )
+        except ValueError as e:
+            api.abort(400, str(e))
+
         host_obj = Host.query.filter_by(ip_address=data["ip_address"]).first()
         created = host_obj is None
+
+        mac_changed = False
+        if not created and "mac_address" in data:
+            old_mac = normalize_mac(host_obj.mac_address)
+            new_mac = normalize_mac(data.get("mac_address"))
+            mac_changed = bool(old_mac and new_mac and old_mac != new_mac)
+            if (
+                mac_changed
+                and host_obj.assignment_type in PERSISTENT_ASSIGNMENT_TYPES
+                and not confirm_mac_change
+            ):
+                api.abort(
+                    409,
+                    f"MAC address conflict for {host_obj.ip_address}: "
+                    f"the {host_obj.assignment_type} assignment belongs to "
+                    f"{host_obj.mac_address}, request has "
+                    f"{data.get('mac_address')}. Send "
+                    "confirm_mac_change=true to transition deliberately.",
+                    existing_mac_address=host_obj.mac_address,
+                    requested_mac_address=data.get("mac_address"),
+                    assignment_type=host_obj.assignment_type,
+                )
 
         if created:
             host_obj = Host(ip_address=data["ip_address"], status="active")
@@ -286,44 +408,31 @@ class HostUpsert(Resource):
                 )
             setattr(host_obj, field, value)
 
-        try:
-            if "is_assigned" in data:
-                is_assigned = _parse_bool(data.get("is_assigned"))
-                if is_assigned is not None:
-                    host_obj.is_assigned = is_assigned
-            elif created:
-                host_obj.is_assigned = current_app.config.get(
-                    "HOST_ASSIGN_ON_CREATE", True
-                )
-
-            if "last_seen" in data:
-                host_obj.last_seen = _parse_datetime(data.get("last_seen"))
-        except ValueError as e:
-            api.abort(400, str(e))
+        if is_assigned is not None:
+            host_obj.is_assigned = is_assigned
+        elif created:
+            host_obj.is_assigned = current_app.config.get(
+                "HOST_ASSIGN_ON_CREATE", True
+            )
 
         if "discovery_source" in data:
             host_obj.discovery_source = data.get("discovery_source")
 
+        if mac_changed and confirm_mac_change:
+            # Deliberate device transition: lease and observation history
+            # belonged to the previous device and must not carry over.
+            for field in ASPECT_FIELDS["lease"] + ASPECT_FIELDS["observation"]:
+                if field not in aspects:
+                    setattr(host_obj, field, None)
+
+        ignored = apply_aspect_upsert(host_obj, aspects, created)
+
         db.session.commit()
 
-        return {
-            "id": host_obj.id,
-            "ip_address": host_obj.ip_address,
-            "hostname": host_obj.hostname,
-            "cname": host_obj.cname,
-            "mac_address": host_obj.mac_address,
-            "status": host_obj.status,
-            "is_assigned": host_obj.is_assigned,
-            "last_seen": host_obj.last_seen,
-            "discovery_source": host_obj.discovery_source,
-            "description": host_obj.description,
-            "network_id": host_obj.network_id,
-            "network": (
-                f"{host_obj.network_ref.network}/{host_obj.network_ref.cidr}"
-                if host_obj.network_ref
-                else None
-            ),
-        }, 201 if created else 200
+        headers = {}
+        if ignored:
+            headers["X-IPAM-Ignored-Aspects"] = ",".join(ignored)
+        return serialize_host(host_obj), 201 if created else 200, headers
 
 
 @api.route("/<int:id>")
@@ -335,24 +444,7 @@ class HostResource(Resource):
     def get(self, id):
         """Get a specific host by ID."""
         host_obj = Host.query.get_or_404(id)
-        return {
-            "id": host_obj.id,
-            "ip_address": host_obj.ip_address,
-            "hostname": host_obj.hostname,
-            "cname": host_obj.cname,
-            "mac_address": host_obj.mac_address,
-            "status": host_obj.status,
-            "is_assigned": host_obj.is_assigned,
-            "last_seen": host_obj.last_seen,
-            "discovery_source": host_obj.discovery_source,
-            "description": host_obj.description,
-            "network_id": host_obj.network_id,
-            "network": (
-                f"{host_obj.network_ref.network}/{host_obj.network_ref.cidr}"
-                if host_obj.network_ref
-                else None
-            ),
-        }
+        return serialize_host(host_obj)
 
     @api.doc("update_host")
     @api.expect(host_input, validate=True)
@@ -390,11 +482,13 @@ class HostResource(Resource):
         else:
             network = Network.query.get(network_id) if network_id else None
 
-        # Update fields
-        last_seen = None
+        # Update fields. Assignment, lease and observation fields are
+        # only changed when present in the body, so legacy clients that
+        # do not know them leave them untouched. PUT is an explicit
+        # manual update: freshness and persistence guards of the upsert
+        # endpoint do not apply here.
         try:
-            if "last_seen" in data:
-                last_seen = _parse_datetime(data.get("last_seen"))
+            aspects = _parse_aspect_fields(data)
             is_assigned = _parse_bool(data.get("is_assigned"))
         except ValueError as e:
             api.abort(400, str(e))
@@ -408,8 +502,8 @@ class HostResource(Resource):
         host_obj.status = data.get("status", "active")
         if is_assigned is not None:
             host_obj.is_assigned = is_assigned
-        if "last_seen" in data:
-            host_obj.last_seen = last_seen
+        for field, value in aspects.items():
+            setattr(host_obj, field, value)
         if "discovery_source" in data:
             host_obj.discovery_source = data.get("discovery_source")
         host_obj.description = data.get("description")
@@ -417,24 +511,7 @@ class HostResource(Resource):
 
         db.session.commit()
 
-        return {
-            "id": host_obj.id,
-            "ip_address": host_obj.ip_address,
-            "hostname": host_obj.hostname,
-            "cname": host_obj.cname,
-            "mac_address": host_obj.mac_address,
-            "status": host_obj.status,
-            "is_assigned": host_obj.is_assigned,
-            "last_seen": host_obj.last_seen,
-            "discovery_source": host_obj.discovery_source,
-            "description": host_obj.description,
-            "network_id": host_obj.network_id,
-            "network": (
-                f"{host_obj.network_ref.network}/{host_obj.network_ref.cidr}"
-                if host_obj.network_ref
-                else None
-            ),
-        }
+        return serialize_host(host_obj)
 
     @api.doc("delete_host")
     @api.response(204, "Host deleted")

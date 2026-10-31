@@ -2,6 +2,11 @@
 
 import ipaddress
 
+from ipam.allocation import (
+    allocation_label,
+    derive_allocation_state,
+    lease_is_active,
+)
 from ipam.extensions import db
 
 
@@ -53,7 +58,37 @@ class Network(db.Model):
 
     @property
     def available_hosts(self):
-        return self.total_hosts - self.used_hosts
+        """Number of addresses that would be offered for allocation.
+
+        Uses the same semantics as :meth:`allocatable_addresses`.
+        """
+        return sum(1 for _ in self.allocatable_addresses())
+
+    def allocatable_addresses(self):
+        """Yield addresses that may be suggested for static allocation.
+
+        An address is excluded when any host record exists for it
+        (whatever its assignment, lease or observation state: an expired
+        lease or missed ping is not proof that it is free) or when it
+        lies inside an active DHCP range. A yielded address only has *no
+        recorded allocation*; it is not positively confirmed free.
+        """
+        net = ipaddress.IPv4Network(f"{self.network}/{self.cidr}", strict=False)
+        recorded = {ipaddress.IPv4Address(h.ip_address) for h in self.hosts}
+        pools = [
+            (
+                ipaddress.IPv4Address(r.start_ip),
+                ipaddress.IPv4Address(r.end_ip),
+            )
+            for r in self.dhcp_ranges
+            if r.is_active
+        ]
+        for ip in net.hosts():
+            if ip in recorded:
+                continue
+            if any(start <= ip <= end for start, end in pools):
+                continue
+            yield ip
 
     @classmethod
     def find_for_ip(cls, ip_address):
@@ -106,13 +141,41 @@ class Host(db.Model):
     status = db.Column(db.String(20), default="active")
     last_seen = db.Column(db.DateTime)
     discovery_source = db.Column(db.String(50))
+    # Legacy curation flag. Not authoritative for allocation; see
+    # ``allocation_state`` and ADDRESS_ASSIGNMENT_MODEL.md.
     is_assigned = db.Column(db.Boolean, default=False, nullable=False)
     network_id = db.Column(
         db.Integer, db.ForeignKey("networks.id"), nullable=True
     )
 
+    # Assignment aspect: how the address is allocated.
+    assignment_type = db.Column(db.String(20))
+    assignment_source = db.Column(db.String(50))
+    assignment_last_confirmed_at = db.Column(db.DateTime)
+    # Lease aspect: an explicitly observed DHCP lease.
+    lease_expires_at = db.Column(db.DateTime)
+    lease_source = db.Column(db.String(50))
+    lease_observed_at = db.Column(db.DateTime)
+    # Observation aspect: provenance of ``last_seen``.
+    last_seen_source = db.Column(db.String(50))
+
     def __repr__(self):
         return f"<Host {self.ip_address}>"
+
+    @property
+    def lease_active(self):
+        """True if an explicitly observed lease has not yet expired."""
+        return lease_is_active(self)
+
+    @property
+    def allocation_state(self):
+        """Allocation state derived from assignment, lease and observation."""
+        return derive_allocation_state(self)
+
+    @property
+    def allocation_label(self):
+        """Human readable form of :attr:`allocation_state`."""
+        return allocation_label(self.allocation_state)
 
 
 class DhcpRange(db.Model):

@@ -37,6 +37,12 @@ Claude Code-specific configuration and standards for the Python IPAM project.
 ## Testing Expectations
 
 - Add or update tests for new features and behavior changes.
+- Tests must never touch `./ipam.db`. `tests/conftest.py` sets
+  `DATABASE_URL=sqlite:///:memory:` before `ipam` is imported, because the
+  engine is bound inside `create_app()`; changing
+  `app.config["SQLALCHEMY_DATABASE_URI"]` afterwards has no effect. Use
+  `create_app(name, {"SQLALCHEMY_DATABASE_URI": ...})` when a test needs
+  its own database file.
 
 ## Project Overview
 
@@ -162,7 +168,8 @@ tests/
 ├── test_forms.py            # WTForms Validation Tests
 ├── test_database.py         # Database initialization tests
 ├── test_export_import.py    # Export/Import plugin tests
-└── test_crud_operations.py  # CRUD operation tests
+├── test_crud_operations.py  # CRUD operation tests
+└── test_address_assignment.py # Assignment/lease/observation model
 ```
 
 **Test Commands**:

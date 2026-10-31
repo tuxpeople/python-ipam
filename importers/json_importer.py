@@ -5,6 +5,11 @@ import json
 from datetime import datetime
 from typing import Any
 
+from ipam.allocation import (
+    EXPORT_ASPECT_COLUMNS,
+    normalize_imported_aspects,
+    to_db_utc,
+)
 from ipam.normalize import normalize_network_address
 
 from . import BaseImporter
@@ -93,6 +98,11 @@ class JSONImporter(BaseImporter):
                             "discovery_source",
                             "description",
                         )
+                        if field in host_data
+                    },
+                    **{
+                        field: host_data[field]
+                        for field in EXPORT_ASPECT_COLUMNS
                         if field in host_data
                     },
                 }
@@ -207,8 +217,8 @@ class JSONImporter(BaseImporter):
                         normalized = str(host_data["last_seen"]).strip()
                         if normalized.endswith("Z"):
                             normalized = f"{normalized[:-1]}+00:00"
-                        host_data["last_seen"] = datetime.fromisoformat(
-                            normalized
+                        host_data["last_seen"] = to_db_utc(
+                            datetime.fromisoformat(normalized)
                         )
                     except ValueError:
                         errors.append(
@@ -217,6 +227,12 @@ class JSONImporter(BaseImporter):
                         continue
                 else:
                     host_data["last_seen"] = None
+
+                try:
+                    normalize_imported_aspects(host_data)
+                except ValueError as e:
+                    errors.append(f"Entry {entry_num}: {e}")
+                    continue
 
                 if not host_data.get("discovery_source"):
                     host_data["discovery_source"] = None

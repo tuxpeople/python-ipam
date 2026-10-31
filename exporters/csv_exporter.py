@@ -4,6 +4,8 @@ import csv
 import io
 from typing import Any
 
+from ipam.allocation import EXPORT_ASPECT_COLUMNS, export_aspect_values
+
 from . import BaseExporter
 
 
@@ -77,6 +79,7 @@ class CSVExporter(BaseExporter):
                 "Discovery Source",
                 "Network",
                 "Description",
+                *EXPORT_ASPECT_COLUMNS.values(),
             ]
         )
 
@@ -99,6 +102,10 @@ class CSVExporter(BaseExporter):
                     host.discovery_source or "",
                     network_info,
                     host.description or "",
+                    *(
+                        value or ""
+                        for value in export_aspect_values(host).values()
+                    ),
                 ]
             )
 

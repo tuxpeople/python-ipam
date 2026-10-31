@@ -65,9 +65,15 @@
                             <div class="mb-3 form-check mt-4">
                                 {{ form.is_assigned(class="form-check-input") }}
                                 {{ form.is_assigned.label(class="form-check-label") }}
-                                <div class="form-text">Mark as officially assigned</div>
+                                <div class="form-text">Legacy curation flag (not used for allocation)</div>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.assignment_type.label(class="form-label") }}
+                        {{ form.assignment_type(class="form-select") }}
+                        <div class="form-text">How the address is allocated. Independent of status, DHCP leases and last seen.</div>
                     </div>
 
                     <div class="mb-3">

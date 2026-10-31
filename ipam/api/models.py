@@ -2,6 +2,41 @@
 
 from flask_restx import fields
 
+from ipam.allocation import ALLOCATION_STATE_LABELS, ASSIGNMENT_TYPES
+
+# Address assignment, lease and observation fields shared by the host
+# input and output models (see ADDRESS_ASSIGNMENT_MODEL.md).
+_assignment_fields = {
+    "assignment_type": fields.String(
+        enum=list(ASSIGNMENT_TYPES),
+        description=(
+            "How the address is assigned: reservation (DHCP "
+            "reservation), static (configured on the host or declared "
+            "static), dynamic (DHCP pool lease), unknown (not "
+            "established; NOT 'free'). Null means unset."
+        ),
+    ),
+    "assignment_source": fields.String(
+        description="Source that asserted the assignment"
+    ),
+    "assignment_last_confirmed_at": fields.DateTime(
+        description="When the source last confirmed the assignment (UTC)"
+    ),
+    "lease_expires_at": fields.DateTime(
+        description=(
+            "Expiry of an explicitly observed DHCP lease (UTC). Null "
+            "means unknown/not supplied, not infinite."
+        )
+    ),
+    "lease_source": fields.String(description="Source of the lease data"),
+    "lease_observed_at": fields.DateTime(
+        description="When the lease was observed by its source (UTC)"
+    ),
+    "last_seen_source": fields.String(
+        description="Source of the last_seen observation"
+    ),
+}
+
 # Network models
 network_model = {
     "id": fields.Integer(readonly=True, description="Network ID"),
@@ -79,10 +114,16 @@ host_model = {
         description="Host status (active, inactive, reserved)"
     ),
     "is_assigned": fields.Boolean(
-        description="Whether the host is officially assigned"
+        description=(
+            "Legacy curation flag; not authoritative for allocation "
+            "(use assignment_type / allocation_state)"
+        )
     ),
     "last_seen": fields.DateTime(
-        description="Last observed timestamp (ISO 8601)"
+        description=(
+            "Latest actual observation of the device (ISO 8601, UTC; "
+            "naive input is treated as UTC)"
+        )
     ),
     "discovery_source": fields.String(
         description="Discovery source identifier"
@@ -90,6 +131,19 @@ host_model = {
     "description": fields.String(description="Host description"),
     "network_id": fields.Integer(description="Associated network ID"),
     "network": fields.String(readonly=True, description="Network address"),
+    **_assignment_fields,
+    "lease_active": fields.Boolean(
+        readonly=True,
+        description="Derived: an observed lease exists and has not expired",
+    ),
+    "allocation_state": fields.String(
+        readonly=True,
+        enum=list(ALLOCATION_STATE_LABELS),
+        description="Derived allocation state (never stored)",
+    ),
+    "allocation_label": fields.String(
+        readonly=True, description="Human readable allocation state"
+    ),
 }
 
 host_input_model = {
@@ -105,16 +159,29 @@ host_input_model = {
         description="Host status (active, inactive, reserved)"
     ),
     "is_assigned": fields.Boolean(
-        description="Whether the host is officially assigned"
+        description=(
+            "Legacy curation flag; not authoritative for allocation "
+            "(use assignment_type / allocation_state)"
+        )
     ),
     "last_seen": fields.DateTime(
-        description="Last observed timestamp (ISO 8601)"
+        description=(
+            "Latest actual observation of the device (ISO 8601, UTC; "
+            "naive input is treated as UTC)"
+        )
     ),
     "discovery_source": fields.String(
         description="Discovery source identifier"
     ),
     "description": fields.String(description="Host description"),
     "network_id": fields.Integer(description="Associated network ID"),
+    **_assignment_fields,
+    "confirm_mac_change": fields.Boolean(
+        description=(
+            "Upsert only: deliberately accept a MAC change on a host "
+            "with a reservation/static assignment"
+        )
+    ),
 }
 
 # IP management models

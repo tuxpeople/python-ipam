@@ -46,6 +46,7 @@
                     <th>CNAME</th>
                     <th>MAC Address</th>
                     <th>Status</th>
+                    <th>Allocation</th>
                     <th>Last Seen</th>
                     <th>Network</th>
                     <th>Description</th>
@@ -72,6 +73,17 @@
                             {% elif host.status == 'reserved' %}bg-warning
                             {% else %}bg-info{% endif %}">
                             {{ host.status.title() }}
+                        </span>
+                    </td>
+                    <td>
+                        {% set state = host.allocation_state %}
+                        <span class="badge
+                            {% if state in ('reserved', 'reserved_lease_active', 'static') %}bg-primary
+                            {% elif state == 'dynamic' %}bg-info
+                            {% elif state == 'lease_expired' %}bg-warning
+                            {% else %}bg-secondary{% endif %}"
+                            title="{{ host.assignment_source or '' }}">
+                            {{ host.allocation_label }}
                         </span>
                     </td>
                     <td class="text-nowrap" data-order="{{ host.last_seen.strftime('%Y-%m-%d %H:%M:%S') if host.last_seen else '' }}">
@@ -114,7 +126,7 @@ $(document).ready(function() {
         pageLength: 25,
         order: [[0, 'asc']],
         columnDefs: [
-            { targets: [5], type: 'string' },
+            { targets: [6], type: 'string' },
             { targets: [-1], orderable: false }
         ]
     });

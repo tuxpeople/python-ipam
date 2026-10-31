@@ -3,6 +3,8 @@
 import json
 from typing import Any
 
+from ipam.allocation import export_aspect_values
+
 from . import BaseExporter
 
 
@@ -70,6 +72,7 @@ class JSONExporter(BaseExporter):
                     "discovery_source": host.discovery_source,
                     "description": host.description,
                     "network": network_info,
+                    **export_aspect_values(host),
                 }
             )
 

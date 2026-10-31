@@ -15,6 +15,7 @@ from flask import (
 
 from exporters import get_exporter
 from importers import get_available_importers, get_importer
+from ipam.allocation import EXPORT_ASPECT_COLUMNS, utcnow
 from ipam.backup import (
     create_backup,
     list_backups,
@@ -131,6 +132,21 @@ def add_network():
     return render_template("add_network.html", form=form)
 
 
+def _apply_manual_assignment(host, assignment_type):
+    """Apply an assignment type chosen in the web UI.
+
+    Only an actual change touches the assignment aspect; it is then
+    recorded as a manual declaration confirmed now. Lease and
+    observation data are never changed here.
+    """
+    assignment_type = assignment_type or None
+    if assignment_type == host.assignment_type:
+        return
+    host.assignment_type = assignment_type
+    host.assignment_source = "manual" if assignment_type else None
+    host.assignment_last_confirmed_at = utcnow() if assignment_type else None
+
+
 @web_bp.route("/add_host", methods=["GET", "POST"])
 def add_host():
     """Add new host."""
@@ -163,6 +179,7 @@ def add_host():
             is_assigned=form.is_assigned.data,
             network_id=network_id,
         )
+        _apply_manual_assignment(host, form.assignment_type.data)
         db.session.add(host)
         db.session.commit()
         flash("Host added successfully!", "success")
@@ -350,6 +367,8 @@ def edit_host(host_id):
     """Edit existing host."""
     host = Host.query.get_or_404(host_id)
     form = HostForm(obj=host)
+    if request.method == "GET":
+        form.assignment_type.data = host.assignment_type or ""
     form.network_id.choices = [(0, "Auto-detect")] + [
         (n.id, f"{n.network}/{n.cidr}") for n in Network.query.all()
     ]
@@ -372,6 +391,7 @@ def edit_host(host_id):
         host.status = form.status.data
         host.is_assigned = form.is_assigned.data
         host.network_id = network_id
+        _apply_manual_assignment(host, form.assignment_type.data)
 
         db.session.commit()
         flash("Host updated successfully!", "success")
@@ -450,6 +470,8 @@ def api_hosts():
                 "description": h.description,
                 "status": h.status,
                 "network_id": h.network_id,
+                "assignment_type": h.assignment_type,
+                "allocation_state": h.allocation_state,
             }
             for h in hosts_list
         ]
@@ -684,6 +706,7 @@ def _create_hosts_from_data(hosts_data, update_existing=False):
                 "last_seen",
                 "discovery_source",
                 "is_assigned",
+                *EXPORT_ASPECT_COLUMNS,
             ):
                 if field in host_data:
                     value = host_data[field]
@@ -732,6 +755,11 @@ def _create_hosts_from_data(hosts_data, update_existing=False):
             discovery_source=host_data.get("discovery_source"),
             is_assigned=is_assigned,
             network_id=network_id,
+            **{
+                field: host_data[field]
+                for field in EXPORT_ASPECT_COLUMNS
+                if field in host_data
+            },
         )
 
         db.session.add(host)

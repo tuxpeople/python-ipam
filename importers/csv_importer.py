@@ -6,6 +6,11 @@ import ipaddress
 from datetime import datetime
 from typing import Any
 
+from ipam.allocation import (
+    EXPORT_ASPECT_COLUMNS,
+    normalize_imported_aspects,
+    to_db_utc,
+)
 from ipam.normalize import normalize_network_address
 
 from . import BaseImporter
@@ -41,6 +46,7 @@ class CSVImporter(BaseImporter):
                             "vlan_id": "VLAN ID",
                             "location": "Location",
                             "description": "Description",
+                            **EXPORT_ASPECT_COLUMNS,
                         }.items()
                         if column in row
                     },
@@ -69,6 +75,7 @@ class CSVImporter(BaseImporter):
                             "last_seen": "Last Seen",
                             "discovery_source": "Discovery Source",
                             "description": "Description",
+                            **EXPORT_ASPECT_COLUMNS,
                         }.items()
                         if column in row
                     },
@@ -176,8 +183,8 @@ class CSVImporter(BaseImporter):
                         normalized = host_data["last_seen"].strip()
                         if normalized.endswith("Z"):
                             normalized = f"{normalized[:-1]}+00:00"
-                        host_data["last_seen"] = datetime.fromisoformat(
-                            normalized
+                        host_data["last_seen"] = to_db_utc(
+                            datetime.fromisoformat(normalized)
                         )
                     except ValueError:
                         errors.append(
@@ -186,6 +193,12 @@ class CSVImporter(BaseImporter):
                         continue
                 else:
                     host_data["last_seen"] = None
+
+                try:
+                    normalize_imported_aspects(host_data)
+                except ValueError as e:
+                    errors.append(f"Row {row_num}: {e}")
+                    continue
 
                 if not host_data.get("discovery_source"):
                     host_data["discovery_source"] = None

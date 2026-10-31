@@ -2,10 +2,12 @@
 
 import ipaddress
 
+from flask import request
 from flask_restx import Namespace, Resource
 
+from ipam.allocation import STATE_NO_RECORD, allocation_label, to_api_utc
 from ipam.api.models import available_ips_model, error_model, next_ip_model
-from ipam.models import DhcpRange, Host, Network
+from ipam.models import Host, Network
 
 api = Namespace("ip", description="IP address management operations")
 
@@ -15,16 +17,40 @@ available_ips = api.model("AvailableIPs", available_ips_model)
 error = api.model("Error", error_model)
 
 
-def _in_active_dhcp_range(ip_address, ranges):
-    """Return True if IP is inside any active DHCP range."""
-    for range_obj in ranges:
-        if not range_obj.is_active:
-            continue
-        start_ip = ipaddress.IPv4Address(range_obj.start_ip)
-        end_ip = ipaddress.IPv4Address(range_obj.end_ip)
-        if start_ip <= ip_address <= end_ip:
-            return True
-    return False
+def _isoformat(value):
+    value = to_api_utc(value)
+    return value.isoformat() if value else None
+
+
+def _json_host(host):
+    """JSON-safe host representation for the IP query endpoint."""
+    return {
+        "id": host.id,
+        "hostname": host.hostname,
+        "cname": host.cname,
+        "mac_address": host.mac_address,
+        "status": host.status,
+        "is_assigned": host.is_assigned,
+        "last_seen": _isoformat(host.last_seen),
+        "last_seen_source": host.last_seen_source,
+        "discovery_source": host.discovery_source,
+        "description": host.description,
+        "network_id": host.network_id,
+        "network": (
+            f"{host.network_ref.network}/{host.network_ref.cidr}"
+            if host.network_ref
+            else None
+        ),
+        "assignment_type": host.assignment_type,
+        "assignment_source": host.assignment_source,
+        "assignment_last_confirmed_at": _isoformat(
+            host.assignment_last_confirmed_at
+        ),
+        "lease_expires_at": _isoformat(host.lease_expires_at),
+        "lease_source": host.lease_source,
+        "lease_observed_at": _isoformat(host.lease_observed_at),
+        "lease_active": host.lease_active,
+    }
 
 
 @api.route("/networks/<int:network_id>/next-ip")
@@ -38,26 +64,10 @@ class NextAvailableIP(Resource):
         """Get the next available IP address in a network."""
         network = Network.query.get_or_404(network_id)
 
-        # Get network range
-        net = ipaddress.IPv4Network(
-            f"{network.network}/{network.cidr}", strict=False
-        )
-
-        # Get all used IPs in this network
-        used_ips = {
-            ipaddress.IPv4Address(h.ip_address)
-            for h in Host.query.filter_by(network_id=network_id).all()
-        }
-        dhcp_ranges = DhcpRange.query.filter_by(
-            network_id=network_id, is_active=True
-        ).all()
-
-        # Find first available IP
-        for ip in net.hosts():
-            if ip in used_ips:
-                continue
-            if _in_active_dhcp_range(ip, dhcp_ranges):
-                continue
+        # Same allocation semantics as available-ips and the network
+        # counters (see Network.allocatable_addresses).
+        ip = next(network.allocatable_addresses(), None)
+        if ip is not None:
             return {
                 "ip_address": str(ip),
                 "network": f"{network.network}/{network.cidr}",
@@ -78,28 +88,9 @@ class AvailableIPs(Resource):
     def get(self, network_id):
         """Get all available IP addresses in a network."""
         network = Network.query.get_or_404(network_id)
-        limit = api.payload.get("limit") if api.payload else None
+        limit = request.args.get("limit", type=int)
 
-        # Get network range
-        net = ipaddress.IPv4Network(
-            f"{network.network}/{network.cidr}", strict=False
-        )
-
-        # Get all used IPs in this network
-        used_ips = {
-            ipaddress.IPv4Address(h.ip_address)
-            for h in Host.query.filter_by(network_id=network_id).all()
-        }
-        dhcp_ranges = DhcpRange.query.filter_by(
-            network_id=network_id, is_active=True
-        ).all()
-
-        # Find all available IPs
-        available = [
-            str(ip)
-            for ip in net.hosts()
-            if ip not in used_ips and not _in_active_dhcp_range(ip, dhcp_ranges)
-        ]
+        available = [str(ip) for ip in network.allocatable_addresses()]
 
         # Apply limit if specified
         if limit:
@@ -133,23 +124,9 @@ class IPQuery(Resource):
             return {
                 "ip_address": ip_address,
                 "status": "assigned",
-                "host": {
-                    "id": host.id,
-                    "hostname": host.hostname,
-                    "cname": host.cname,
-                    "mac_address": host.mac_address,
-                    "status": host.status,
-                    "is_assigned": host.is_assigned,
-                    "last_seen": host.last_seen,
-                    "discovery_source": host.discovery_source,
-                    "description": host.description,
-                    "network_id": host.network_id,
-                    "network": (
-                        f"{host.network_ref.network}/{host.network_ref.cidr}"
-                        if host.network_ref
-                        else None
-                    ),
-                },
+                "allocation_state": host.allocation_state,
+                "allocation_label": host.allocation_label,
+                "host": _json_host(host),
             }
 
         # Check which network this IP belongs to
@@ -173,6 +150,8 @@ class IPQuery(Resource):
                     return {
                         "ip_address": ip_address,
                         "status": "dhcp",
+                        "allocation_state": STATE_NO_RECORD,
+                        "allocation_label": allocation_label(STATE_NO_RECORD),
                         "dhcp_range": {
                             "id": dhcp_range.id,
                             "start_ip": dhcp_range.start_ip,
@@ -188,9 +167,14 @@ class IPQuery(Resource):
                             "location": network.location,
                         },
                     }
+                # "available" (legacy) only means no recorded allocation
+                # and no active DHCP pool, not a confirmed free address.
                 return {
                     "ip_address": ip_address,
                     "status": "available",
+                    "allocation_state": STATE_NO_RECORD,
+                    "allocation_label": allocation_label(STATE_NO_RECORD),
+                    "confirmed_free": False,
                     "network": {
                         "id": network.id,
                         "network": f"{network.network}/{network.cidr}",

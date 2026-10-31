@@ -3,10 +3,16 @@
 import os
 import tempfile
 
-import pytest
+# The database URI is read when ipam.config is imported and the engine is
+# bound in create_app(); setting app.config afterwards does not rebind it.
+# Without this, the test suite would run against (and drop the tables of)
+# the developer's ./ipam.db.
+os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 
-from ipam import create_app
-from ipam.extensions import db
+import pytest  # noqa: E402
+
+from ipam import create_app  # noqa: E402
+from ipam.extensions import db  # noqa: E402
 
 
 @pytest.fixture

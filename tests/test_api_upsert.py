@@ -282,6 +282,7 @@ def test_upsert_host_serializes_last_seen(client):
         },
         headers=AUTH,
     )
+    # Timestamps are exposed as timezone-aware UTC.
 
     assert response.status_code == 201
-    assert response.get_json()["last_seen"] == "2025-12-28T10:01:58"
+    assert response.get_json()["last_seen"] == "2025-12-28T10:01:58+00:00"

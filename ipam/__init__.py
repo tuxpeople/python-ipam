@@ -9,11 +9,15 @@ from ipam.config import config
 from ipam.extensions import db, limiter, migrate
 
 
-def create_app(config_name=None):
+def create_app(config_name=None, config_overrides=None):
     """Create and configure the Flask application.
 
     Args:
         config_name: Configuration name ('development', 'production', or None for default)
+        config_overrides: Optional mapping applied on top of the selected
+            configuration *before* extensions are initialized. Settings
+            such as ``SQLALCHEMY_DATABASE_URI`` only take effect here;
+            changing ``app.config`` afterwards does not rebind the engine.
 
     Returns:
         Configured Flask application instance
@@ -26,6 +30,8 @@ def create_app(config_name=None):
     if config_name is None:
         config_name = os.environ.get("FLASK_ENV", "default")
     app.config.from_object(config[config_name])
+    if config_overrides:
+        app.config.update(config_overrides)
 
     # Initialize extensions
     db.init_app(app)

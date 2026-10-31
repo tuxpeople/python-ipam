@@ -322,6 +322,32 @@
     - ✅ Environment-driven configuration (`API_TOKENS`, `API_RATE_LIMIT`)
     - ✅ Optional rate limiting toggle (`RATELIMIT_ENABLED`)
 
+- **[IPAM-032]** ✅ Address Assignment, Leases and Observations
+  - **Priority**: High | **Category**: Core / API
+  - **Status**: Complete (IPAM side, phase 1)
+  - **Design**: [ADDRESS_ASSIGNMENT_MODEL.md](ADDRESS_ASSIGNMENT_MODEL.md)
+  - **Description**: Track how an address is assigned (reservation,
+    static, dynamic, unknown), explicitly observed DHCP leases and device
+    observations as independent aspects with per-aspect provenance,
+    instead of overloading `status`
+  - **Acceptance Criteria**:
+    - ✅ Additive nullable fields via Alembic migration; existing data
+      preserved, UDM reservation rows backfilled to `reservation`
+    - ✅ Derived `allocation_state` (never stored)
+    - ✅ Upsert reconciliation: per-aspect partial updates, older
+      timestamps ignored, persistent assignments not downgraded by
+      leases, MAC changes on reservations/static need confirmation (409)
+    - ✅ Timezone-aware UTC timestamps in the API
+    - ✅ Next IP, available IPs and network counters share one rule
+    - ✅ Web UI (assignment selector, allocation column and details),
+      JSON/CSV export and import
+  - **Follow-ups** (not implemented):
+    - External identifiers / source scopes for hosts, networks and DHCP
+      ranges, and scoped retirement based on complete snapshots
+    - Child records for multiple independent claims per aspect
+    - Collector updates in homelab-automation (reservation provenance,
+      then leases, then static sources)
+
 ---
 
 ## 📋 Planned Features

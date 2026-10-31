@@ -1,7 +1,9 @@
 # Multi-stage build using Chainguard Python images for minimal attack surface
 # Stage 1: Build virtualenv with all dependencies
+# Chainguard only publishes `latest` tags for free; pin the digest so Renovate
+# proposes base image updates as PRs that have to pass CI.
 # hadolint ignore=DL3007
-FROM cgr.dev/chainguard/python:latest-dev AS build
+FROM cgr.dev/chainguard/python:latest-dev@sha256:157a562dbc225a2a9039dbd8249cbf704202260ba27bf525f24e47a3a685050f AS build
 
 # Create virtualenv in its final location and upgrade build tools
 # Pin pip >=26.2 for CVE-2025-8869 and the CVE-2026-1703/3219/6357/8643/13346
@@ -30,7 +32,7 @@ USER nonroot
 
 # Stage 3: Final minimal runtime image
 # hadolint ignore=DL3007
-FROM cgr.dev/chainguard/python:latest
+FROM cgr.dev/chainguard/python:latest@sha256:35d6025b288eb1c40ae631db77ed6cdd26c6f51d898428d8fc9989db7f29e784
 
 LABEL maintainer="Python IPAM"
 LABEL description="IP Address Management System built with Flask"

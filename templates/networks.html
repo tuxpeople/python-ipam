@@ -45,7 +45,7 @@
             <tbody>
                 {% for network in networks %}
                 <tr>
-                    <td><a href="{{ url_for('web.network_detail', network_id=network.id) }}">{{ network.network }}</a></td>
+                    <td data-order="{{ network.network|ip_sort_key }}"><a href="{{ url_for('web.network_detail', network_id=network.id) }}">{{ network.network }}</a></td>
                     <td>{{ network.name or '-' }}</td>
                     <td>{{ network.domain or '-' }}</td>
                     <td>/{{ network.cidr }}</td>

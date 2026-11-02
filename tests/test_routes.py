@@ -242,3 +242,40 @@ class TestAPIRoutes:
         assert response.status_code == 200
         data = json.loads(response.data)
         assert data == []
+
+
+class TestIpSortKey:
+    def test_orders_numerically(self):
+        from ipam.web.routes import ip_sort_key
+
+        ips = ["10.0.0.10", "10.0.0.2", "9.255.255.255", "192.168.1.1"]
+        assert sorted(ips, key=ip_sort_key) == [
+            "9.255.255.255",
+            "10.0.0.2",
+            "10.0.0.10",
+            "192.168.1.1",
+        ]
+
+    def test_invalid_value_returned_unchanged(self):
+        from ipam.web.routes import ip_sort_key
+
+        assert ip_sort_key("not-an-ip") == "not-an-ip"
+        assert ip_sort_key("") == ""
+
+    def test_lists_render_sort_keys(self, client):
+        with client.application.app_context():
+            network = Network(network="10.0.0.0", cidr=24)
+            db.session.add(network)
+            db.session.commit()
+            db.session.add(Host(ip_address="10.0.0.2", network_id=network.id))
+            db.session.commit()
+            network_id = network.id
+
+        hosts = client.get("/hosts").data
+        assert b'data-order="0167772162"' in hosts
+        assert b'data-order="0167772160/24"' in hosts
+        assert b'data-order="0167772160"' in client.get("/networks").data
+        assert (
+            b'data-order="0167772162"'
+            in client.get(f"/networks/{network_id}").data
+        )

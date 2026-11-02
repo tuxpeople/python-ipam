@@ -29,6 +29,20 @@ from ipam.normalize import normalize_network_address, strip_domain_suffix
 from ipam.web import web_bp
 
 
+@web_bp.app_template_filter("ip_sort_key")
+def ip_sort_key(value):
+    """Return a zero-padded sort key so tables order IPs numerically.
+
+    DataTables compares cell text, which puts 10.0.0.10 before 10.0.0.2.
+    Used as ``data-order``; values that are not IPv4 addresses are
+    returned unchanged.
+    """
+    try:
+        return f"{int(ipaddress.IPv4Address(value)):010d}"
+    except ValueError:
+        return value
+
+
 def _validate_dhcp_range(network, start_ip, end_ip, exclude_range_id=None):
     """Validate DHCP range boundaries and overlaps."""
     net = ipaddress.IPv4Network(

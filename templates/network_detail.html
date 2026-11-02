@@ -156,7 +156,7 @@
             <tbody>
                 {% for host in network.hosts %}
                 <tr>
-                    <td><a href="{{ url_for('web.host_detail', host_id=host.id) }}">{{ host.ip_address }}</a></td>
+                    <td data-order="{{ host.ip_address|ip_sort_key }}"><a href="{{ url_for('web.host_detail', host_id=host.id) }}">{{ host.ip_address }}</a></td>
                     <td>{{ host.hostname or '-' }}</td>
                     <td>{% if host.mac_address %}<code>{{ host.mac_address }}</code>{% else %}-{% endif %}</td>
                     <td>

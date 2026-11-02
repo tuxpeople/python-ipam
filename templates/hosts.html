@@ -56,7 +56,7 @@
             <tbody>
                 {% for host in hosts %}
                 <tr>
-                    <td><a href="{{ url_for('web.host_detail', host_id=host.id) }}">{{ host.ip_address }}</a></td>
+                    <td data-order="{{ host.ip_address|ip_sort_key }}"><a href="{{ url_for('web.host_detail', host_id=host.id) }}">{{ host.ip_address }}</a></td>
                     <td>{{ host.hostname or '-' }}</td>
                     <td>{{ host.cname or '-' }}</td>
                     <td>
@@ -89,7 +89,7 @@
                     <td class="text-nowrap" data-order="{{ host.last_seen.strftime('%Y-%m-%d %H:%M:%S') if host.last_seen else '' }}">
                         {{ host.last_seen.strftime('%Y-%m-%d %H:%M:%S') if host.last_seen else '-' }}
                     </td>
-                    <td>
+                    <td data-order="{{ (host.network_ref.network|ip_sort_key) ~ '/' ~ '%02d'|format(host.network_ref.cidr) if host.network_ref else '' }}">
                         {% if host.network_ref %}
                             <a href="{{ url_for('web.network_detail', network_id=host.network_ref.id) }}">{{ host.network_ref.network }}/{{ host.network_ref.cidr }}</a>
                         {% else %}

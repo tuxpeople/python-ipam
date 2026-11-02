@@ -88,7 +88,7 @@ from ipam import db, Network, Host
 
 Follow security best practices:
 ```dockerfile
-FROM python:3.14-slim
+FROM python:3.15-slim
 
 # Security: Non-root user
 RUN useradd -r -s /bin/false ipam
@@ -300,8 +300,8 @@ Reads the Python version (`requires-python`) and project name from
 
 Manual equivalent:
 ```bash
-pyenv install 3.14
-pyenv virtualenv 3.14 python-ipam-env
+pyenv install 3.15
+pyenv virtualenv 3.15 python-ipam-env
 pyenv local python-ipam-env   # writes .python-version (the env name), auto-activates
 pip install -r requirements.txt -r requirements-dev.txt
 ```
@@ -431,7 +431,7 @@ Complete documentation: **API.md**
 - **Security**: 0 CRITICAL/HIGH vulnerabilities (Trivy scanned)
 - **Size**: ~50-100MB (multi-stage build)
 - **User**: nonroot (UID 65532)
-- **Python**: 3.14 (from `latest`; keep `pyproject.toml` `requires-python` in step)
+- **Python**: 3.15 (from `latest`; keep `pyproject.toml` `requires-python` in step)
 
 **Tags**:
 - `latest` - Always points to latest stable release

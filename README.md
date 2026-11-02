@@ -66,8 +66,8 @@ A modern, web-based IP Address Management (IPAM) system built with Flask, SQLite
 
    Manual equivalent:
    ```bash
-   pyenv install 3.14
-   pyenv virtualenv 3.14 python-ipam-env
+   pyenv install 3.15
+   pyenv virtualenv 3.15 python-ipam-env
    pyenv local python-ipam-env   # writes .python-version, auto-activates
    ```
 
@@ -156,11 +156,11 @@ The production Docker image is built on **Chainguard distroless Python images** 
 - ✅ Distroless runtime (no shell, package manager)
 - ✅ Runs as nonroot user (UID 65532)
 - ✅ Includes SBOM (Software Bill of Materials)
-- ✅ Python 3.14
+- ✅ Python 3.15
 
 **Image Details:**
 - **Size**: ~50-100MB (vs 200-300MB for standard Python images)
-- **Base**: cgr.dev/chainguard/python:latest (distroless; currently Python 3.14)
+- **Base**: cgr.dev/chainguard/python:latest (distroless; currently Python 3.15)
 - **Registry**: ghcr.io/tuxpeople/python-ipam
 
 ```bash

@@ -5,7 +5,7 @@ help: ## Zeige verfügbare Befehle
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 install: ## Installiere Dependencies
-	pip install -r requirements.txt
+	pip install -r requirements.txt -r requirements-dev.txt
 
 test: ## Führe Tests aus
 	./run_tests.sh

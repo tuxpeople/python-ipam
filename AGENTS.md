@@ -506,8 +506,11 @@ spec:
 ```bash
 pip list --outdated
 pip install -U package_name
-pip freeze > requirements.txt
 ```
+Update the pinned version in `requirements.txt` (runtime, shipped in the
+image) or `requirements-dev.txt` (tests/lint) by hand. Do not use
+`pip freeze > requirements.txt`: it would copy dev tools into the image.
+Renovate normally proposes these bumps.
 
 **Database Migrations** (on schema changes):
 ```python

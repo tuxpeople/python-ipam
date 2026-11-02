@@ -81,8 +81,11 @@ A modern, web-based IP Address Management (IPAM) system built with Flask, SQLite
 
 4. **Install dependencies:**
    ```bash
-   pip install -r requirements.txt
+   pip install -r requirements.txt -r requirements-dev.txt
    ```
+   `requirements.txt` holds runtime dependencies only (it is what the
+   production image installs); test and lint tools live in
+   `requirements-dev.txt`.
 
 5. **Configure environment variables:**
    ```bash

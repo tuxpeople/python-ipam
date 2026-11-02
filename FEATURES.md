@@ -17,7 +17,7 @@ See [API contract](API.md#conditional-retirement-of-an-expired-dynamic-host).
 |----------|-----------|-------------|---------|-------|
 | Core Features | 9 | 0 | 3 | 12 |
 | API Integration | 2 | 0 | 0 | 2 |
-| UI/UX | 7 | 0 | 3 | 10 |
+| UI/UX | 8 | 0 | 2 | 10 |
 | Data Management | 4 | 0 | 10 | 14 |
 | Testing | 6 | 0 | 1 | 7 |
 | Security | 0 | 0 | 2 | 2 |
@@ -226,6 +226,28 @@ See [API contract](API.md#conditional-retirement-of-an-expired-dynamic-host).
     - `GET /networks/<id>` - Network detail
     - `GET /hosts/<id>` - Host detail
 
+- **[IPAM-028]** ✅ Visual Subnet Display
+  - **Priority**: Medium | **Category**: Network Tools / UI
+  - **Status**: Complete
+  - **GitHub Issue**: [#85](https://github.com/tuxpeople/python-ipam/issues/85)
+  - **Description**: Address map on the network detail view showing each
+    address's recorded state instead of only an aggregate percentage
+  - **Acceptance Criteria**:
+    - ✅ Grid of addresses colour-coded by derived allocation state:
+      reserved/static, dynamic, recorded but unconfirmed, DHCP pool, no
+      recorded allocation, network/broadcast
+    - ✅ Hover shows IP, allocation state, hostname, MAC and description;
+      click opens the host, or Add Host prefilled for unrecorded addresses
+    - ✅ Large subnets: one /24 block at a time with previous/next and
+      jump-to-IP; clickable block occupancy overview up to /16
+    - ✅ Available on the network detail view; 16 columns on narrow, 32 on
+      wide screens
+  - **Technical Notes**:
+    - `ipam/subnet_map.py` builds the map from stored data only; an
+      unrecorded address is not shown as confirmed free
+    - Gateways are not modelled yet, so they appear as normal hosts
+    - Block overview is computed arithmetically, not per address
+
 ### Export/Import System
 - **[IPAM-018]** ✅ DNSmasq Host Export with Multiple Modes
   - **Priority**: Medium | **Category**: Export
@@ -399,18 +421,6 @@ See [API contract](API.md#conditional-retirement-of-an-expired-dynamic-host).
     - Scheduled scan capabilities
   - **Dependencies**: [IPAM-010] for subnet calculations
   - **Technical Notes**: Consider using python-nmap library
-
-- **[IPAM-028]** 📅 Visual Subnet Display
-  - **Priority**: Medium | **Category**: Network Tools
-  - **Estimated Effort**: Medium (2-3 days)
-  - **GitHub Issue**: [#85](https://github.com/tuxpeople/python-ipam/issues/85)
-  - **Description**: Graphical subnet map showing per-IP status instead of just an aggregate utilization percentage
-  - **Acceptance Criteria**:
-    - Visual grid/map of addresses in a subnet, color-coded by status (free, assigned, reserved, network/broadcast/gateway)
-    - Hover/click on a cell shows host details (hostname, MAC, description)
-    - Reasonable handling of large subnets (e.g., compact/paginated view for /16 and larger)
-    - Available on the network detail view
-  - **Dependencies**: Builds on the existing utilization progress bar (IPAM-006); complements the Subnet Calculator (IPAM-010)
 
 ### Network Management
 - **[IPAM-029]** 📅 Locations Management

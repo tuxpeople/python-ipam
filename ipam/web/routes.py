@@ -26,6 +26,7 @@ from ipam.extensions import db
 from ipam.forms import DhcpRangeForm, HostForm, ImportForm, NetworkForm
 from ipam.models import DhcpRange, Host, Network
 from ipam.normalize import normalize_network_address, strip_domain_suffix
+from ipam.subnet_map import block_for_ip, build_subnet_map
 from ipam.web import web_bp
 
 
@@ -94,9 +95,21 @@ def hosts():
 
 @web_bp.route("/networks/<int:network_id>")
 def network_detail(network_id):
-    """Network detail page."""
+    """Network detail page with per-address subnet map."""
     network = Network.query.get_or_404(network_id)
-    return render_template("network_detail.html", network=network)
+    block = request.args.get("block", 0, type=int)
+    jump_ip = request.args.get("ip", "").strip()
+    if jump_ip:
+        jump_block = block_for_ip(network, jump_ip)
+        if jump_block is None:
+            flash(f"{jump_ip} is not an address in this network", "error")
+        else:
+            block = jump_block
+    return render_template(
+        "network_detail.html",
+        network=network,
+        subnet_map=build_subnet_map(network, block),
+    )
 
 
 @web_bp.route("/hosts/<int:host_id>")
@@ -186,6 +199,9 @@ def add_host():
         form.is_assigned.data = current_app.config.get(
             "HOST_ASSIGN_ON_CREATE", True
         )
+        # Prefill from links such as the subnet map's free cells.
+        form.ip_address.data = request.args.get("ip_address", "")
+        form.network_id.data = request.args.get("network_id", 0, type=int)
 
     if form.validate_on_submit():
         network_id = form.network_id.data if form.network_id.data != 0 else None

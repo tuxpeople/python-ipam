@@ -1,0 +1,125 @@
+{# Per-address subnet map; expects `network` and `subnet_map` (ipam.subnet_map). #}
+<style>
+    .subnet-map, .subnet-overview {
+        display: grid;
+        gap: 2px;
+        grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+    }
+    @media (min-width: 992px) {
+        .subnet-map, .subnet-overview { grid-template-columns: repeat(var(--cols-wide), minmax(0, 1fr)); }
+    }
+    .subnet-map .cell {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 0;
+        border: 1px solid transparent;
+        border-radius: 2px;
+        font-size: clamp(0.5rem, 1.4vw, 0.75rem);
+        line-height: 1;
+        text-decoration: none;
+        overflow: hidden;
+    }
+    .subnet-map a.cell:hover, .subnet-map a.cell:focus {
+        outline: 2px solid var(--bs-emphasis-color);
+        outline-offset: -1px;
+    }
+    .subnet-map-legend .swatch {
+        display: inline-block;
+        width: 0.9rem;
+        height: 0.9rem;
+        border: 1px solid transparent;
+        border-radius: 2px;
+        vertical-align: -0.1rem;
+    }
+    .cat-persistent { background: var(--bs-primary); color: #fff; }
+    .cat-dynamic { background: var(--bs-info); color: #000; }
+    .cat-recorded { background: var(--bs-warning); color: #000; }
+    .cat-pool { background: var(--bs-info-bg-subtle); border-color: var(--bs-info) !important; border-style: dashed !important; color: var(--bs-info-text-emphasis); }
+    .cat-free { background: var(--bs-body-bg); border-color: var(--bs-border-color) !important; color: var(--bs-secondary-color); }
+    .cat-network { background: var(--bs-secondary); color: #fff; }
+    .subnet-overview a {
+        aspect-ratio: 1;
+        border: 1px solid var(--bs-border-color);
+        border-radius: 2px;
+    }
+    .subnet-overview a.current { outline: 2px solid var(--bs-emphasis-color); outline-offset: -1px; }
+</style>
+
+<div class="card mb-4" id="subnet-map">
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <h5 class="card-title mb-0">
+            <i class="bi bi-grid-3x3"></i> Address Map
+        </h5>
+        {% if subnet_map.block_count > 1 %}
+        <form method="GET" action="{{ url_for('web.network_detail', network_id=network.id) }}" class="d-flex gap-1">
+            <input type="text" name="ip" class="form-control form-control-sm" placeholder="Jump to IP" aria-label="Jump to IP" style="max-width: 10rem;">
+            <button type="submit" class="btn btn-sm btn-outline-secondary">Go</button>
+        </form>
+        {% endif %}
+    </div>
+    <div class="card-body">
+        {% if subnet_map.overview %}
+        <p class="small text-muted mb-1">Blocks (/24) – darker means more occupied; click to open.</p>
+        <div class="subnet-overview mb-3" style="--cols: 16; --cols-wide: 32;">
+            {% for b in subnet_map.overview %}
+            <a href="{{ url_for('web.network_detail', network_id=network.id, block=b.index, _anchor='subnet-map') }}"
+               class="{{ 'current' if b.index == subnet_map.block else '' }}"
+               style="background-color: rgba(var(--bs-primary-rgb), {{ '%.2f'|format(0.08 + 0.92 * b.ratio) }});"
+               title="{{ b.start }}/24: {{ b.used }}/{{ b.size }} occupied"
+               aria-label="Block {{ b.start }}/24, {{ b.used }} of {{ b.size }} occupied"></a>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if subnet_map.block_count > 1 %}
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+            {% if subnet_map.block > 0 %}
+            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('web.network_detail', network_id=network.id, block=subnet_map.block - 1, _anchor='subnet-map') }}">
+                <i class="bi bi-chevron-left"></i> Previous
+            </a>
+            {% else %}<span></span>{% endif %}
+            <span class="small">
+                {{ subnet_map.block_start }} – {{ subnet_map.block_end }}
+                <span class="text-muted">(block {{ subnet_map.block + 1 }} of {{ subnet_map.block_count }})</span>
+            </span>
+            {% if subnet_map.block < subnet_map.block_count - 1 %}
+            <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('web.network_detail', network_id=network.id, block=subnet_map.block + 1, _anchor='subnet-map') }}">
+                Next <i class="bi bi-chevron-right"></i>
+            </a>
+            {% else %}<span></span>{% endif %}
+        </div>
+        {% endif %}
+
+        <div class="subnet-map mb-3" style="--cols: {{ subnet_map.columns }}; --cols-wide: {{ subnet_map.columns_wide }};">
+            {% for cell in subnet_map.cells %}
+            {% set octet = cell.ip.rsplit('.', 1)[1] %}
+            {% if cell.host %}
+            {% set h = cell.host %}
+            <a class="cell cat-{{ cell.category }}"
+               href="{{ url_for('web.host_detail', host_id=h.id) }}"
+               title="{{ cell.ip }} – {{ cell.state_label }}{% if h.hostname %}&#10;Hostname: {{ h.hostname }}{% endif %}{% if h.mac_address %}&#10;MAC: {{ h.mac_address }}{% endif %}{% if h.description %}&#10;{{ h.description }}{% endif %}">{{ octet }}</a>
+            {% elif cell.category == 'free' %}
+            <a class="cell cat-free"
+               href="{{ url_for('web.add_host', ip_address=cell.ip, network_id=network.id) }}"
+               title="{{ cell.ip }} – {{ cell.state_label }}&#10;Click to add a host">{{ octet }}</a>
+            {% else %}
+            <span class="cell cat-{{ cell.category }}" title="{{ cell.ip }} – {{ cell.state_label }}">{{ octet }}</span>
+            {% endif %}
+            {% endfor %}
+        </div>
+
+        <div class="subnet-map-legend small d-flex flex-wrap gap-3">
+            {% for category, label in subnet_map.labels.items() %}
+            {% if subnet_map.counts[category] %}
+            <span><span class="swatch cat-{{ category }}"></span> {{ label }} ({{ subnet_map.counts[category] }})</span>
+            {% endif %}
+            {% endfor %}
+        </div>
+        <p class="small text-muted mt-2 mb-0">
+            Shows recorded data only. An address without a record is not confirmed free.
+            Hover a cell for details; click a host to open it or an unrecorded address to add a host.
+        </p>
+    </div>
+</div>

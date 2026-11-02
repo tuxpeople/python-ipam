@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.9.1](https://github.com/tuxpeople/python-ipam/compare/v1.9.0...v1.9.1) (2026-11-02)
+
+
+### Bug Fixes
+
+* **config:** warn when production runs with a placeholder SECRET_KEY ([722276d](https://github.com/tuxpeople/python-ipam/commit/722276d908347d3c06ba541014a0aedf2d94baa9))
+
+
+### Documentation
+
+* correct GitHub App installation scope ([dde6e35](https://github.com/tuxpeople/python-ipam/commit/dde6e35cf586df940bcffaa7adbfaddc03da568a))
+
 ## [1.9.0](https://github.com/tuxpeople/python-ipam/compare/v1.8.0...v1.9.0) (2026-11-02)
 
 

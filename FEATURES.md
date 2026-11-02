@@ -3,6 +3,14 @@
 **Version**: 1.1.0
 **Last Updated**: 2026-09-29
 
+## Lease retirement API (2026-11-02)
+
+Implemented `POST /api/v1/hosts/{id}/retire-lease`: source ownership, expiry,
+configurable server grace and curation guards with an atomic full-snapshot
+comparison. Renewals/manual edits return 412 instead of deleting changed data.
+Collector-side complete-snapshot selection and recurring execution remain separate.
+See [API contract](API.md#conditional-retirement-of-an-expired-dynamic-host).
+
 ## 📊 Project Status Overview
 
 | Category | Completed | In Progress | Planned | Total |

@@ -9,6 +9,8 @@ A modern, web-based IP Address Management (IPAM) system built with Flask, SQLite
 - 🧭 **Assignment Tracking**: DHCP reservations, static and dynamic
   assignments, leases and observations as independent facts with
   per-aspect provenance
+- 🧹 **Guarded lease retirement**: Atomic, snapshot-checked deletion of expired
+  collector-owned dynamic records; see [API contract](API.md#conditional-retirement-of-an-expired-dynamic-host).
 - 🔌 **REST API**: Complete RESTful API with Swagger UI documentation
 - 📊 **Dashboard**: Clear overview of network utilization
 - 🔍 **Advanced Search**: DataTables integration for efficient data filtering
@@ -84,6 +86,8 @@ A modern, web-based IP Address Management (IPAM) system built with Flask, SQLite
    Optional host assignment behavior:
    - `HOST_ASSIGN_ON_CREATE=true` marks new hosts as assigned by default.
    API authentication and rate limiting:
+   - `LEASE_RETIRE_MIN_AGE_SECONDS=3600` sets the minimum grace period after lease expiry
+     for conditional retirement (nonnegative integer; no cleanup scheduler is enabled).
    - `API_TOKENS=token1,token2` enables token auth for `/api/v1` (empty disables).
    - `API_RATE_LIMIT=200 per minute` sets the global API limit.
    - `RATELIMIT_ENABLED=true` toggles rate limiting.

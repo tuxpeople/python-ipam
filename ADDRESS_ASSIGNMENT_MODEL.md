@@ -193,3 +193,13 @@ Not implemented yet:
   complete-snapshot bookkeeping and scoped retirement.
 - Child records for multiple concurrent claims per aspect.
 - Collector changes in homelab-automation.
+
+## Conditional retirement API (2026-11-02)
+
+Implemented `POST /api/v1/hosts/{id}/retire-lease` with a full expected snapshot,
+source ownership/expiry/curation guards and a configurable minimum server grace
+period (LEASE_RETIRE_MIN_AGE_SECONDS, default 3600). All stored columns take
+part in the atomic DELETE condition; changes produce 412. No migration needed.
+Normal manual DELETE is unchanged. See API.md for the request contract.
+Collector-side complete-source selection, invocation after deployment and recurring
+execution remain open; this adds no autonomous time-based cleanup in IPAM.

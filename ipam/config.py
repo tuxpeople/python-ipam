@@ -16,6 +16,11 @@ class Config:
 
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key")
     HOST_ASSIGN_ON_CREATE = _get_bool_env("HOST_ASSIGN_ON_CREATE", True)
+    LEASE_RETIRE_MIN_AGE_SECONDS = int(
+        os.environ.get("LEASE_RETIRE_MIN_AGE_SECONDS", "3600")
+    )
+    if LEASE_RETIRE_MIN_AGE_SECONDS < 0:
+        raise ValueError("LEASE_RETIRE_MIN_AGE_SECONDS must be nonnegative")
 
     # Use absolute path for SQLite database in project root
     BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))

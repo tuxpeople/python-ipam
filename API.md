@@ -1001,3 +1001,85 @@ REFACTORING.md for the historical write-up) has been resolved.
 - **FEATURES.md**: Feature roadmap and requirements (IPAM-023)
 - **REFACTORING.md**: Detailed refactoring plan
 - **CLAUDE.md**: Project coding standards
+
+
+### Conditional retirement of an expired dynamic host
+
+```http
+POST /api/v1/hosts/{id}/retire-lease
+```
+
+This is the collector-facing alternative to unconditional host deletion. It
+removes the entire host record only if the previously read snapshot still
+matches **every stored Host column** in one atomic SQL DELETE. No database
+migration is required. Normal API authentication and rate limiting apply.
+
+Request fields:
+
+- `source`: nonempty collector identifier, for example `udm-leases`.
+- `expired_before`: offset-aware ISO 8601 cutoff. Future cutoffs are rejected.
+- `expected`: the complete host object previously returned by GET/list. All
+  stored columns, including null values, are mandatory. Computed fields such
+  as `allocation_state` may be included and are ignored for comparison.
+
+The expected host must have `assignment_type=dynamic`, and `assignment_source`,
+`lease_source` and `discovery_source` must all equal `source`. It must have a
+MAC, finite expired lease, and non-future assignment/lease confirmation times.
+`is_assigned=true`, CNAME, description, device `last_seen` or `last_seen_source`
+protect the record. A collector-owned hostname alone does not protect an old
+lease. Reservations, static/unknown assignments and foreign sources are refused.
+
+`LEASE_RETIRE_MIN_AGE_SECONDS` imposes a server-side minimum age after lease
+expiry (default **3600**). The effective cutoff is the earlier of the client's
+`expired_before` and server UTC now minus this minimum. A collector may request
+longer grace, but cannot shorten the server minimum. Configure a nonnegative
+integer; 0 explicitly disables the server-side grace period.
+
+Example after a successful, complete source collection and candidate selection:
+
+```python
+from datetime import datetime, timedelta, timezone
+import requests
+
+# session already has the normal Authorization header.
+url = f"{base_url}/hosts/{host_id}"
+snapshot_response = session.get(url, timeout=30)
+snapshot_response.raise_for_status()
+snapshot = snapshot_response.json()
+response = session.post(
+    url + "/retire-lease",
+    json={
+        "source": "udm-leases",
+        "expired_before": (
+            datetime.now(timezone.utc) - timedelta(hours=2)
+        ).isoformat(),
+        "expected": snapshot,
+    },
+    timeout=30,
+)
+response.raise_for_status()
+```
+
+Responses:
+
+| Status | Meaning |
+|--------|---------|
+| 204 | Matching expired dynamic host removed |
+| 400 | Missing/malformed snapshot, invalid types/timestamps or future cutoff |
+| 404 | Host already absent; a repeated request does not remove another row |
+| 409 | Protected/foreign record, missing evidence or grace period not elapsed |
+| 412 | Stored record changed since the supplied snapshot; nothing deleted |
+
+On 412, collect/reconcile again; do not replace the snapshot and retry blindly.
+A changed hostname, MAC, network, status, confirmation timestamp or any other
+stored value invalidates the request, even if the lease remains expired.
+Lease renewals and reassignment therefore invalidate an older deletion request.
+
+This endpoint does **not** prove that the source snapshot is complete or that an
+IP is free on the network. Those are collector responsibilities. Only call it
+when a complete successful snapshot has no current lease/reservation/static
+claim for the candidate. Source strings are ownership assertions, not token
+scopes; existing API tokens retain their existing privileges. The old
+`DELETE /hosts/{id}` remains unconditional for manual administration.
+Addresses in active DHCP pools remain excluded from static allocation suggestions
+regardless of host removal. No scheduled cleanup is enabled by this change.

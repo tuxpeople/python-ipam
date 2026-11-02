@@ -392,7 +392,10 @@ make test       # Makefile target
 - `POST /api/v1/hosts` - Create host
 - `GET /api/v1/hosts/{id}` - Get host
 - `PUT /api/v1/hosts/{id}` - Update host
-- `DELETE /api/v1/hosts/{id}` - Delete host
+- `DELETE /api/v1/hosts/{id}` - Delete host (unconditional manual operation)
+- `POST /api/v1/hosts/{id}/retire-lease` - Atomic conditional retirement of an expired
+  dynamic collector record; full expected snapshot required, see API.md. Server
+  minimum grace: LEASE_RETIRE_MIN_AGE_SECONDS (3600 default). No scheduler enabled.
 
 **IP Management**:
 - `GET /api/v1/ip/networks/{id}/next-ip` - Get next free IP

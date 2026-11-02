@@ -15,6 +15,7 @@ from ipam.allocation import (
     parse_timestamp,
     to_api_utc,
 )
+from ipam.api.lease_retirement import retire_lease
 from ipam.api.models import (
     error_model,
     host_input_model,
@@ -524,3 +525,34 @@ class HostResource(Resource):
         db.session.commit()
 
         return "", 204
+
+
+retire_lease_input = api.model(
+    "LeaseRetirementInput",
+    {
+        "source": fields.String(
+            required=True, description="Owning collector source"
+        ),
+        "expired_before": fields.DateTime(
+            required=True, description="UTC grace cutoff, never in the future"
+        ),
+        "expected": fields.Raw(
+            required=True, description="Previously read complete host snapshot"
+        ),
+    },
+)
+
+
+@api.route("/<int:id>/retire-lease")
+@api.param("id", "The host identifier")
+class LeaseRetirementResource(Resource):
+    @api.doc("retire_expired_lease")
+    @api.expect(retire_lease_input)
+    @api.response(204, "Expired dynamic host retired")
+    @api.response(400, "Invalid snapshot or cutoff")
+    @api.response(404, "Host no longer exists")
+    @api.response(409, "Host protected or grace period not elapsed")
+    @api.response(412, "Host changed since the supplied snapshot")
+    def post(self, id):
+        """Conditionally retire an expired collector-owned dynamic host."""
+        return retire_lease(id)

@@ -1,7 +1,7 @@
 # 🚀 Python IPAM - Features & Roadmap
 
 **Version**: 1.1.0
-**Last Updated**: 2026-09-29
+**Last Updated**: 2026-11-02
 
 ## Lease retirement API (2026-11-02)
 
@@ -17,8 +17,8 @@ See [API contract](API.md#conditional-retirement-of-an-expired-dynamic-host).
 |----------|-----------|-------------|---------|-------|
 | Core Features | 9 | 0 | 3 | 12 |
 | API Integration | 2 | 0 | 0 | 2 |
-| UI/UX | 6 | 0 | 3 | 9 |
-| Data Management | 4 | 0 | 7 | 11 |
+| UI/UX | 7 | 0 | 3 | 10 |
+| Data Management | 4 | 0 | 10 | 14 |
 | Testing | 6 | 0 | 1 | 7 |
 | Security | 0 | 0 | 2 | 2 |
 
@@ -364,12 +364,9 @@ See [API contract](API.md#conditional-retirement-of-an-expired-dynamic-host).
     - ✅ Next IP, available IPs and network counters share one rule
     - ✅ Web UI (assignment selector, allocation column and details),
       JSON/CSV export and import
-  - **Follow-ups** (not implemented):
-    - External identifiers / source scopes for hosts, networks and DHCP
-      ranges, and scoped retirement based on complete snapshots
-    - Child records for multiple independent claims per aspect
-    - Collector updates in homelab-automation (reservation provenance,
-      then leases, then static sources)
+  - **Follow-ups**: [IPAM-034], [IPAM-035], [IPAM-036]; collector-side
+    status and open items in
+    [ADDRESS_ASSIGNMENT_MODEL.md](ADDRESS_ASSIGNMENT_MODEL.md#open-items)
 
 ---
 
@@ -559,6 +556,62 @@ See [API contract](API.md#conditional-retirement-of-an-expired-dynamic-host).
     - Reuse existing Bootstrap/DataTables UI patterns
     - Add password strength validation
     - Implement user audit trail
+
+- **[IPAM-034]** 📅 Guarded Reservation Removal and Conversion
+  - **Priority**: Medium | **Category**: Data Management / API
+  - **Estimated Effort**: Medium (2-3 days)
+  - **GitHub Issue**: [#106](https://github.com/tuxpeople/python-ipam/issues/106)
+  - **Design**: [ADDRESS_ASSIGNMENT_MODEL.md](ADDRESS_ASSIGNMENT_MODEL.md#open-items)
+  - **Description**: Snapshot-checked API operations for removing a
+    reservation or converting it to a dynamic record, analogous to
+    `POST /hosts/{id}/retire-lease`
+  - **Acceptance Criteria**:
+    - Conditional delete of a reservation host with a full expected snapshot
+      (412 on any change, atomic condition like `retire-lease`)
+    - Atomic reservation → dynamic conversion in one request (replaces the
+      collector's two upserts with the `udm-reservation-release` marker)
+    - Manual `DELETE` stays unchanged
+    - Documented in API.md
+  - **Dependencies**: [IPAM-032]
+  - **Technical Notes**: The UDM collector currently uses the unconditional
+    `DELETE` and accepts a read/delete race window
+
+- **[IPAM-035]** 📅 Source Identity and Scoped Retirement
+  - **Priority**: Low | **Category**: Data Management
+  - **Estimated Effort**: High (4-5 days)
+  - **GitHub Issue**: [#107](https://github.com/tuxpeople/python-ipam/issues/107)
+  - **Design**: [ADDRESS_ASSIGNMENT_MODEL.md](ADDRESS_ASSIGNMENT_MODEL.md#sources-timestamps-and-identity)
+  - **Description**: External identifiers and source scopes for hosts,
+    networks and DHCP ranges, so records that disappear from a source can be
+    retired safely without assuming a single authoritative source
+  - **Acceptance Criteria**:
+    - Nullable external identifier and source scope on hosts, networks and
+      DHCP ranges (Alembic migration, API/upsert support)
+    - Bookkeeping of complete successful snapshots per source/scope
+    - Retirement of networks and DHCP ranges only after a complete snapshot
+      of their owning scope; failed or partial collection retires nothing
+    - Field ownership rules defined before enabling retirement
+  - **Dependencies**: [IPAM-032], [IPAM-034]
+  - **Technical Notes**: Needed once more than one site or reservation
+    source feeds the same IPAM; today the collector treats the single UDM as
+    sole reservation authority
+
+- **[IPAM-036]** 📅 Multiple Claims per Assignment Aspect
+  - **Priority**: Low | **Category**: Data Management
+  - **Estimated Effort**: High (4-5 days)
+  - **GitHub Issue**: [#108](https://github.com/tuxpeople/python-ipam/issues/108)
+  - **Design**: [ADDRESS_ASSIGNMENT_MODEL.md](ADDRESS_ASSIGNMENT_MODEL.md#sources-timestamps-and-identity)
+  - **Description**: Child records keyed by source/external identity so
+    several collectors can claim the same aspect (assignment, lease,
+    observation) instead of last-writer-wins on flat fields
+  - **Acceptance Criteria**:
+    - Precedence and conflict rules defined and documented first
+    - Conflicting MAC claims remain visible in API and UI
+    - Derived allocation state computed from all claims
+    - Existing flat fields stay readable for legacy clients
+  - **Dependencies**: [IPAM-035]
+  - **Technical Notes**: Only worthwhile once a second collector claims the
+    same aspect
 
 ### Core Validation
 - **[IPAM-026]** 📅 IP Conflict Detection

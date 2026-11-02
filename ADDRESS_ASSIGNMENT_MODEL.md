@@ -1,8 +1,9 @@
 # Address assignment, leases and observations
 
-Date: 2026-10-31. Status: phase 1 implemented in this repository (see
-"Implementation status" at the end); collector changes and scoped
-retirement are still open.
+Date: 2026-10-31, status updated 2026-11-02. Phase 1 and conditional lease
+retirement are implemented in this repository; the collector uses them for
+reservations, leases, removed reservations and expired-lease retirement. See
+"Implementation status" and "Open items" at the end.
 
 ## Purpose
 
@@ -14,7 +15,8 @@ this repository; the UDM collector lives in
 
 ## Current integration and model
 
-The collector has successfully upserted eight networks, eight DHCP ranges and
+Initial state on 2026-10-31, before phase 1; kept as design context. The
+collector has successfully upserted eight networks, eight DHCP ranges and
 13 active reservations from the UDM. A subsequent preview reported zero changes.
 Terraform configures the UDM; the independent collector reads its applied state.
 The collector currently creates reservation hosts with `status=reserved`,
@@ -187,12 +189,7 @@ Implemented (migration `e5a8c1d4f2b3`):
   that is not authoritative for allocation.
 - Web UI, JSON/CSV export and import support the new fields.
 
-Not implemented yet:
-
-- External identifiers and source scopes (hosts, networks, DHCP ranges),
-  complete-snapshot bookkeeping and scoped retirement.
-- Child records for multiple concurrent claims per aspect.
-- Collector changes in homelab-automation.
+Not implemented yet: see "Open items" below.
 
 ## Conditional retirement API (2026-11-02)
 
@@ -203,3 +200,50 @@ part in the atomic DELETE condition; changes produce 412. No migration needed.
 Normal manual DELETE is unchanged. See API.md for the request contract.
 Collector-side complete-source selection, invocation after deployment and recurring
 execution remain open; this adds no autonomous time-based cleanup in IPAM.
+
+
+## Collector status (homelab-automation, 2026-11-02)
+
+The collector in `homelab-automation/scripts/ipam/` (see its README) now:
+
+- Upserts reservations with `assignment_type=reservation`,
+  `assignment_source=udm-reservations` and UTC confirmation timestamps.
+- Reads DHCPv4 leases from the UDM dnsmasq lease file and merges them into
+  reservations or creates `dynamic` records; handles DHCP address reuse.
+- Retires expired collector-owned dynamic records via
+  `POST /hosts/{id}/retire-lease` (`--retire-expired-leases`).
+- Reconciles removed reservations from a complete UDM snapshot: converts them
+  to `dynamic` while a valid lease exists, otherwise deletes them.
+
+It replaces external identifiers with an explicit deployment assumption: the
+single UDM is the sole reservation authority, so every IPAM reservation is
+reconciled against it without a source filter. That assumption does not hold
+for an IPAM shared with other sites or manual reservation sources.
+
+## Open items
+
+In this repository (tracked in FEATURES.md):
+
+- **Guarded reservation removal and conversion (IPAM-034).** The collector
+  deletes removed reservations through the unconditional manual `DELETE`
+  and converts them to `dynamic` in two non-atomic upserts with a temporary
+  `udm-reservation-release` marker, because `retire-lease` only accepts
+  expired dynamic records. A snapshot-checked endpoint for these
+  transitions would close the read/delete race window.
+- **Source identity and scoped retirement (IPAM-035).** External identifiers
+  and source scopes for hosts, networks and DHCP ranges, plus
+  complete-snapshot bookkeeping. Needed for retiring networks/ranges and
+  for replacing the sole-authority assumption once more than one site or
+  reservation source exists.
+- **Multiple claims per aspect (IPAM-036).** Child records keyed by
+  source/external identity. Only needed once a second collector claims the
+  same aspect; precedence and conflict rules must be defined first.
+
+Known limitation: infinite DHCP leases (dnsmasq expiry 0) cannot be
+represented by `lease_expires_at`; the collector rejects them in preflight.
+
+In homelab-automation (not tracked here):
+
+- Sources for host-configured static addresses.
+- Recurring execution; the sync currently runs manually via
+  `task ipam-sync`, and concurrent runs must be avoided.

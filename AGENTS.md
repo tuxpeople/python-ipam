@@ -571,6 +571,13 @@ no manual `git tag` or `gh release create` anymore.
 - *Settings → General → Pull Requests* → "Allow merge commits" **disabled**
   (squash-merge only) – otherwise the release-please changelog gets
   duplicate entries
+- release-please runs with a GitHub App token (`actions/create-github-app-token`),
+  not `GITHUB_TOKEN`: release PRs opened with `GITHUB_TOKEN` need manual
+  approval before their checks run. The App (Contents, Pull requests, Issues:
+  read & write; no webhook) is installed on this repo only. Repo variable
+  `RELEASE_APP_CLIENT_ID` and secret `RELEASE_APP_PRIVATE_KEY` (a key used only
+  by this repo). To rotate: create a new key in the App settings, update the
+  secret, delete the old key.
 
 **Version bump mapping**: `feat` → Minor, `fix`/`deps`/`docker`/`perf` → Patch,
 `feat!` or `BREAKING CHANGE:` footer → Major. Config: `release-please-config.json`,

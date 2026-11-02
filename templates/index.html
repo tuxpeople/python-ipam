@@ -96,7 +96,7 @@
                         <tbody>
                             {% for network in networks[:5] %}
                             <tr>
-                                <td>{{ network.network }}/{{ network.cidr }}</td>
+                                <td><a href="{{ url_for('web.network_detail', network_id=network.id) }}">{{ network.network }}/{{ network.cidr }}</a></td>
                                 <td>{{ network.vlan_id or '-' }}</td>
                                 <td>{{ network.used_hosts }}/{{ network.total_hosts }}</td>
                                 <td>
@@ -147,7 +147,7 @@
                         <tbody>
                             {% for host in hosts[:5] %}
                             <tr>
-                                <td>{{ host.ip_address }}</td>
+                                <td><a href="{{ url_for('web.host_detail', host_id=host.id) }}">{{ host.ip_address }}</a></td>
                                 <td>{{ host.hostname or '-' }}</td>
                                 <td>
                                     <span class="badge

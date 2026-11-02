@@ -211,6 +211,21 @@ See [API contract](API.md#conditional-retirement-of-an-expired-dynamic-host).
     - Bootstrap form styling with validation feedback
     - JavaScript confirmation with host count display
 
+- **[IPAM-033]** ✅ Detail Views for Networks and Hosts
+  - **Priority**: Medium | **Category**: UI/UX
+  - **Status**: Complete
+  - **Description**: Read-only detail pages so objects can be inspected
+    without opening the edit form
+  - **Acceptance Criteria**:
+    - ✅ Network detail: properties, utilization, DHCP ranges, host table
+    - ✅ Host detail: properties, FQDN, network link, allocation/lease/last seen
+    - ✅ Network/IP columns in lists and dashboard link to the detail pages
+    - ✅ Edit and Delete actions available on the detail pages
+    - ✅ Saving or cancelling an edit form returns to the detail page
+  - **Routes Added**:
+    - `GET /networks/<id>` - Network detail
+    - `GET /hosts/<id>` - Host detail
+
 ### Export/Import System
 - **[IPAM-018]** ✅ DNSmasq Host Export with Multiple Modes
   - **Priority**: Medium | **Category**: Export

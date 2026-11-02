@@ -400,3 +400,107 @@ class TestFormValidation:
         assert response.status_code == 200
         # Form should redisplay with validation errors
         assert b"Edit Host" in response.data
+
+
+class TestDetailViews:
+    """Test read-only detail pages for networks and hosts."""
+
+    def _create_network_with_host(self, client):
+        with client.application.app_context():
+            network = Network(
+                network="192.168.110.0",
+                cidr=24,
+                broadcast_address="192.168.110.255",
+                name="Lab",
+                domain="lab.example",
+                vlan_id=110,
+            )
+            db.session.add(network)
+            db.session.commit()
+            host = Host(
+                ip_address="192.168.110.10",
+                hostname="printer",
+                mac_address="aa:bb:cc:dd:ee:10",
+                network_id=network.id,
+            )
+            db.session.add(host)
+            db.session.commit()
+            return network.id, host.id
+
+    def test_network_detail_shows_properties_and_hosts(self, client):
+        network_id, host_id = self._create_network_with_host(client)
+
+        response = client.get(f"/networks/{network_id}")
+        assert response.status_code == 200
+        assert b"192.168.110.0/24" in response.data
+        assert b"192.168.110.255" in response.data
+        assert b"lab.example" in response.data
+        assert f'href="/hosts/{host_id}"'.encode() in response.data
+        assert f'href="/edit_network/{network_id}"'.encode() in response.data
+
+    def test_host_detail_shows_properties_and_network(self, client):
+        network_id, host_id = self._create_network_with_host(client)
+
+        response = client.get(f"/hosts/{host_id}")
+        assert response.status_code == 200
+        assert b"192.168.110.10" in response.data
+        assert b"aa:bb:cc:dd:ee:10" in response.data
+        assert b"Derived state" in response.data
+        assert f'href="/networks/{network_id}"'.encode() in response.data
+        assert f'href="/edit_host/{host_id}"'.encode() in response.data
+
+    def test_detail_404(self, client):
+        assert client.get("/networks/99999").status_code == 404
+        assert client.get("/hosts/99999").status_code == 404
+
+    def test_list_pages_link_to_detail(self, client):
+        network_id, host_id = self._create_network_with_host(client)
+
+        for path in ("/", "/networks", "/hosts"):
+            response = client.get(path)
+            assert f'href="/networks/{network_id}"'.encode() in response.data
+            if path != "/networks":
+                assert f'href="/hosts/{host_id}"'.encode() in response.data
+
+    def test_edit_redirects_to_detail(self, client):
+        network_id, host_id = self._create_network_with_host(client)
+
+        response = client.post(
+            f"/edit_host/{host_id}",
+            data={
+                "ip_address": "192.168.110.10",
+                "hostname": "printer2",
+                "status": "active",
+                "network_id": 0,
+            },
+        )
+        assert response.status_code == 302
+        assert response.headers["Location"].endswith(f"/hosts/{host_id}")
+
+        response = client.post(
+            f"/edit_network/{network_id}",
+            data={"network": "192.168.110.0", "cidr": 24, "name": "Lab 2"},
+        )
+        assert response.status_code == 302
+        assert response.headers["Location"].endswith(f"/networks/{network_id}")
+
+    def test_host_detail_escapes_hostname_in_delete_confirm(self, client):
+        with client.application.app_context():
+            host = Host(ip_address="192.168.111.10", hostname="x');alert(1);//")
+            db.session.add(host)
+            db.session.commit()
+            host_id = host.id
+
+        response = client.get(f"/hosts/{host_id}")
+        assert b"x');alert(1)" not in response.data
+        assert b'onsubmit="return confirm(this.dataset.confirm);"' in (
+            response.data
+        )
+
+    def test_network_detail_disables_delete_with_hosts(self, client):
+        network_id, _ = self._create_network_with_host(client)
+
+        response = client.get(f"/networks/{network_id}")
+        assert f'action="/delete_network/{network_id}"'.encode() not in (
+            response.data
+        )

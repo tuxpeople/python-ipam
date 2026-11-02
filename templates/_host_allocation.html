@@ -1,0 +1,41 @@
+<div class="card mt-4">
+    <div class="card-header">
+        <h6 class="card-title mb-0">
+            <i class="bi bi-clock-history"></i> Allocation
+        </h6>
+    </div>
+    <div class="card-body">
+        <p class="mb-2"><strong>Derived state:</strong> {{ host.allocation_label }}</p>
+        <div class="table-responsive">
+            <table class="table table-sm mb-0">
+                <thead>
+                    <tr><th>Aspect</th><th>Value</th><th>Source</th><th>As of (UTC)</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Assignment</td>
+                        <td>{{ host.assignment_type or '-' }}</td>
+                        <td>{{ host.assignment_source or '-' }}</td>
+                        <td>{{ host.assignment_last_confirmed_at.strftime('%Y-%m-%d %H:%M:%S') if host.assignment_last_confirmed_at else '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td>DHCP lease</td>
+                        <td>
+                            {% if host.lease_expires_at %}
+                                {{ 'active' if host.lease_active else 'expired' }}, expires {{ host.lease_expires_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                            {% else %}-{% endif %}
+                        </td>
+                        <td>{{ host.lease_source or '-' }}</td>
+                        <td>{{ host.lease_observed_at.strftime('%Y-%m-%d %H:%M:%S') if host.lease_observed_at else '-' }}</td>
+                    </tr>
+                    <tr>
+                        <td>Last seen</td>
+                        <td>{{ host.last_seen.strftime('%Y-%m-%d %H:%M:%S') if host.last_seen else '-' }}</td>
+                        <td>{{ host.last_seen_source or '-' }}</td>
+                        <td>-</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

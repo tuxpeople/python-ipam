@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}{{ host.hostname or host.ip_address }} - Python IPAM{% endblock %}
+
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+    <h1 class="mb-0">
+        <i class="bi bi-pc-display"></i> {{ host.ip_address }}
+        {% if host.hostname %}<small class="text-muted">{{ host.hostname }}</small>{% endif %}
+    </h1>
+    <div class="d-flex gap-2">
+        <a href="{{ url_for('web.hosts') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Hosts
+        </a>
+        <a href="{{ url_for('web.edit_host', host_id=host.id) }}" class="btn btn-primary">
+            <i class="bi bi-pencil"></i> Edit
+        </a>
+        <form method="POST" action="{{ url_for('web.delete_host', host_id=host.id) }}"
+              data-confirm="Are you sure you want to delete host &quot;{{ host.hostname or host.ip_address }}&quot;? This action cannot be undone."
+              onsubmit="return confirm(this.dataset.confirm);">
+            <button type="submit" class="btn btn-outline-danger">
+                <i class="bi bi-trash"></i> Delete
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-pc-display"></i> Host Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">IP Address</dt>
+                    <dd class="col-sm-8">{{ host.ip_address }}</dd>
+
+                    <dt class="col-sm-4">Hostname</dt>
+                    <dd class="col-sm-8">
+                        {% if host.hostname %}
+                            {{ host.hostname }}{% if host.network_ref and host.network_ref.domain %}<span class="text-muted">.{{ host.network_ref.domain }}</span>{% endif %}
+                        {% else %}-{% endif %}
+                    </dd>
+
+                    <dt class="col-sm-4">CNAME</dt>
+                    <dd class="col-sm-8">{{ host.cname or '-' }}</dd>
+
+                    <dt class="col-sm-4">MAC Address</dt>
+                    <dd class="col-sm-8">
+                        {% if host.mac_address %}<code>{{ host.mac_address }}</code>{% else %}-{% endif %}
+                    </dd>
+
+                    <dt class="col-sm-4">Status</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge
+                            {% if host.status == 'active' %}bg-success
+                            {% elif host.status == 'inactive' %}bg-secondary
+                            {% elif host.status == 'reserved' %}bg-warning
+                            {% else %}bg-info{% endif %}">
+                            {{ host.status.title() }}
+                        </span>
+                    </dd>
+
+                    <dt class="col-sm-4">Network</dt>
+                    <dd class="col-sm-8">
+                        {% if host.network_ref %}
+                            <a href="{{ url_for('web.network_detail', network_id=host.network_ref.id) }}">{{ host.network_ref.network }}/{{ host.network_ref.cidr }}</a>
+                            {% if host.network_ref.name %}<span class="text-muted">({{ host.network_ref.name }})</span>{% endif %}
+                        {% else %}-{% endif %}
+                    </dd>
+
+                    <dt class="col-sm-4">Discovery Source</dt>
+                    <dd class="col-sm-8">{{ host.discovery_source or '-' }}</dd>
+
+                    <dt class="col-sm-4">Description</dt>
+                    <dd class="col-sm-8 mb-0">{{ host.description or '-' }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        {% include "_host_allocation.html" %}
+    </div>
+</div>
+{% endblock %}

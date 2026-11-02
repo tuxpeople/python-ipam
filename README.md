@@ -6,6 +6,8 @@ A modern, web-based IP Address Management (IPAM) system built with Flask, SQLite
 
 - 🌐 **Network Management**: Manage IP networks with CIDR notation
 - 🖥️ **Host Management**: Track IP addresses, hostnames, and MAC addresses
+- 🔎 **Detail Views**: Click a network or IP address to see all details,
+  related hosts/DHCP ranges, and allocation state
 - 🧭 **Assignment Tracking**: DHCP reservations, static and dynamic
   assignments, leases and observations as independent facts with
   per-aspect provenance
@@ -247,6 +249,9 @@ ipam/
 │   ├── hosts.html        # Host overview
 │   ├── add_network.html  # Add network
 │   ├── add_host.html     # Add host
+│   ├── network_detail.html # Network detail
+│   ├── host_detail.html  # Host detail
+│   ├── _host_allocation.html # Allocation card (shared partial)
 │   ├── edit_network.html # Edit network
 │   └── edit_host.html    # Edit host
 ├── exporters/            # Export plugins

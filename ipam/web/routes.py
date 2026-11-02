@@ -78,6 +78,20 @@ def hosts():
     return render_template("hosts.html", hosts=hosts_list)
 
 
+@web_bp.route("/networks/<int:network_id>")
+def network_detail(network_id):
+    """Network detail page."""
+    network = Network.query.get_or_404(network_id)
+    return render_template("network_detail.html", network=network)
+
+
+@web_bp.route("/hosts/<int:host_id>")
+def host_detail(host_id):
+    """Host detail page."""
+    host = Host.query.get_or_404(host_id)
+    return render_template("host_detail.html", host=host)
+
+
 @web_bp.route("/add_network", methods=["GET", "POST"])
 def add_network():
     """Add new network."""
@@ -254,7 +268,9 @@ def edit_network(network_id):
 
             db.session.commit()
             flash("Network updated successfully!", "success")
-            return redirect(url_for("web.networks"))
+            return redirect(
+                url_for("web.network_detail", network_id=network.id)
+            )
         except ValueError as e:
             flash(f"Invalid network: {e}", "error")
 
@@ -395,7 +411,7 @@ def edit_host(host_id):
 
         db.session.commit()
         flash("Host updated successfully!", "success")
-        return redirect(url_for("web.hosts"))
+        return redirect(url_for("web.host_detail", host_id=host.id))
 
     return render_template("edit_host.html", form=form, host=host)
 

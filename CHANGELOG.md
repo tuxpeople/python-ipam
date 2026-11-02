@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.9.0](https://github.com/tuxpeople/python-ipam/compare/v1.8.0...v1.9.0) (2026-11-02)
+
+
+### Features
+
+* **api:** add guarded release of removed reservations ([3d45581](https://github.com/tuxpeople/python-ipam/commit/3d45581cbf0ce24acf54ffcb33022465847dbfa8)), closes [#106](https://github.com/tuxpeople/python-ipam/issues/106)
+* **web:** add address map to network detail view ([63d550e](https://github.com/tuxpeople/python-ipam/commit/63d550e52f1c35ee61211d521e5fa2a0ab9380c7)), closes [#85](https://github.com/tuxpeople/python-ipam/issues/85)
+* **web:** add detail views for networks and hosts ([71de8b5](https://github.com/tuxpeople/python-ipam/commit/71de8b53180c3f77ac192db83dd10c3561a9f217))
+* **web:** show app version in UI footer ([fc75583](https://github.com/tuxpeople/python-ipam/commit/fc75583f91198c364fae246508a5ae85f059ba6b))
+
+
+### Bug Fixes
+
+* **web:** enable CSRF protection for the web UI ([a4fab5a](https://github.com/tuxpeople/python-ipam/commit/a4fab5a8239e4f8e9da3fcae94c82c4f6b4f3dee))
+* **web:** sort IP address columns numerically ([389093e](https://github.com/tuxpeople/python-ipam/commit/389093e0892750a52ce39c45cd4f78e46dfbf203))
+* **web:** stop interpolating host data into inline delete handlers ([cdf728d](https://github.com/tuxpeople/python-ipam/commit/cdf728deb5e86d1330f44de4aebeccb8e3f8504a))
+
+
+### Container
+
+* keep test tooling out of the production image ([844f511](https://github.com/tuxpeople/python-ipam/commit/844f511b9fd11220b18e8876f8f633793fea87dd))
+
+
+### Documentation
+
+* plan forward auth via Remote-User header for IPAM-015 ([73e8117](https://github.com/tuxpeople/python-ipam/commit/73e8117926f2e969baa0c8e3f74562531a9ac6ce))
+* update assignment model status and track open follow-ups ([72ac575](https://github.com/tuxpeople/python-ipam/commit/72ac575d16c5918408f92396257ecad629d3cbe8))
+* update Python version references to 3.15 ([1d13d27](https://github.com/tuxpeople/python-ipam/commit/1d13d27aade0db225d0ff8b17bf39b6ef5d66104))
+
 ## [1.8.0](https://github.com/tuxpeople/python-ipam/compare/v1.7.0...v1.8.0) (2026-11-02)
 
 

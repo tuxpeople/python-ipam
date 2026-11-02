@@ -647,6 +647,15 @@ See [API contract](API.md#conditional-retirement-of-an-expired-dynamic-host).
   - **Acceptance Criteria**:
     - **Local Authentication**: Built-in user registration, login, password reset
     - **OAuth2 Proxy Support**: OIDC integration via reverse proxy
+    - **Forward Auth Support**: Accept the authenticated user from a
+      forward-auth proxy (e.g. Authelia with Traefik/nginx/Caddy) via the
+      `Remote-User` header, optionally groups via `Remote-Groups` for role
+      mapping; header names configurable
+    - **Trusted Proxy Only**: Identity headers are honoured only from
+      configured trusted proxy addresses; requests that bypass the proxy
+      must not be able to spoof `Remote-User`
+    - **API Unaffected**: `/api/v1/` keeps token authentication and must be
+      excluded from forward auth so collectors keep working
     - **LDAP Authentication**: Direct bind against an LDAP/Active Directory server (configurable server URL, bind DN, user/group search base), with group-to-role mapping
     - **Role-based Access Control**: Admin, User, ReadOnly roles
     - **Configurable Auth Mode**: Environment variable to switch between modes
@@ -654,7 +663,11 @@ See [API contract](API.md#conditional-retirement-of-an-expired-dynamic-host).
     - **Session Management**: Secure session handling across all modes
   - **Technical Notes**:
     - Use Flask-Login for local authentication
-    - Header extraction for proxy-based auth
+    - Header extraction for proxy-based auth (OAuth2 Proxy
+      `X-Forwarded-User`, forward auth `Remote-User`/`Remote-Groups`)
+    - Forward auth is the low-effort first step: the proxy already runs
+      in front of the deployment, and the app only maps the header to a
+      user/role (no password storage)
     - `python-ldap` or `ldap3` for direct LDAP/Active Directory binds
     - Unified User model supporting all three auth types
     - Role inheritance from OIDC groups, LDAP groups, or local assignment

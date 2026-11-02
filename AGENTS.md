@@ -574,7 +574,9 @@ no manual `git tag` or `gh release create` anymore.
 - release-please runs with a GitHub App token (`actions/create-github-app-token`),
   not `GITHUB_TOKEN`: release PRs opened with `GITHUB_TOKEN` need manual
   approval before their checks run. The App (Contents, Pull requests, Issues:
-  read & write; no webhook) is installed on this repo only. Repo variable
+  read & write; no webhook) is installed only on the repos that use
+  release-please (python-ipam, dorflade-mhd); each workflow's token is scoped
+  to its own repository. Repo variable
   `RELEASE_APP_CLIENT_ID` and secret `RELEASE_APP_PRIVATE_KEY` (a key used only
   by this repo). To rotate: create a new key in the App settings, update the
   secret, delete the old key.

@@ -11,6 +11,17 @@ def _get_bool_env(name, default):
     return value.strip().lower() in {"1", "true", "yes", "on"}
 
 
+def _version_from_file(base_dir):
+    """Read version.txt (maintained by release-please, copied into image)."""
+    try:
+        with open(
+            os.path.join(base_dir, "version.txt"), encoding="utf-8"
+        ) as version_file:
+            return version_file.read().strip()
+    except OSError:
+        return ""
+
+
 class Config:
     """Base configuration."""
 
@@ -24,6 +35,9 @@ class Config:
 
     # Use absolute path for SQLite database in project root
     BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    APP_VERSION = (
+        os.environ.get("APP_VERSION") or _version_from_file(BASE_DIR) or "dev"
+    )
     SQLALCHEMY_DATABASE_URI = os.environ.get(
         "DATABASE_URL", f"sqlite:///{os.path.join(BASE_DIR, 'ipam.db')}"
     )

@@ -92,6 +92,10 @@ A modern, web-based IP Address Management (IPAM) system built with Flask, SQLite
    - `API_RATE_LIMIT=200 per minute` sets the global API limit.
    - `RATELIMIT_ENABLED=true` toggles rate limiting.
    - `RATELIMIT_STORAGE_URI=memory://` sets the Flask-Limiter backend.
+   Version display:
+   - The UI footer shows the version from `version.txt` (maintained by
+     release-please). `APP_VERSION=...` overrides it; without either, `dev`
+     is shown.
 
 6. **Initialize database (migrations):**
    ```bash

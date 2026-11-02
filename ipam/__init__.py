@@ -38,6 +38,10 @@ def create_app(config_name=None, config_overrides=None):
     migrate.init_app(app, db)
     limiter.init_app(app)
 
+    @app.context_processor
+    def inject_app_version():
+        return {"app_version": app.config["APP_VERSION"]}
+
     # Import models for Flask-Migrate/Alembic
     # Register blueprints
     from ipam.api import api_bp, configure_api

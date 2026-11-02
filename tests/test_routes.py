@@ -1,6 +1,7 @@
 """Test web routes."""
 
 import json
+import os
 from datetime import datetime
 
 from ipam.extensions import db
@@ -26,6 +27,28 @@ class TestIndexRoute:
         response = client.get("/")
         assert response.status_code == 200
         assert b"192.168.1.0" in response.data
+
+
+class TestAppVersion:
+    def test_version_from_version_file(self):
+        from ipam.config import Config, _version_from_file
+
+        with open(
+            os.path.join(Config.BASE_DIR, "version.txt"), encoding="utf-8"
+        ) as version_file:
+            expected = version_file.read().strip()
+        assert _version_from_file(Config.BASE_DIR) == expected
+
+    def test_missing_version_file(self, tmp_path):
+        from ipam.config import _version_from_file
+
+        assert _version_from_file(str(tmp_path)) == ""
+
+    def test_version_shown_in_footer(self, client):
+        client.application.config["APP_VERSION"] = "9.9.9"
+        response = client.get("/")
+        assert response.status_code == 200
+        assert b"Python IPAM v9.9.9" in response.data
 
 
 class TestNetworkRoutes:

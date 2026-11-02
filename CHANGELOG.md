@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/tuxpeople/python-ipam/compare/v1.7.0...v1.8.0) (2026-11-02)
+
+
+### Features
+
+* **api:** add guarded retirement of expired leases ([411c005](https://github.com/tuxpeople/python-ipam/commit/411c0059b4744286f4b130d9018e5d0dd514f5a8))
+
 ## [1.7.0](https://github.com/tuxpeople/python-ipam/compare/v1.6.1...v1.7.0) (2026-10-31)
 
 

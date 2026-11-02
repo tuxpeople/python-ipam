@@ -175,6 +175,17 @@ cp .env.example .env
 docker-compose up -d
 ```
 
+### Web UI access
+
+The web UI has no built-in login yet (planned: IPAM-015). Anyone who can
+reach it can change or delete data and restore backups, so put it behind
+an authenticating reverse proxy (e.g. Authelia forward auth) or restrict
+network access. Exclude `/api/v1/` from the proxy login: the REST API
+authenticates with `API_TOKENS` itself.
+
+All state-changing web UI requests are CSRF-protected (Flask-WTF). Set a
+random `SECRET_KEY` in production; it signs the session and CSRF tokens.
+
 ### Development
 
 ```bash

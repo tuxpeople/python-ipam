@@ -1,12 +1,14 @@
 """IPAM Application Factory."""
 
 import os
+from urllib.parse import urlsplit
 
-from flask import Flask
+from flask import Flask, flash, redirect, request, url_for
+from flask_wtf.csrf import CSRFError
 
 from ipam.cli import init_cli
 from ipam.config import config
-from ipam.extensions import db, limiter, migrate
+from ipam.extensions import csrf, db, limiter, migrate
 
 
 def create_app(config_name=None, config_overrides=None):
@@ -37,6 +39,7 @@ def create_app(config_name=None, config_overrides=None):
     db.init_app(app)
     migrate.init_app(app, db)
     limiter.init_app(app)
+    csrf.init_app(app)
 
     @app.context_processor
     def inject_app_version():
@@ -51,6 +54,17 @@ def create_app(config_name=None, config_overrides=None):
     configure_api(app)
     app.register_blueprint(web_bp)
     app.register_blueprint(api_bp)
+    # The REST API authenticates with tokens, not browser cookies.
+    csrf.exempt(api_bp)
+
+    @app.errorhandler(CSRFError)
+    def handle_csrf_error(error):
+        flash(
+            "The form was rejected because its security token is missing "
+            "or expired. Please try again.",
+            "error",
+        )
+        return redirect(_same_origin_referrer() or url_for("web.index"))
 
     # Register export/import plugins
     with app.app_context():
@@ -73,3 +87,14 @@ def create_app(config_name=None, config_overrides=None):
     init_cli(app)
 
     return app
+
+
+def _same_origin_referrer():
+    """Return the referrer if it points back to this application."""
+    referrer = request.referrer
+    if not referrer:
+        return None
+    target = urlsplit(referrer)
+    if target.netloc != urlsplit(request.host_url).netloc:
+        return None
+    return referrer

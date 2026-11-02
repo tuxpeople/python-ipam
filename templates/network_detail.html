@@ -24,6 +24,7 @@
         <form method="POST" action="{{ url_for('web.delete_network', network_id=network.id) }}"
               data-confirm="Are you sure you want to delete network &quot;{{ network.network }}/{{ network.cidr }}&quot;? This action cannot be undone."
               onsubmit="return confirm(this.dataset.confirm);">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-outline-danger">
                 <i class="bi bi-trash"></i> Delete
             </button>

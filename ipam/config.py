@@ -26,6 +26,9 @@ class Config:
     """Base configuration."""
 
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key")
+    # CSRF tokens stay valid for the browser session instead of one hour,
+    # so list pages left open do not reject delete buttons.
+    WTF_CSRF_TIME_LIMIT = None
     HOST_ASSIGN_ON_CREATE = _get_bool_env("HOST_ASSIGN_ON_CREATE", True)
     LEASE_RETIRE_MIN_AGE_SECONDS = int(
         os.environ.get("LEASE_RETIRE_MIN_AGE_SECONDS", "3600")

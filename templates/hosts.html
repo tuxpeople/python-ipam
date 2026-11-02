@@ -105,7 +105,10 @@
                             </a>
                             <button class="btn btn-outline-danger"
                                     title="Delete Host"
-                                    onclick="confirmDeleteHost('{{ host.ip_address }}', '{{ host.hostname or '' }}', '{{ url_for('web.delete_host', host_id=host.id) }}')">
+                                    data-ip-address="{{ host.ip_address }}"
+                                    data-hostname="{{ host.hostname or '' }}"
+                                    data-delete-url="{{ url_for('web.delete_host', host_id=host.id) }}"
+                                    onclick="confirmDeleteHost(this)">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
@@ -132,7 +135,10 @@ $(document).ready(function() {
     });
 });
 
-function confirmDeleteHost(ipAddress, hostname, deleteUrl) {
+function confirmDeleteHost(button) {
+    // Values come from data-* attributes so user-controlled strings are
+    // never interpolated into inline JavaScript.
+    const { ipAddress, hostname, deleteUrl } = button.dataset;
     const hostIdentifier = hostname ? `${hostname} (${ipAddress})` : ipAddress;
     const message = `Are you sure you want to delete host "${hostIdentifier}"?\n\nThis action cannot be undone.`;
 

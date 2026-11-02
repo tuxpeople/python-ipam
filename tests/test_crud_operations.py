@@ -504,3 +504,28 @@ class TestDetailViews:
         assert f'action="/delete_network/{network_id}"'.encode() not in (
             response.data
         )
+
+
+class TestDeleteButtonEscaping:
+    """User-controlled values must not end up in inline JavaScript."""
+
+    def test_host_list_delete_button_uses_data_attributes(self, client):
+        with client.application.app_context():
+            db.session.add(
+                Host(ip_address="192.168.120.10", hostname="x');alert(1);//")
+            )
+            db.session.commit()
+
+        response = client.get("/hosts")
+        assert b"x');alert(1)" not in response.data
+        assert b'data-hostname="x&#39;);alert(1);//"' in response.data
+        assert b'onclick="confirmDeleteHost(this)"' in response.data
+
+    def test_network_list_delete_button_uses_data_attributes(self, client):
+        with client.application.app_context():
+            db.session.add(Network(network="192.168.121.0", cidr=24))
+            db.session.commit()
+
+        response = client.get("/networks")
+        assert b'data-network-name="192.168.121.0/24"' in response.data
+        assert b'onclick="confirmDelete(this)"' in response.data

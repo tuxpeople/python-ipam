@@ -73,7 +73,10 @@
                             </a>
                             <button class="btn btn-outline-danger"
                                     title="Delete Network"
-                                    onclick="confirmDelete('{{ network.network }}/{{ network.cidr }}', '{{ url_for('web.delete_network', network_id=network.id) }}', {{ network.hosts|length }})">
+                                    data-network-name="{{ network.network }}/{{ network.cidr }}"
+                                    data-delete-url="{{ url_for('web.delete_network', network_id=network.id) }}"
+                                    data-host-count="{{ network.hosts|length }}"
+                                    onclick="confirmDelete(this)">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
@@ -99,7 +102,11 @@ $(document).ready(function() {
     });
 });
 
-function confirmDelete(networkName, deleteUrl, hostCount) {
+function confirmDelete(button) {
+    // Values come from data-* attributes so user-controlled strings are
+    // never interpolated into inline JavaScript.
+    const { networkName, deleteUrl } = button.dataset;
+    const hostCount = Number(button.dataset.hostCount);
     let message;
     if (hostCount > 0) {
         message = `Cannot delete network "${networkName}" because it has ${hostCount} host(s) assigned to it.\n\nPlease remove or reassign all hosts before deleting this network.`;

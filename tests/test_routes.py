@@ -4,6 +4,7 @@ import json
 import os
 from datetime import datetime
 
+from ipam import create_app
 from ipam.extensions import db
 from ipam.models import Host, Network
 
@@ -279,3 +280,39 @@ class TestIpSortKey:
             b'data-order="0167772162"'
             in client.get(f"/networks/{network_id}").data
         )
+
+
+class TestSecretKeyWarning:
+    WARNING = "SECRET_KEY is a published placeholder"
+
+    def test_warns_in_production_with_placeholder(self, caplog):
+        for key in ("dev-secret-key", "change-me-in-production"):
+            caplog.clear()
+            create_app(
+                "production",
+                {
+                    "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+                    "SECRET_KEY": key,
+                },
+            )
+            assert self.WARNING in caplog.text, key
+
+    def test_no_warning_with_random_key(self, caplog):
+        create_app(
+            "production",
+            {
+                "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+                "SECRET_KEY": "3f9c0b1e7a5d4c2b8e6f1a0d9c7b5e3a",
+            },
+        )
+        assert self.WARNING not in caplog.text
+
+    def test_no_warning_in_development(self, caplog):
+        create_app(
+            "development",
+            {
+                "SQLALCHEMY_DATABASE_URI": "sqlite:///:memory:",
+                "SECRET_KEY": "dev-secret-key",
+            },
+        )
+        assert self.WARNING not in caplog.text

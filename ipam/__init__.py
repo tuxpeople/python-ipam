@@ -7,7 +7,7 @@ from flask import Flask, flash, redirect, request, url_for
 from flask_wtf.csrf import CSRFError
 
 from ipam.cli import init_cli
-from ipam.config import config
+from ipam.config import INSECURE_SECRET_KEYS, config
 from ipam.extensions import csrf, db, limiter, migrate
 
 
@@ -34,6 +34,15 @@ def create_app(config_name=None, config_overrides=None):
     app.config.from_object(config[config_name])
     if config_overrides:
         app.config.update(config_overrides)
+    if (
+        config_name == "production"
+        and app.config.get("SECRET_KEY") in INSECURE_SECRET_KEYS
+    ):
+        app.logger.warning(
+            "SECRET_KEY is a published placeholder; sessions and CSRF tokens "
+            "can be forged. Set SECRET_KEY to a random value, e.g. "
+            "python -c 'import secrets; print(secrets.token_hex(32))'."
+        )
 
     # Initialize extensions
     db.init_app(app)

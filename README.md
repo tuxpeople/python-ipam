@@ -192,6 +192,8 @@ authenticates with `API_TOKENS` itself.
 
 All state-changing web UI requests are CSRF-protected (Flask-WTF). Set a
 random `SECRET_KEY` in production; it signs the session and CSRF tokens.
+With `FLASK_ENV=production` the app logs a warning at startup while
+`SECRET_KEY` is still one of the placeholders published in this repository.
 
 ### Development
 

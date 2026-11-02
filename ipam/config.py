@@ -22,6 +22,18 @@ def _version_from_file(base_dir):
         return ""
 
 
+#: Placeholder secret keys published in this repository (config default,
+#: docker-compose.yml, .env.example). Anyone can sign sessions with them.
+INSECURE_SECRET_KEYS = frozenset(
+    {
+        "dev-secret-key",
+        "change-me-in-production",
+        "your-secret-key-here",
+        "your-production-secret-key",
+    }
+)
+
+
 class Config:
     """Base configuration."""
 

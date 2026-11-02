@@ -12,6 +12,10 @@ on:
 
 jobs:
   claude-review:
+    # release-please PRs only bump the version and changelog; nothing to
+    # review. Matching the branch (not the author) keeps this working when
+    # the PR is opened by a GitHub App instead of github-actions[bot].
+    if: ${{ !startsWith(github.head_ref, 'release-please--') }}
     # Optional: Filter by PR author
     # if: |
     #   github.event.pull_request.user.login == 'external-contributor' ||

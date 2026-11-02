@@ -22,6 +22,9 @@ from ipam.api.models import (
     host_model,
     pagination_model,
 )
+from ipam.api.reservation_release import (
+    release_reservation,
+)
 from ipam.extensions import db
 from ipam.models import Host, Network
 from ipam.normalize import strip_domain_suffix
@@ -556,3 +559,47 @@ class LeaseRetirementResource(Resource):
     def post(self, id):
         """Conditionally retire an expired collector-owned dynamic host."""
         return retire_lease(id)
+
+
+release_reservation_input = api.model(
+    "ReservationReleaseInput",
+    {
+        "source": fields.String(
+            required=True,
+            description="Reservation source; must equal assignment_source",
+        ),
+        "action": fields.String(
+            required=True,
+            enum=["delete", "convert"],
+            description="delete the host, or convert it to a dynamic lease",
+        ),
+        "expected": fields.Raw(
+            required=True, description="Previously read complete host snapshot"
+        ),
+        "lease": fields.Raw(
+            description=(
+                "convert only: mac_address, lease_expires_at, lease_source, "
+                "lease_observed_at and optional hostname of the current lease"
+            )
+        ),
+    },
+)
+
+
+@api.route("/<int:id>/release-reservation")
+@api.param("id", "The host identifier")
+class ReservationReleaseResource(Resource):
+    @api.doc("release_reservation")
+    @api.expect(release_reservation_input)
+    @api.response(200, "Reservation converted to a dynamic lease", host)
+    @api.response(204, "Reservation host deleted")
+    @api.response(400, "Invalid snapshot, action or lease")
+    @api.response(404, "Host no longer exists")
+    @api.response(409, "Not an owned reservation, or action not allowed")
+    @api.response(412, "Host changed since the supplied snapshot")
+    def post(self, id):
+        """Conditionally delete or convert a reservation removed at source."""
+        host_obj = release_reservation(id)
+        if host_obj is None:
+            return "", 204
+        return api.marshal(serialize_host(host_obj), host), 200

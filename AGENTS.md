@@ -396,6 +396,9 @@ make test       # Makefile target
 - `POST /api/v1/hosts/{id}/retire-lease` - Atomic conditional retirement of an expired
   dynamic collector record; full expected snapshot required, see API.md. Server
   minimum grace: LEASE_RETIRE_MIN_AGE_SECONDS (3600 default). No scheduler enabled.
+- `POST /api/v1/hosts/{id}/release-reservation` - Atomic conditional delete or
+  conversion to dynamic of a reservation removed at its source; full expected
+  snapshot required, see API.md.
 
 **IP Management**:
 - `GET /api/v1/ip/networks/{id}/next-ip` - Get next free IP

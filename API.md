@@ -1083,3 +1083,79 @@ scopes; existing API tokens retain their existing privileges. The old
 `DELETE /hosts/{id}` remains unconditional for manual administration.
 Addresses in active DHCP pools remain excluded from static allocation suggestions
 regardless of host removal. No scheduled cleanup is enabled by this change.
+
+### Conditional release of a removed reservation
+
+```http
+POST /api/v1/hosts/{id}/release-reservation
+```
+
+Collector-facing operation for a reservation that no longer exists at its
+source. Like `retire-lease`, it applies only if the previously read snapshot
+still matches **every stored Host column**, in one atomic SQL statement. It
+replaces deleting the reservation with the unconditional `DELETE` and
+converting it with two separate upserts.
+
+Request fields:
+
+- `source`: the reservation source; must equal the snapshot's
+  `assignment_source` (for example `udm-reservations`).
+- `action`: `delete` or `convert`.
+- `expected`: the complete host object previously returned by GET/list (same
+  rules as for `retire-lease`).
+- `lease` (`convert` only): the current lease of the address, with
+  `mac_address`, `lease_expires_at`, `lease_source`, `lease_observed_at`
+  (offset-aware, not in the future) and optional `hostname`.
+
+Only hosts with `assignment_type=reservation` owned by `source` are eligible;
+static, dynamic and foreign records are refused with 409.
+
+**`delete`** removes the host. It is refused (409) while the stored lease is
+still valid: removing a reservation must not free an address that a current
+lease still claims. Use `convert` instead.
+
+**`convert`** turns the reservation into a dynamic allocation backed by the
+supplied lease, which must still be valid and must not be older than the stored
+lease observation (409 otherwise). The host gets `assignment_type=dynamic`,
+`assignment_source`/`discovery_source`/`lease_source` = `lease.lease_source`,
+`assignment_last_confirmed_at` = `lease.lease_observed_at`, `is_assigned=false`
+and the lease fields. CNAME, description, status and network stay unchanged.
+The hostname is taken from the lease when supplied (network domain suffix
+stripped). If the lease MAC differs, another device holds the address: the
+hostname is replaced (cleared when the lease has none) and `last_seen` /
+`last_seen_source` are cleared. The response is the updated host.
+
+```python
+response = session.post(
+    f"{base_url}/hosts/{host_id}/release-reservation",
+    json={
+        "source": "udm-reservations",
+        "action": "convert",
+        "expected": snapshot,
+        "lease": {
+            "mac_address": "aa:bb:cc:dd:ee:ff",
+            "lease_expires_at": "2026-11-02T20:00:00+00:00",
+            "lease_source": "udm-leases",
+            "lease_observed_at": "2026-11-02T16:00:00+00:00",
+            "hostname": "printer",
+        },
+    },
+    timeout=30,
+)
+```
+
+Responses:
+
+| Status | Meaning |
+|--------|---------|
+| 200 | `convert`: reservation converted; body is the updated host |
+| 204 | `delete`: reservation host removed |
+| 400 | Invalid action, snapshot, lease, MAC or timestamps |
+| 404 | Host already absent |
+| 409 | Not a reservation of `source`; `delete` with valid stored lease; `convert` with expired or older lease |
+| 412 | Stored record changed since the supplied snapshot; nothing changed |
+
+As with `retire-lease`, the endpoint does not prove that the source snapshot is
+complete; only call it after a complete successful collection shows the
+reservation is gone. The converted record fits the `retire-lease` contract once
+its lease expires, provided it carries no CNAME or description.

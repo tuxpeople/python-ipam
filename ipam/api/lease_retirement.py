@@ -12,7 +12,8 @@ from ipam.extensions import db
 from ipam.models import Host
 
 
-def _expected_snapshot(data, host_id):
+def expected_snapshot(data, host_id):
+    """Parse the complete host snapshot a guarded request is based on."""
     expected = data.get("expected")
     if not isinstance(expected, dict):
         raise ValueError("expected must contain the previously read host")
@@ -65,7 +66,7 @@ def retire_lease(host_id):
         )
         if cutoff is None:
             raise ValueError("expired_before is required")
-        expected = _expected_snapshot(data, host_id)
+        expected = expected_snapshot(data, host_id)
     except (TypeError, ValueError) as error:
         abort(400, str(error))
 
@@ -109,24 +110,35 @@ def retire_lease(host_id):
             "Host is protected, not source-owned, or lease grace period has not elapsed",
         )
 
+    result = db.session.execute(
+        delete(Host)
+        .where(*snapshot_conditions(expected))
+        .execution_options(synchronize_session=False)
+    )
+    abort_unless_single_row(result, host_id)
+    db.session.commit()
+    return "", 204
+
+
+def snapshot_conditions(expected):
+    """Return WHERE conditions matching every stored column of a snapshot."""
     conditions = []
     for field, value in expected.items():
         column = getattr(Host, field)
         conditions.append(
             column.is_(None) if value is None else column == value
         )
-    result = db.session.execute(
-        delete(Host)
-        .where(*conditions)
-        .execution_options(synchronize_session=False)
+    return conditions
+
+
+def abort_unless_single_row(result, host_id):
+    """Roll back and abort with 404/412 unless exactly one row matched."""
+    if result.rowcount == 1:
+        return
+    db.session.rollback()
+    if db.session.get(Host, host_id) is None:
+        abort(404, "Host not found")
+    abort(
+        412,
+        "Host changed since the supplied snapshot; read and reconcile again",
     )
-    if result.rowcount != 1:
-        db.session.rollback()
-        if db.session.get(Host, host_id) is None:
-            abort(404, "Host not found")
-        abort(
-            412,
-            "Host changed since the supplied snapshot; read and reconcile again",
-        )
-    db.session.commit()
-    return "", 204

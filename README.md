@@ -15,6 +15,8 @@ A modern, web-based IP Address Management (IPAM) system built with Flask, SQLite
   per-aspect provenance
 - 🧹 **Guarded lease retirement**: Atomic, snapshot-checked deletion of expired
   collector-owned dynamic records; see [API contract](API.md#conditional-retirement-of-an-expired-dynamic-host).
+  Reservations removed at the source are deleted or converted to dynamic the
+  same way; see [release contract](API.md#conditional-release-of-a-removed-reservation).
 - 🔌 **REST API**: Complete RESTful API with Swagger UI documentation
 - 📊 **Dashboard**: Clear overview of network utilization
 - 🔍 **Advanced Search**: DataTables integration for efficient data filtering

@@ -18,7 +18,7 @@ See [API contract](API.md#conditional-retirement-of-an-expired-dynamic-host).
 | Core Features | 9 | 0 | 3 | 12 |
 | API Integration | 2 | 0 | 0 | 2 |
 | UI/UX | 8 | 0 | 2 | 10 |
-| Data Management | 4 | 0 | 10 | 14 |
+| Data Management | 5 | 0 | 9 | 14 |
 | Testing | 6 | 0 | 1 | 7 |
 | Security | 0 | 0 | 2 | 2 |
 
@@ -247,6 +247,24 @@ See [API contract](API.md#conditional-retirement-of-an-expired-dynamic-host).
       unrecorded address is not shown as confirmed free
     - Gateways are not modelled yet, so they appear as normal hosts
     - Block overview is computed arithmetically, not per address
+
+- **[IPAM-034]** ✅ Guarded Reservation Removal and Conversion
+  - **Priority**: Medium | **Category**: Data Management / API
+  - **Status**: Complete (IPAM side; collector switch pending)
+  - **GitHub Issue**: [#106](https://github.com/tuxpeople/python-ipam/issues/106)
+  - **Design**: [ADDRESS_ASSIGNMENT_MODEL.md](ADDRESS_ASSIGNMENT_MODEL.md#open-items)
+  - **Description**: `POST /api/v1/hosts/{id}/release-reservation` deletes a
+    reservation removed at its source, or converts it to a dynamic record
+    backed by its current lease, analogous to `retire-lease`
+  - **Acceptance Criteria**:
+    - ✅ Conditional delete with a full expected snapshot (412 on any change,
+      one atomic statement); refused while the stored lease is valid
+    - ✅ Atomic reservation → dynamic conversion in one request (replaces the
+      collector's two upserts with the `udm-reservation-release` marker)
+    - ✅ Only reservations owned by `source`; static/dynamic/foreign refused
+    - ✅ Manual `DELETE` unchanged
+    - ✅ Documented in API.md
+  - **Follow-up**: Switch the homelab-automation collector to the endpoint
 
 ### Export/Import System
 - **[IPAM-018]** ✅ DNSmasq Host Export with Multiple Modes
@@ -566,25 +584,6 @@ See [API contract](API.md#conditional-retirement-of-an-expired-dynamic-host).
     - Reuse existing Bootstrap/DataTables UI patterns
     - Add password strength validation
     - Implement user audit trail
-
-- **[IPAM-034]** 📅 Guarded Reservation Removal and Conversion
-  - **Priority**: Medium | **Category**: Data Management / API
-  - **Estimated Effort**: Medium (2-3 days)
-  - **GitHub Issue**: [#106](https://github.com/tuxpeople/python-ipam/issues/106)
-  - **Design**: [ADDRESS_ASSIGNMENT_MODEL.md](ADDRESS_ASSIGNMENT_MODEL.md#open-items)
-  - **Description**: Snapshot-checked API operations for removing a
-    reservation or converting it to a dynamic record, analogous to
-    `POST /hosts/{id}/retire-lease`
-  - **Acceptance Criteria**:
-    - Conditional delete of a reservation host with a full expected snapshot
-      (412 on any change, atomic condition like `retire-lease`)
-    - Atomic reservation → dynamic conversion in one request (replaces the
-      collector's two upserts with the `udm-reservation-release` marker)
-    - Manual `DELETE` stays unchanged
-    - Documented in API.md
-  - **Dependencies**: [IPAM-032]
-  - **Technical Notes**: The UDM collector currently uses the unconditional
-    `DELETE` and accepts a read/delete race window
 
 - **[IPAM-035]** 📅 Source Identity and Scoped Retirement
   - **Priority**: Low | **Category**: Data Management

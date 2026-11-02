@@ -224,12 +224,12 @@ for an IPAM shared with other sites or manual reservation sources.
 
 In this repository (tracked in FEATURES.md):
 
-- **Guarded reservation removal and conversion (IPAM-034).** The collector
-  deletes removed reservations through the unconditional manual `DELETE`
-  and converts them to `dynamic` in two non-atomic upserts with a temporary
-  `udm-reservation-release` marker, because `retire-lease` only accepts
-  expired dynamic records. A snapshot-checked endpoint for these
-  transitions would close the read/delete race window.
+- **Guarded reservation removal and conversion (IPAM-034): implemented**
+  as `POST /api/v1/hosts/{id}/release-reservation` (see API.md). The
+  collector still uses the unconditional `DELETE` and the two-step upsert
+  with the `udm-reservation-release` marker until it is switched to the
+  new endpoint; rows left with that marker by an interrupted run are no
+  longer reservations and are finished with a normal upsert.
 - **Source identity and scoped retirement (IPAM-035).** External identifiers
   and source scopes for hosts, networks and DHCP ranges, plus
   complete-snapshot bookkeeping. Needed for retiring networks/ranges and
@@ -244,6 +244,7 @@ represented by `lease_expires_at`; the collector rejects them in preflight.
 
 In homelab-automation (not tracked here):
 
+- Switch removed-reservation reconciliation to `release-reservation`.
 - Sources for host-configured static addresses.
 - Recurring execution; the sync currently runs manually via
   `task ipam-sync`, and concurrent runs must be avoided.

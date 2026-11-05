@@ -1,40 +1,15 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "github>tuxpeople/shared//renovate/renovate.json5",
+    "github>tuxpeople/shared//renovate/minimumReleaseAge.json5"
   ],
-  "semanticCommitType": "deps",
-  "semanticCommitScope": null,
-  "automerge": true,
-  "automergeType": "pr",
-  "platformAutomerge": false,
   "packageRules": [
     {
-      "matchUpdateTypes": [
-        "patch",
-        "minor"
-      ],
-      "automerge": true
-    },
-    {
-      "matchUpdateTypes": [
-        "major"
-      ],
-      "automerge": false
-    }
-  ],
-  "customManagers": [
-    {
-      "customType": "regex",
-      "description": "Versions annotated with a `# renovate:` comment in workflows and Dockerfiles",
-      "managerFilePatterns": [
-        "/(^|/)\\.github/workflows/[^/]+\\.ya?ml$/",
-        "/(^|/)Dockerfile[^/]*$/"
-      ],
-      "matchStrings": [
-        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)(\\s+versioning=(?<versioning>\\S+))?\\s*\\n\\s*(?:ARG\\s+|ENV\\s+)?[A-Za-z0-9_-]+\\s*[:=]\\s*[\"']?(?<currentValue>[^\\s\"']+)"
-      ],
-      "versioningTemplate": "{{#if versioning}}{{{versioning}}}{{else}}semver-coerced{{/if}}"
+      "description": "Updates that change the image are released: release-please only releases visible changelog types, and `deps` is one (chore is hidden). GitHub Actions and dev tools stay chore(deps) without a release.",
+      "matchFileNames": ["Dockerfile", "requirements.txt"],
+      "semanticCommitType": "deps",
+      "semanticCommitScope": null
     }
   ]
 }

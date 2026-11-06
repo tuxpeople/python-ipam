@@ -604,9 +604,11 @@ build only on release:
   merging it, or manual `workflow_dispatch`, runs the `build` job):
   - Multi-arch Docker build (`linux/amd64,linux/arm64`), pushed to GHCR
   - Image signed with cosign (keyless, by digest)
-  - SBOM generation (Trivy, CycloneDX) – attached to the image in the
-    registry (`cosign attach sbom`), uploaded to the GitHub Release, and
-    uploaded as a workflow artifact
+  - Cosign keyless signature, verified right after signing
+  - SBOM generation (Trivy, SPDX) – signed attestation in the registry
+    (`actions/attest`, together with the build provenance) and uploaded to
+    the GitHub Release; verify with
+    `gh attestation verify oci://ghcr.io/tuxpeople/python-ipam:latest --owner tuxpeople`
   - Trivy scan: SARIF upload to Code scanning (informational) + table-output
     scan with `exit-code: "1"` (fails the job on CRITICAL/HIGH)
   - Tags: `X.Y.Z`, `X.Y`, `X`, `latest` (read from `version.txt`, which

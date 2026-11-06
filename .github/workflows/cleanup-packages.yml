@@ -1,0 +1,77 @@
+name: "Cleanup: GHCR Packages"
+
+# Monthly cleanup of the GHCR package of this repository:
+# - version tags of old releases (e.g. 1.2.3) older than TAG_RETENTION
+# - untagged versions (superseded nightly/main builds)
+# - sha-<commit> tags (one per build, no release value)
+# - orphaned cosign signatures / attestations whose image is gone
+#
+# dataaxiom/ghcr-cleanup-action understands multi-arch images: platform
+# manifests and referrers of a tagged image are untagged too, but are kept as
+# long as their parent exists. (actions/delete-package-versions would delete
+# them and break the image.)
+#
+# Requirement: the package grants this repository the Admin role under
+# Package settings → Manage Actions access, otherwise deleting fails.
+#
+# Run manually with dry-run first to see what would be deleted.
+
+on:
+  schedule:
+    - cron: "17 4 1 * *"  # monthly, 1st at 04:17 UTC
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Only log what would be deleted"
+        type: boolean
+        default: true
+
+env:
+  # How long tagged images of old releases are kept
+  TAG_RETENTION: "36 months"
+  # How long untagged versions and sha-* tags are kept
+  UNTAGGED_RETENTION: "12 months"
+  # Tags that are never deleted, regardless of age
+  KEEP_TAGS: "latest,main,nightly"
+
+concurrency:
+  group: cleanup-packages
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      # Package name = repository name (github.event has no repository
+      # object on scheduled runs)
+      - name: Package name
+        id: package
+        run: echo "name=${GITHUB_REPOSITORY#*/}" >> "$GITHUB_OUTPUT"
+
+      # Runs first: deleting an old tagged image also removes its platform
+      # manifests and referrers, so nothing is left for the next step
+      - name: Delete old releases
+        uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1.2.2
+        with:
+          package: ${{ steps.package.outputs.name }}
+          delete-tags: "*"
+          exclude-tags: ${{ env.KEEP_TAGS }}
+          older-than: ${{ env.TAG_RETENTION }}
+          validate: true
+          dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}
+
+      - name: Delete untagged versions, sha-* tags and orphans
+        uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1.2.2
+        with:
+          package: ${{ steps.package.outputs.name }}
+          delete-untagged: true
+          delete-tags: "sha-*"
+          exclude-tags: ${{ env.KEEP_TAGS }}
+          delete-orphaned-images: true
+          delete-ghost-images: true
+          older-than: ${{ env.UNTAGGED_RETENTION }}
+          validate: true
+          dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}

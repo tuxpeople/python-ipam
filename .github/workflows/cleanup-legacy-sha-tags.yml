@@ -3,7 +3,7 @@ name: Cleanup Legacy Branch/Commit Image Tags
 # One-time cleanup: older CI pipelines tagged every push to main with
 # main-<shortsha> (very old) or sha-<commit> (ci.yml, replaced by
 # tests.yml + release.yml) -- neither has release value. Manual trigger
-# only, not ongoing maintenance (see cleanup-untagged.yml for that).
+# only, not ongoing maintenance (see cleanup-packages.yml for that).
 # Delete this file once the backlog is cleared.
 #
 # NOTE: actions/delete-package-versions' `ignore-versions` regex matches

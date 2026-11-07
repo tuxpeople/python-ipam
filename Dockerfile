@@ -3,7 +3,7 @@
 # Chainguard only publishes `latest` tags for free; pin the digest so Renovate
 # proposes base image updates as PRs that have to pass CI.
 # hadolint ignore=DL3007
-FROM cgr.dev/chainguard/python:latest-dev@sha256:6d35106ef5ea0b82957aaea5e1ca439611baf825f2078b98837c03d9c7b62486 AS build
+FROM cgr.dev/chainguard/python:latest-dev@sha256:64f414bffa25ca9ff518f35975ad153a921b2e4850c4a84c31a96885fdb86a02 AS build
 
 # Create virtualenv in its final location and upgrade build tools
 # Pin pip >=26.2 for CVE-2025-8869 and the CVE-2026-1703/3219/6357/8643/13346

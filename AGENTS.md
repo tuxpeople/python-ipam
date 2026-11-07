@@ -615,7 +615,7 @@ build only on release:
     the GitHub Release; verify with
     `gh attestation verify oci://ghcr.io/tuxpeople/python-ipam:latest --owner tuxpeople`
   - Trivy scan: SARIF upload to Code scanning (informational); the blocking
-    scan is `image-scan` in `tests.yml`
+    scan is `image-scan` in `tests.yml` (only findings with an available fix)
   - Tags: `X.Y.Z`, `X.Y`, `X`, `latest` (read from `version.txt`, which
     release-please's `simple` release-type maintains)
 

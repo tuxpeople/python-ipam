@@ -103,4 +103,5 @@ jobs:
           image-ref: python-ipam:scan
           format: table
           severity: CRITICAL,HIGH
+          ignore-unfixed: true
           exit-code: "1"

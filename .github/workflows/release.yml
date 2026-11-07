@@ -11,180 +11,42 @@ on:
         default: ""
 
 permissions:
-  contents: write # Tag + GitHub Release
-  pull-requests: write # Open/update the release PR
-  packages: write # Push image to GHCR
-  id-token: write # Cosign keyless signing + attestations
-  security-events: write # Upload Trivy SARIF results
-  attestations: write # GitHub attestations
-  artifact-metadata: write # Attestation storage record
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  contents: read
 
 jobs:
   # On every push to main: maintain the release PR. Only its merge sets
   # released == 'true'.
   release-please:
     if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    outputs:
-      released: ${{ steps.rp.outputs.release_created }}
-      version: ${{ steps.rp.outputs.version }}
-    steps:
-      # A GitHub App token instead of GITHUB_TOKEN: PRs opened with
-      # GITHUB_TOKEN need manual approval before their checks run.
-      - uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
-        id: app-token
-        with:
-          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
-          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
-      - uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5
-        id: rp
-        with:
-          token: ${{ steps.app-token.outputs.token }}
-          config-file: release-please-config.json
-          manifest-file: .release-please-manifest.json
+    uses: tuxpeople/shared/.github/workflows/release-please.yml@3c7eb0e8fbc28b56b40366b711be26511674fa52 # v1.1.0
+    with:
+      client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+    secrets:
+      private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
 
-  # Runs after a merged release PR, or manually via "Run workflow".
-  build:
+  # Safety net -- tests.yml already ran on the same commit.
+  tests:
     needs: release-please
     if: >-
       ${{ always() && needs.release-please.result != 'failure' &&
           (needs.release-please.outputs.released == 'true'
            || github.event_name == 'workflow_dispatch') }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.inputs.ref || github.sha }}
+    uses: ./.github/workflows/tests.yml
+    with:
+      ref: ${{ inputs.ref || github.sha }}
 
-      - name: Resolve version
-        id: v
-        run: |
-          version="$(cat version.txt)"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "tag=v$version" >> "$GITHUB_OUTPUT"
-          echo "major=${version%%.*}" >> "$GITHUB_OUTPUT"
-          echo "major_minor=${version%.*}" >> "$GITHUB_OUTPUT"
-
-      # Safety net -- tests.yml already ran on the same commit.
-      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7
-        with:
-          python-version-file: pyproject.toml
-          cache: "pip"
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt -r requirements-dev.txt
-      - name: Check formatting (ruff)
-        run: |
-          ruff check .
-          ruff format --check .
-      - name: Run tests
-        run: pytest -v
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
-
-      - name: Login to GHCR
-        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata
-        id: meta
-        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=raw,value=${{ steps.v.outputs.version }}
-            type=raw,value=${{ steps.v.outputs.major_minor }}
-            type=raw,value=${{ steps.v.outputs.major }}
-            type=raw,value=latest
-
-      - name: Build and push
-        id: build
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
-        with:
-          context: .
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          sbom: true
-          provenance: true
-
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
-
-      - name: Sign image (keyless)
-        run: |
-          cosign sign --yes \
-            "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}"
-
-      - name: Verify signature
-        run: |
-          cosign verify \
-            --certificate-identity "https://github.com/${{ github.workflow_ref }}" \
-            --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
-            "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}" \
-            > /dev/null
-          echo "✅ Signature verified"
-
-      - name: Install trivy
-        env:
-          # renovate: datasource=github-releases depName=aquasecurity/trivy
-          TRIVY_VERSION: v0.76.1
-        run: curl -sfL "https://raw.githubusercontent.com/aquasecurity/trivy/${TRIVY_VERSION}/contrib/install.sh" | sh -s -- -b /usr/local/bin "${TRIVY_VERSION}"
-
-      # Only actionable findings: CRITICAL/HIGH with an available fix
-      - name: Scan image for vulnerabilities
-        run: |
-          trivy image \
-            --format sarif \
-            --output trivy-results.sarif \
-            --severity CRITICAL,HIGH \
-            --ignore-unfixed \
-            "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}"
-
-      - name: Upload scan results to GitHub Security
-        uses: github/codeql-action/upload-sarif@33d7b85da1a04171e211befe2c739303b9a4c066 # v4
-        with:
-          sarif_file: trivy-results.sarif
-
-      - name: Generate SBOM
-        run: |
-          trivy image --quiet --format spdx-json --output sbom.spdx.json \
-            "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}"
-
-      # Signed, verifiable with: gh attestation verify oci://ghcr.io/<owner>/<repo>:latest --owner <owner>
-      - name: Attest build provenance
-        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.build.outputs.digest }}
-          push-to-registry: true
-
-      - name: Attest SBOM
-        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.build.outputs.digest }}
-          sbom-path: sbom.spdx.json
-          push-to-registry: true
-
-      - name: Attach SBOM to GitHub Release
-        if: needs.release-please.outputs.released == 'true'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh release upload "${{ steps.v.outputs.tag }}" sbom.spdx.json --clobber
+  # Runs after a merged release PR, or manually via "Run workflow".
+  image:
+    needs: [release-please, tests]
+    if: ${{ always() && needs.tests.result == 'success' }}
+    permissions:
+      contents: write # Attach the SBOM to the GitHub Release
+      packages: write # Push image to GHCR
+      id-token: write # Cosign keyless signing + attestations
+      security-events: write # Upload Trivy SARIF results
+      attestations: write # GitHub attestations
+      artifact-metadata: write # Attestation storage record
+    uses: tuxpeople/shared/.github/workflows/container-release.yml@3c7eb0e8fbc28b56b40366b711be26511674fa52 # v1.1.0
+    with:
+      ref: ${{ inputs.ref || github.sha }}
+      attach-sbom: ${{ needs.release-please.outputs.released == 'true' }}

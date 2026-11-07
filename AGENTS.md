@@ -439,7 +439,7 @@ Complete documentation: **API.md**
 - `1.0` - Minor version (updates with new patches)
 - `1` - Major version (updates with new minors/patches)
 
-All tags are created by the `release.yml` `build` job after a release-please
+All tags are created by the `release.yml` `image` job after a release-please
 PR merge – a regular `main` push does **not** produce a new image (see
 `## Releases` above).
 
@@ -560,7 +560,7 @@ no manual `git tag` or `gh release create` anymore.
 3. Merge that PR when you want to ship a release. This automatically:
    - Creates the Git tag `vX.Y.Z` and a GitHub Release with categorized
      changelog
-   - Triggers the `build` job in `release.yml` (Docker image + SBOM +
+   - Triggers the `image` job in `release.yml` (Docker image + SBOM +
      Trivy scan, pushed to GHCR with `X.Y.Z`, `X.Y`, `X`, `latest` tags)
 4. **No manual tag, no manual release notes, no manual Docker verification
    step** – all of the above happens automatically from the merge.
@@ -600,17 +600,22 @@ build only on release:
   check+format), `pytest` (tests+coverage), `hadolint` (Dockerfile),
   `image-scan` (fast, single-arch Trivy scan, no push) – all four run in
   parallel.
-- **`release.yml`** (push to `main` maintains the release-please PR; only
-  merging it, or manual `workflow_dispatch`, runs the `build` job):
+- **`release.yml`** calls the reusable workflows `release-please.yml` and
+  `container-release.yml` from `tuxpeople/shared`, pinned by SHA (push to
+  `main` maintains the release-please PR; only merging it, or manual
+  `workflow_dispatch`, runs the `tests` and `image` jobs):
+  - `tests`: the complete `tests.yml` as safety net; a failure blocks the image
   - Multi-arch Docker build (`linux/amd64,linux/arm64`), pushed to GHCR
   - Image signed with cosign (keyless, by digest)
-  - Cosign keyless signature, verified right after signing
+  - Cosign keyless signature, verified right after signing. The certificate
+    names `container-release.yml` in `tuxpeople/shared`, see the header of
+    that file for the `cosign verify` command
   - SBOM generation (Trivy, SPDX) – signed attestation in the registry
     (`actions/attest`, together with the build provenance) and uploaded to
     the GitHub Release; verify with
     `gh attestation verify oci://ghcr.io/tuxpeople/python-ipam:latest --owner tuxpeople`
-  - Trivy scan: SARIF upload to Code scanning (informational) + table-output
-    scan with `exit-code: "1"` (fails the job on CRITICAL/HIGH)
+  - Trivy scan: SARIF upload to Code scanning (informational); the blocking
+    scan is `image-scan` in `tests.yml`
   - Tags: `X.Y.Z`, `X.Y`, `X`, `latest` (read from `version.txt`, which
     release-please's `simple` release-type maintains)
 

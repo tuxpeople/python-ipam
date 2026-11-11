@@ -23,6 +23,6 @@ permissions:
 
 jobs:
   cleanup:
-    uses: tuxpeople/shared/.github/workflows/ghcr-cleanup.yml@10ff786fd8c8860f2c25d1accdccb58f4eb8a612 # v1.0.0
+    uses: tuxpeople/shared/.github/workflows/ghcr-cleanup.yml@3c7eb0e8fbc28b56b40366b711be26511674fa52 # v1.1.0
     with:
       dry-run: ${{ github.event_name == 'workflow_dispatch' && inputs.dry-run }}

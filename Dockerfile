@@ -32,7 +32,7 @@ USER nonroot
 
 # Stage 3: Final minimal runtime image
 # hadolint ignore=DL3007
-FROM cgr.dev/chainguard/python:latest@sha256:120fda99d16c799bca7117afcf34d592831f015455105f4026dfef370c2faaf7
+FROM cgr.dev/chainguard/python:latest@sha256:4b2cec05cea94a58e635f21ca5d7c642d24ec58258008bf9341a0c062de5d99d
 
 LABEL maintainer="Python IPAM"
 LABEL description="IP Address Management System built with Flask"

@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.9.4](https://github.com/tuxpeople/python-ipam/compare/v1.9.3...v1.9.4) (2026-11-21)
+
+
+### Dependencies
+
+* update image cgr.dev/chainguard/python to 120fda9 ([#161](https://github.com/tuxpeople/python-ipam/issues/161)) ([7c82a05](https://github.com/tuxpeople/python-ipam/commit/7c82a054550013b0d850f3431ed759603aca78c5))
+* update image cgr.dev/chainguard/python to 4b2cec0 ([#164](https://github.com/tuxpeople/python-ipam/issues/164)) ([6e6d5bd](https://github.com/tuxpeople/python-ipam/commit/6e6d5bd801567ef5c9db96be656296cf2310f79b))
+* update image cgr.dev/chainguard/python to 88d8715 ([#162](https://github.com/tuxpeople/python-ipam/issues/162)) ([9f8f1ba](https://github.com/tuxpeople/python-ipam/commit/9f8f1ba312d618f1653e5ad72cf600bbf8ac848f))
+* update image cgr.dev/chainguard/python to c047e6d ([#166](https://github.com/tuxpeople/python-ipam/issues/166)) ([5255446](https://github.com/tuxpeople/python-ipam/commit/5255446bb60f6ce649114bf69a6c19ef91d845af))
+* update image cgr.dev/chainguard/python to f6e5c2e ([#168](https://github.com/tuxpeople/python-ipam/issues/168)) ([97971bd](https://github.com/tuxpeople/python-ipam/commit/97971bd68bfc1d6fde81481707e9664333ca969d))
+
 ## [1.9.3](https://github.com/tuxpeople/python-ipam/compare/v1.9.2...v1.9.3) (2026-11-16)
 
 

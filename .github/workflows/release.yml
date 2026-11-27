@@ -18,7 +18,7 @@ jobs:
   # released == 'true'.
   release-please:
     if: github.event_name == 'push'
-    uses: tuxpeople/shared/.github/workflows/release-please.yml@3c7eb0e8fbc28b56b40366b711be26511674fa52 # v1.1.0
+    uses: tuxpeople/shared/.github/workflows/release-please.yml@e89965d378b3b2edd19eeb2a95c56e33bfad4c54 # v1.2.0
     with:
       client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
     secrets:
@@ -46,7 +46,7 @@ jobs:
       security-events: write # Upload Trivy SARIF results
       attestations: write # GitHub attestations
       artifact-metadata: write # Attestation storage record
-    uses: tuxpeople/shared/.github/workflows/container-release.yml@3c7eb0e8fbc28b56b40366b711be26511674fa52 # v1.1.0
+    uses: tuxpeople/shared/.github/workflows/container-release.yml@e89965d378b3b2edd19eeb2a95c56e33bfad4c54 # v1.2.0
     with:
       ref: ${{ inputs.ref || github.sha }}
       attach-sbom: ${{ needs.release-please.outputs.released == 'true' }}
